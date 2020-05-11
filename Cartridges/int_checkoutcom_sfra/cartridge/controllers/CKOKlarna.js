@@ -17,7 +17,7 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 /**
  * Initiate the Kalrna session.
  */
-server.get('KlarnaSession', server.middleware.https, function (req, res, next) {
+server.get('klarnaSession', server.middleware.https, function (req, res, next) {
     // Prepare the basket
     var basket = BasketMgr.getCurrentBasket();
     if (basket) {
