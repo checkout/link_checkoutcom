@@ -65,7 +65,11 @@ server.post('HandleMandate', server.middleware.https, function (req, res, next) 
     var orderId = ckoHelper.getOrderId();
     
     // Get the form
+   // var sepaForm = server.forms.getForm('sepaForm');
     var sepaForm = req.form;
+
+
+    ckoHelper.doLog('logging sepa form: ', JSON.stringify(sepaForm));
 
     // Cancel validation
     if (sepaForm) {
@@ -75,6 +79,8 @@ server.post('HandleMandate', server.middleware.https, function (req, res, next) 
 
             // Mandate is true
             if (mandate) {
+                var mandateForm = server.forms.getForm('sepaForm'); //gets the mandate form object 
+                mandateForm.clear();
                 
                 // Get the response object from session
                 var responseObjectId = session.privacy.sepaResponseId;
@@ -120,7 +126,7 @@ server.post('HandleMandate', server.middleware.https, function (req, res, next) 
                     );
                 }
             } else {
-                res.render('sepaForm')
+                res.redirect(URLUtils.url('CKOSepa-Mandate'));
             }
         });
     }

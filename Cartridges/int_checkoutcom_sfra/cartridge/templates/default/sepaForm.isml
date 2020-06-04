@@ -79,8 +79,7 @@
 
 	<div class="cko-sepa-button-container">
 		<fieldset class="cko-button-group">
-			<button type="submit" name="${pdict.CurrentForms.sepaForm.submit.htmlName}" value="submit" class="cko-sepa-submit-btn">${Resource.msg('cko.sepa.paynow','cko',null)}</button>
-			<button type="cancel" name="${pdict.CurrentForms.sepaForm.cancel.htmlName}" value="submit" class="cko-sepa-cancel-btn">${Resource.msg('cko.sepa.cancel','cko',null)}</button>
+			<button type="submit" name="submit" class="cko-sepa-submit-btn" valid-form="true">${Resource.msg('cko.sepa.paynow','cko',null)}</button>
 		</fieldset>
 	</div>
 </form>
