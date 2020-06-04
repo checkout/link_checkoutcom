@@ -15,14 +15,14 @@ var paymentHelper = require('~/cartridge/scripts/helpers/paymentHelper');
 
 // Initiate the mandate session
 server.get('Mandate', server.middleware.https, function (req, res, next) {
+
     // Prepare the variables
-    var url = session.privacy.redirectUrl;
     var orderId = ckoHelper.getOrderId();
     var order = OrderMgr.getOrder(orderId);
     
     // Process the URL
-    if (url) {
-        res.render('sepaForm/ajax/output', {
+    if (order) {
+        res.render('sepaForm', {
             // Prepare the view parameters
             creditAmount: order.totalGrossPrice.value.toFixed(2),
             formatedAmount: ckoHelper.getFormattedPrice(
@@ -60,23 +60,21 @@ server.get('Mandate', server.middleware.https, function (req, res, next) {
     next();
 });
 
-server.get('HandleMandate', server.middleware.https, function (req, res, next) {
-    // Set session redirect url to null
-    session.privacy.redirectUrl = null;
+server.post('HandleMandate', server.middleware.https, function (req, res, next) {
+
     var orderId = ckoHelper.getOrderId();
     
     // Get the form
-    var sepaForm = server.forms.getForm('sepaForm');
+    var sepaForm = req.form;
 
     // Cancel validation
-    if (sepaForm.valid) {
-        var sepa = app.getForm('sepaForm');
-        var mandate = sepa.get('mandate').value();
+    if (sepaForm) {
+        var sepa = sepaForm;
+        var mandate = sepa.mandate;
         this.on('route:BeforeComplete', function () {
+
             // Mandate is true
             if (mandate) {
-                // Clear form
-                app.getForm('sepaForm').clear();
                 
                 // Get the response object from session
                 var responseObjectId = session.privacy.sepaResponseId;
@@ -122,8 +120,7 @@ server.get('HandleMandate', server.middleware.https, function (req, res, next) {
                     );
                 }
             } else {
-                res.render('sepaForm');
-                next();
+                res.render('sepaForm')
             }
         });
     }

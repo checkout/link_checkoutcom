@@ -21,9 +21,6 @@ function initTabs() {
 			$('.tab-pane').removeClass('active');
 			$('a.nav-link').removeClass('active');
 
-			// Handle the saved cards display
-			handleSavedCardsDisplay();
-
 			// Get the target id
 			var targetId = $(this).attr('href');
 
@@ -47,14 +44,6 @@ function initTabs() {
 
 	// Show the first active
 	$('.payment-options li.nav-item').first().find('a.nav-link').trigger('click');
-}
-
-function handleSavedCardsDisplay() {
-	var savedCards = $('.row.saved-payment-instrument').length;
-	if (savedCards == 0) {
-		$('.saved-card-tab').closest('li').hide();
-		$('.tab-pane.saved-card-content').hide();
-	}
 }
 
 function initFormValidation() {

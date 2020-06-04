@@ -8,7 +8,7 @@ var PaymentMgr = require('dw/order/PaymentMgr');
 
 /* Checkout.com Helper functions */
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var savedCardHelper = require('~/cartridge/scripts/helpers/savedCardHelper');
+var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
 var transactionHelper = require('~/cartridge/scripts/helpers/transactionHelper');
 
 /**
@@ -96,7 +96,7 @@ var eventsHelper = {
         transactionHelper.createAuthorization(hook);
 
         // Save the card if needed
-        savedCardHelper.updateSavedCard(hook);
+        cardHelper.updateSavedCard(hook);
     },
 
     /**
@@ -111,9 +111,6 @@ var eventsHelper = {
      */
     paymentDeclined: function (hook) {
         this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', 'ORDER_STATUS_FAILED');
-
-        // Delete the card if needed
-        savedCardHelper.updateSavedCardhook();
     },
 
     /**
