@@ -68,10 +68,7 @@ server.post('HandleMandate', server.middleware.https, function (req, res, next) 
    // var sepaForm = server.forms.getForm('sepaForm');
     var sepaForm = req.form;
 
-
-    ckoHelper.doLog('logging sepa form: ', JSON.stringify(sepaForm));
-
-    // Cancel validation
+    // Validation
     if (sepaForm) {
         var sepa = sepaForm;
         var mandate = sepa.mandate;
