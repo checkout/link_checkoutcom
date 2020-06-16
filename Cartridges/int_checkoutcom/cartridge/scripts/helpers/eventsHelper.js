@@ -234,6 +234,13 @@ var eventsHelper = {
      */
     paymentVoidDeclined: function (hook) {
         this.addWebhookInfo(hook, null, null);
+    },
+    
+    /**
+    * Payment pending event.
+    */
+    paymentPending: function (hook) {
+    	this.addWebhookInfo(hook, null, null);
     }
 };
 
