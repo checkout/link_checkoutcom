@@ -1,5 +1,7 @@
 const request = require('request-promise');
 const { assert, expect } = require('chai');
+const config = require('../config');
+const Url = config.sgUrl;
 
 describe('CKO Main Controller Test', function() {
     this.timeout(25000);
@@ -16,8 +18,9 @@ describe('CKO Main Controller Test', function() {
         }
     };
     context('CKO Main HandleRequest', function() {
+        const path = "CKOMain-HandleReturn";
         it('CKOMain-HandleReturn should return a string that includes: Order Not Found', function() {
-            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOMain-HandleReturn';
+            options.uri = Url + path;
             options.method = 'GET';
             return request(options)
                 .then(function (response) {
@@ -26,8 +29,9 @@ describe('CKO Main Controller Test', function() {
         });
     });
     context('CKO Main HandleFail', function() {
+        const path = "CKOMain-HandleFail";
         it('CKOMain-HandleFail should return a string that includes: Order Failed', function() {
-            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOMain-HandleFail';
+            options.uri = Url + path;
             options.method = 'GET';
             return request(options)
                 .then(function (response) {
@@ -36,8 +40,9 @@ describe('CKO Main Controller Test', function() {
         });
     });
     context('CKO Main HandleWebhook', function() {
+        const path = "CKOMain-HandleWebhook";
         it('CKOMain-HandleWebhook should return a string that includes: Invalid Response', function() {
-            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOMain-HandleWebhook';
+            options.uri = Url + path;
             options.method = 'POST';
             return request(options)
                 .then(function (response) {
@@ -46,8 +51,9 @@ describe('CKO Main Controller Test', function() {
         });
     });
     context('CKO Main GetCardsList', function() {
+        const path = "CKOMain-GetCardsList";
         it('CKOMain-GetCardsList should return a string that includes: Failed Authentication', function() {
-            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOMain-GetCardsList';
+            options.uri = Url + path;
             options.method = 'POST';
             return request(options)
                 .then(function (response) {
@@ -56,8 +62,9 @@ describe('CKO Main Controller Test', function() {
         });
     });
     context('CKO Main GetApmFilter', function() {
+        const path = "CKOMain-GetApmFilter";
         it('CKOMain-GetApmFilter should return a string that includes: Shipping Address Not Found', function() {
-            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOMain-GetApmFilter';
+            options.uri = Url + path;
             options.method = 'GET';
             return request(options)
                 .then(function (response) {
@@ -66,8 +73,9 @@ describe('CKO Main Controller Test', function() {
         });
     });
     context('CKO Main GetMadaBin', function() {
+        const path = "CKOMain-GetMadaBin";
         it('CKOMain-GetMadaBin should return an object', function() {
-            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOMain-GetMadaBin';
+            options.uri = Url + path;
             options.method = 'GET';
             return request(options)
                 .then(function (response) {
