@@ -1,7 +1,5 @@
 const request = require('request-promise');
 const { assert, expect } = require('chai');
-const config = require('../config');
-const Url = config.sgUrl;
 
 describe('CKO Klarna Controller Test', function() {
     this.timeout(25000);
@@ -17,9 +15,8 @@ describe('CKO Klarna Controller Test', function() {
         }
     };
     context('CKO Klarna Session', function() {
-        const path = "CKOKlarna-KlarnaSession";
         it('CKOKlarna-KlarnaSession should return a string that includes: Basket Not Found', function() {
-            options.uri = Url + path;
+            options.uri = 'https://checkout01-tech-prtnr-eu02-dw.demandware.net/on/demandware.store/Sites-SiteGenesisGlobal-Site/en_GB/CKOKlarna-KlarnaSession';
             options.method = 'GET';
             return request(options)
                 .then(function (response) {
