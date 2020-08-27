@@ -60,7 +60,6 @@ exports.authorizeOrderPayment = function (order, event) {
     }
 
     return new Status(Status.ERROR);
-
 };
 
 exports.getRequest = function (basket, req) {
