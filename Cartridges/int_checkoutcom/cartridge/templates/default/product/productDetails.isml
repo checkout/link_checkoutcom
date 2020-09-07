@@ -1,5 +1,4 @@
 <isdecorate template="common/layout/page">
-qwqwqw
     <isscript>
         var assets = require('*/cartridge/scripts/assets');
         assets.addJs('/js/productDetail.js');
