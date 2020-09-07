@@ -1,3 +1,7 @@
+<script>
+alert(session.custom.applepaysession);
+</script>
+
 <div class="cart-and-ipay" 
      data-is-apple-session="${session.custom.applepaysession === 'yes' ? 'true' : 'false'}">
     <input type="hidden" class="add-to-cart-url" value="${pdict.addToCartUrl}">
