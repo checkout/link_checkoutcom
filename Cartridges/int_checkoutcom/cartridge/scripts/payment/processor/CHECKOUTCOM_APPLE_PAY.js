@@ -16,6 +16,7 @@ var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
 
 // Utility
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
+
 function authorizeOrderPayment (order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
