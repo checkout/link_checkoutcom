@@ -784,6 +784,10 @@ var ckoHelper = {
             country: billingAddress.getCountryCode().value,
         };
 
+        if (billingDetails.country === '') {
+            billingDetails.country = args.order.defaultShipment.shippingAddress.countryCode.valueOf();
+        }
+
         return billingDetails;
     },
 

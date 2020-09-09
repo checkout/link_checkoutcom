@@ -11,7 +11,7 @@
 #cko-sepa .cko-form-container .cko-top{
 	padding: 2em; 
 	text-align: left; 
-	min-height: 10em;
+	min-height: 20em;
 }
 
 #cko-sepa .cko-form-container .cko-top .cko-top-title{
@@ -19,12 +19,12 @@
 }
 
 #cko-sepa .cko-form-container .cko-top .cko-sepa-creditor{
-	width: 50%; 
+	width: 49%; 
 	float: left;
 }
 
 #cko-sepa .cko-form-container .cko-top .cko-sepa-debtor{
-	width: 50%; 
+	width: 49%; 
 	float: right;
 }
 

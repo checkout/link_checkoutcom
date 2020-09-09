@@ -47,8 +47,8 @@
 		        </p>
 	 		</div>
 	 		<div class="cko-sepa-tandc">
-					<input formfield="${pdict.CurrentForms.sepaForm.mandate}" name="mandate" type="checkbox"/>
-					${Resource.msg('cko.sepa.tandc','cko',null)}
+				<input formfield="${pdict.CurrentForms.sepaForm.mandate}" name="mandate" type="checkbox"/>
+				${Resource.msg('cko.sepa.tandc','cko',null)}
 	 		</div>
 
 			<input type="hidden" name="orderNumber" value="${pdict.orderNumber}" />
