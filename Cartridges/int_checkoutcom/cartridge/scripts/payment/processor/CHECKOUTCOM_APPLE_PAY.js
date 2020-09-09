@@ -1,8 +1,7 @@
 'use strict';
 
-var Status = require('dw/system/Status');
-
 // API Includes
+var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
 
@@ -13,68 +12,76 @@ var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStoref
 // Shopper cart
 var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
 
+// App
+var app = require(SiteControllerName + '/cartridge/scripts/app');
 
 // Utility
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
-function AuthorizeOrderPayment (order, event) {
-    var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
-    && event.isTrusted === true
-    && order;
-
-    if (condition) {
-        // Preparing payment parameters
-        var paymentInstruments = order.getPaymentInstruments(
-            'CHECKOUTCOM_APPLE_PAY').toArray();
-        var paymentInstrument = paymentInstruments[0];
-
-        // Add order number to the session global object
-        // eslint-disable-next-line
-        session.privacy.ckoOrderId = order.orderNo;
-
-        // Add the payload data
-        paymentInstrument.paymentTransaction.custom.ckoApplePayData = event.payment.token.paymentData;
-
-        // Prepare the request arguments
-        var args = {
-            OrderNo: order.orderNo,
-            PaymentInstrument: paymentInstrument
-        };
-
-        // Make the charge request
-        var chargeResponse = applePayHelper.handleRequest(args);
-        if (chargeResponse) {
-            // Create the authorization transaction
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.transactionID = chargeResponse.action_id;
-                paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-                paymentInstrument.paymentTransaction.custom.ckoPaymentId = chargeResponse.id;
-                paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = null;
-                paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
-                paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Authorization';
-                paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH);
-            });
-
-            return new Status(Status.OK);
-        }
-    }
-
-    return new Status(Status.ERROR);
-};
-
-function GetRequest(basket, req) {
+/**
+ * Verifies that the payment data is valid.
+ * @param {Object} args The method arguments
+ * @returns {Object} The form validation result
+ */
+function Handle(args) {
     var cart = Cart.get(args.Basket);
-    var paymentMethod = 'CHECKOUTCOM_APPLE_PAY';
+    var paymentMethod = args.PaymentMethodID;
+
+    // get the payload data
+    var applePayData = app.getForm('applePayForm').get('data').value();
 
     // proceed with transaction
     Transaction.wrap(function() {
         cart.removeExistingPaymentInstruments(paymentMethod);
         var paymentInstrument = cart.createPaymentInstrument(paymentMethod, cart.getNonGiftCertificateAmount());
+        paymentInstrument.paymentTransaction.custom.ckoApplePayData = applePayData;
     });
+
+    return { success: true };
+}
+
+/**
+ * Authorises a payment.
+ * @param {Object} args The method arguments
+ * @returns {Object} The payment success or failure
+ */
+function Authorize(args) {
+    // Preparing payment parameters
+    var paymentInstrument = args.PaymentInstrument;
+    var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+
+    // Add order number to the session global object
+    // eslint-disable-next-line
+    session.privacy.ckoOrderId = args.OrderNo;
+
+    // Make the charge request
+    var chargeResponse = applePayHelper.handleRequest(args);
+    if (chargeResponse) {
+        // Create the authorization transaction
+        Transaction.wrap(function() {
+            paymentInstrument.paymentTransaction.transactionID = chargeResponse.action_id;
+            paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
+            paymentInstrument.paymentTransaction.custom.ckoPaymentId = chargeResponse.id;
+            paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = null;
+            paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
+            paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Authorization';
+            paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH);
+        });
+
+        return { authorized: true };
+    }
+
+    return { error: true };
+}
+
+function getRequest(basket, req) {
 
     session.custom.applepaysession = 'yes';  // eslint-disable-line
 };
 
-// Local methods
-exports.AuthorizeOrderPayment = AuthorizeOrderPayment;
-exports.GetRequest = GetRequest;
+exports.getRequest = getRequest;
+
+// Module exports
+exports.Handle = Handle;
+exports.Authorize = Authorize;
+exports.getRequest = getRequest;
