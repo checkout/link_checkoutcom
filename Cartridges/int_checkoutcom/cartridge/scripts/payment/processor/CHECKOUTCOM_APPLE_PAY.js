@@ -17,7 +17,7 @@ var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
 // Utility
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
-function authorizeOrderPayment (order, event) {
+function AuthorizeOrderPayment (order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
     && order;
@@ -62,7 +62,7 @@ function authorizeOrderPayment (order, event) {
     return new Status(Status.ERROR);
 };
 
-function getRequest(basket, req) {
+function GetRequest(basket, req) {
     var cart = Cart.get(args.Basket);
     var paymentMethod = 'CHECKOUTCOM_APPLE_PAY';
 
@@ -76,5 +76,5 @@ function getRequest(basket, req) {
 };
 
 // Local methods
-exports.authorizeOrderPayment = authorizeOrderPayment;
-exports.getRequest = getRequest;
+exports.AuthorizeOrderPayment = AuthorizeOrderPayment;
+exports.GetRequest = GetRequest;
