@@ -79,9 +79,7 @@ function getRequest(basket, req) {
     session.custom.applepaysession = 'yes';  // eslint-disable-line
 };
 
-exports.getRequest = getRequest;
-
 // Module exports
 exports.Handle = Handle;
 exports.Authorize = Authorize;
-exports.getRequest = getRequest;
+exports.GetRequest = GetRequest;

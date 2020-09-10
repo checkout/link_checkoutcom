@@ -17,11 +17,11 @@
 			"script": "./payment/processor/CHECKOUTCOM_APPLE_PAY"		
 		},
         {
-            "name": "dw.extensions.applepay.getRequest",
+            "name": "app.payment.processor.getRequest",
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         },
         {
-            "name": "dw.extensions.applepay.paymentAuthorized.authorizeOrderPayment",
+            "name": "app.payment.processor.paymentAuthorized.authorizeOrderPayment",
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         }
 	]
