@@ -17,18 +17,11 @@ var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
 function GetRequest(basket, req) {
-
-    var cart = Cart.get(args.Basket);
+    var cart = Cart.get(basket);
     var paymentMethod = 'CHECKOUTCOM_APPLE_PAY';
 
-    // proceed with transaction
-    Transaction.wrap(function() {
-        cart.removeExistingPaymentInstruments(paymentMethod);
-        var paymentInstrument = cart.createPaymentInstrument(paymentMethod, cart.getNonGiftCertificateAmount());
-    });
-
     session.custom.applepaysession = 'yes';  // eslint-disable-line
-};
+}
 
 function AuthorizeOrderPayment (order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
@@ -73,7 +66,7 @@ function AuthorizeOrderPayment (order, event) {
     }
 
     return new Status(Status.ERROR);
-};
+}
 
 // Module exports
 exports.GetRequest = GetRequest;
