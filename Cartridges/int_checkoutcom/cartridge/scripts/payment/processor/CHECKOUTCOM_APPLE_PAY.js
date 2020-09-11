@@ -1,6 +1,7 @@
 'use strict';
 
 var Status = require('dw/system/Status');
+var OrderMgr = require('dw/order/OrderMgr');
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
@@ -17,6 +18,7 @@ var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
 function GetRequest(basket, req) {
+    OrderMgr.createOrder(basket);
     var cart = Cart.get(basket);
     var paymentMethod = 'CHECKOUTCOM_APPLE_PAY';
 	

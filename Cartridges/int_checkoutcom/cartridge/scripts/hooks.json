@@ -18,11 +18,11 @@
 		},
         {
             "name": "app.payment.processor.getRequest",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+            "script": "./payment/processor/CHECKOUTCOM_APPLE_PAY"
         },
         {
             "name": "app.payment.processor.paymentAuthorized.authorizeOrderPayment",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+            "script": "./payment/processor/CHECKOUTCOM_APPLE_PAY"
         }
 	]
 }
