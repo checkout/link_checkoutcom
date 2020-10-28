@@ -26,7 +26,7 @@ var applePayHelper = {
         // Prepare the parameters
         var tokenRequest = {
             type: 'applepay',
-            token_data: paymentData,
+            token_data: JSON.parse(paymentData),
         };
 
         // Log the payment token request data

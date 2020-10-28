@@ -147,9 +147,7 @@
 			<isinclude template="apm/payPal.isml"/>
 		</div>
 	</isif>
-
-	<!-- APM filter URL -->
-	<input type="hidden" id="ckoApmFilterUrl" value="${URLUtils.https('CKOMain-GetApmFilter')}" />	
+	
 
 </div>
 

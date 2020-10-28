@@ -20,11 +20,11 @@
         background-size: 100% 60%;
         background-repeat: no-repeat;
         background-position: 50% 50%;
-        border-radius: 0.5em;
+        border-radius: 0.2em;
         padding: 0em;
         box-sizing: border-box;
-        min-width: 15em;
-        min-height: 3em;
+        min-width: 10em;
+        min-height: 2.5em;
         max-height: 4em;
     }
     .apple-pay-button-black {
@@ -38,15 +38,15 @@
     .apple-pay-button-white-with-line {
         background-image: -webkit-named-image(apple-pay-logo-black);
         background-color: white;
-        border: 0.5em solid black;
+        border: .5px solid black;
     }
 }
 
 /* make ApplePay button larger*/
 .ckoApplePayButton {
     display: none;
-    width: 25em;
-    height: 10em;
+    width: 9em;
+    height: 3em;
 }
 
 .ckoApplePayUnavailable, .ckoApplePayIncompatible {

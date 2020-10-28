@@ -1,9 +1,32 @@
 'use strict';
 
-// jQuery Ajax helpers on DOM ready
+/**
+ * jQuery Ajax helpers on DOM ready.
+ */
 document.addEventListener('DOMContentLoaded', function() {
+    // Launch Apple Pay
     launchApplePay();
 }, false);
+
+function initCheckoutcomApplePayValidation() {
+    $('button.submit-payment').off('click touch').one('click touch', function(e) {
+        if ($('input[name="dwfrm_billing_paymentMethod"]').val() === 'CHECKOUTCOM_APPLE_PAY') {
+            // Prevent the default button click behaviour
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            // Validate the payment data
+            var field1 = $('input[name="dwfrm_billing_applePayForm_ckoApplePayData"]');
+            if (field1.val() === '') {
+                $('#apple-pay-content .invalid-field-message').text(
+                    window.ckoLang.applePayDataInvalid
+                );
+            } else {
+                $(this).trigger('click');
+            }
+        }
+    });
+}
 
 function getLineItems() {
     return [];
@@ -67,7 +90,7 @@ function launchApplePay() {
     }
 
     // Handle the events
-    jQuery('.ckoApplePayButton').click(
+    jQuery('.apple-pay-button').click(
         function(evt) {
             // Prepare the parameters
             var runningTotal = jQuery('[id="ckoApplePayAmount"]').val();
@@ -107,11 +130,13 @@ function launchApplePay() {
 
                 // Shipping info
                 var shippingOptions = [];
+
                 var newTotal = {
                     type: 'final',
                     label: jQuery('[id="ckoApplePaySiteName"]').val(),
                     amount: runningTotal,
                 };
+
                 session.completeShippingContactSelection(status, shippingOptions, newTotal, getLineItems());
             };
 
@@ -123,6 +148,7 @@ function launchApplePay() {
                     label: jQuery('[id="ckoApplePaySiteName"]').val(),
                     amount: runningTotal,
                 };
+
                 session.completeShippingMethodSelection(status, newTotal, getLineItems());
             };
 
@@ -133,6 +159,7 @@ function launchApplePay() {
                     label: jQuery('[id="ckoApplePaySiteName"]').val(),
                     amount: runningTotal,
                 };
+
                 session.completePaymentMethodSelection(newTotal, getLineItems());
             };
 
@@ -156,7 +183,7 @@ function launchApplePay() {
 
                         if (success) {
                             // Redirect to success page
-                            jQuery('[id="dwfrm_applePayForm_data"]').val(JSON.stringify(payload));
+                            jQuery('[id="ckoApplePayData"]').val(JSON.stringify(payload));
                         }
                     }
                 ).catch(

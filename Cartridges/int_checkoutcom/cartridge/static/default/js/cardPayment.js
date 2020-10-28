@@ -1,7 +1,7 @@
 'use strict';
 
-var ckoIsSet = false;
-var ckoIsSetId = document.getElementById('default_thumb');
+var isSet = true;
+var isSetId = document.getElementById('default_thumb');
 
 // set event on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -10,9 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set schema image
     setSchema('#dwfrm_cardPaymentForm_number');
-
-    // Checks if card is mada and set schema image
-    setMada();
 
     // Add expiration years
     setExpirationYears();
@@ -65,7 +62,7 @@ var setSchema = function(inputId) {
             var imageId = getImageId(type);
             if (imageId) {
                 // Set the schema image exist
-                ckoIsSet = true;
+                isSet = true;
 
                 // Get element cardType from form
                 var cardType = document.getElementById('dwfrm_cardPaymentForm_type');
@@ -78,7 +75,15 @@ var setSchema = function(inputId) {
                 // Set card shema image
                 setImage(imageId);
             } else {
-              setImage('default_thumb');
+                // Is mada enabled by shop
+                var mada = document.getElementById('dwfrm_cardPaymentForm_mada');
+
+                // If enabled do mada check
+                if (mada) {
+                    setMada();
+                } else {
+                    setImage('default_thumb');
+                }
             }
         },
     });
@@ -91,13 +96,13 @@ var setImage = function(element) {
     var id = document.getElementById(element);
 
     // If image is already set
-    if (ckoIsSetId) {
-    	ckoIsSetId.style.display = 'none';
+    if (isSetId) {
+        isSetId.style.display = 'none';
         id.style.display = 'block';
-        ckoIsSetId = id;
+        isSetId = id;
     } else {
         id.style.display = 'block';
-        ckoIsSetId = id;
+        isSetId = id;
     }
 };
 
@@ -178,61 +183,57 @@ var ckoMadaFilter = function(cardNumber, bins) {
  * Sets mada image in box
  */
 var setMada = function() {
-    // Is mada enabled by shop
-    var mada = document.getElementById('dwfrm_cardPaymentForm_mada');
     var input = document.getElementById('dwfrm_cardPaymentForm_number');
-    if (mada) {
-        input.addEventListener('keyup', function() {
-            var value = this.value;
-            if (value.length === 7) {
-                var cardNumber = value.replace(/\s/g, '');
+    input.addEventListener('keyup', function() {
+        var value = this.value;
+        if (value.length === 7) {
+            var cardNumber = value.replace(/\s/g, '');
 
-                // Get Mata Config data Url
-                var madaBinUrl = document.getElementById('ckoMadaBinUrl').value;
-                var madaBinRequest = new XMLHttpRequest();
+            // Get Mata Config data Url
+            var madaBinUrl = document.getElementById('ckoMadaBinUrl').value;
+            var madaBinRequest = new XMLHttpRequest();
 
-                madaBinRequest.onreadystatechange = function() {
-                	// If request was successful and return 200
-                    if (this.readyState === 4 && this.status === 200) {
-                    	// Assign the request response to responseObject variable
-                        var responseObject = JSON.parse(this.responseText);
-                        var bins = responseObject;
-                        // console.log(bins);
+            madaBinRequest.onreadystatechange = function() {
+            	// If request was successful and return 200
+                if (this.readyState === 4 && this.status === 200) {
+                	// Assign the request response to responseObject variable
+                    var responseObject = JSON.parse(this.responseText);
+                    var bins = responseObject;
+                    // console.log(bins);
 
-                        // Match cardnumber with mada bins
-                        var result = ckoMadaFilter(cardNumber, bins);
+                    // Match cardnumber with mada bins
+                    var result = ckoMadaFilter(cardNumber, bins);
 
-                        // If result match mada card
-                        if (result) {
-                        	// Get element cardType from form
-                        	var cardType = document.getElementById('dwfrm_cardPaymentForm_type');
+                    // If result match mada card
+                    if (result) {
+                    	// Get element cardType from form
+                    	var cardType = document.getElementById('dwfrm_cardPaymentForm_type');
 
-                        	// If element cardType exist set value to type
-                        	if (cardType) {
-                        		cardType.value = result;
-                        	}
+                    	// If element cardType exist set value to type
+                    	if (cardType) {
+                    		cardType.value = result;
+                    	}
 
-                        	// Get card schema
-                        	var imageId = getImageId(result);
+                    	// Get card schema
+                    	var imageId = getImageId(result);
 
-                        	// Set card schema image
-                        	setImage(imageId);
-                        } else {
-                        	// If there is an active schema image don't change
-                        	if (!ckoIsSet) {
-                        		setImage('default_thumb');
-                        	}
-                        }
+                    	// Set card schema image
+                    	setImage(imageId);
+                    } else {
+                    	// If there is an active schema image don't change
+                    	if (!isSet) {
+                    		setImage('default_thumb');
+                    	}
                     }
-                };
-
-                madaBinRequest.open('GET', madaBinUrl, true);
-                madaBinRequest.send();
-            } else if (value.length < 6) {
-                if (!ckoIsSet) {
-                    setImage('default_thumb');
                 }
+            };
+
+            madaBinRequest.open('GET', madaBinUrl, true);
+            madaBinRequest.send();
+        } else if (value.length < 6) {
+            if (!isSet) {
+                setImage('default_thumb');
             }
-        });
-    }
+        }
+    });
 };

@@ -120,9 +120,7 @@ var eventsHelper = {
         this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', 'ORDER_STATUS_FAILED');
 
         // Delete the card if needed
-        if (hook.data.metadata.payment_processor == 'CHECKOUTCOM_CARD') {
-            savedCardHelper.updateSavedCard(hook);
-        }
+        savedCardHelper.updateSavedCard(hook);
     },
 
     /**
@@ -213,14 +211,6 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentPending: function(hook) {
-        this.addWebhookInfo(hook, null, null);
-    },
-
-    /**
-     * Payment capture pending event.
-     * @param {Object} hook The gateway webhook data
-     */
-    paymentCapturePending: function(hook) {
         this.addWebhookInfo(hook, null, null);
     },
 
