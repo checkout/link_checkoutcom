@@ -16,7 +16,7 @@ function initCheckoutcomCardValidation() {
 }
 
 function cardFormValidation() {
-    $('button.submit-payment').off('click touch').one('click touch', function(e) {
+    $('button.submit-payment').off('click touch').on('click touch', function(e) {
     // Reset the form error messages
         resetFormErrors();
 
@@ -37,7 +37,7 @@ function cardFormValidation() {
 
         // Handle errors
         $.each(cardFields, function(i, field) {
-            if (field.error === 1) {
+            if (field && field.error === 1) {
                 $('#' + field.id).next('.invalid-feedback').show();
             }
         });
@@ -80,7 +80,7 @@ function checkCardExpirationMonth() {
     };
 
     // Check expiration month
-    if (targetField.val() === '') {
+    if (targetField.val() === '' || ($('#expirationYear').val() == new Date().getFullYear() && targetField.val() < new Date().getMonth() + 1)) {
         $('.dwfrm_billing_creditCardFields_expirationMonth .invalid-field-message').text(
             window.ckoLang.cardExpirationMonthInvalid
         );
