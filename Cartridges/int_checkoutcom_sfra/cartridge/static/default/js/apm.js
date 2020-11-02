@@ -76,6 +76,7 @@ function filterApm() {
         if (this.readyState === 4 && this.status === 200) {
             // Get the APM countries and currencies list
             var apmList = JSON.parse(this.responseText);
+            var anyApmActive = false;
 
             // Get the user country and currency
             var userData = apmList.filterObject;
@@ -86,9 +87,15 @@ function filterApm() {
                 var condition1 = dataArray[item].countries.includes(userData.country.toUpperCase());
                 var condition2 = dataArray[item].countries.includes('*');
                 var condition3 = dataArray[item].currencies.includes(userData.currency);
-                if ((condition1 || condition2) && condition3) {
+                var condition4 = dataArray[item].enabled;
+                if ((condition1 || condition2) && condition3 && condition4) {
+                    anyApmActive = true;
                     $('#' + item).css('display', 'block');
                 }
+            }
+
+            if (!anyApmActive){
+                $('a.apm-tab').parent().hide();
             }
         }
     };
