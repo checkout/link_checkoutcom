@@ -6,13 +6,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Load the language strings
     loadTranslations();
-    
-    // Filter APM Payment Methods
-    filterApm();
 
     // Handle payment tabs state
     initTabs();
 }, true);
+
+$('.submit-shipping').on('click', function() {
+    $(function() {
+        // Filter APMs
+        filterApm();
+    });
+});
 
 function initTabs() {
     // Handle the click navigation
