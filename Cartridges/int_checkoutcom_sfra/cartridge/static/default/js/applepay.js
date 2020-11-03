@@ -85,6 +85,7 @@ function launchApplePay() {
             }
         );
     } else {
+        jQuery('.apple-pay-tab').parent().hide()
         jQuery('.ckoApplePayButton').hide();
         jQuery('.ckoApplePayIncompatible').show();
     }
