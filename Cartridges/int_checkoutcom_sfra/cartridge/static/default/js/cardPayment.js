@@ -38,16 +38,12 @@ function cardFormValidation() {
         // Handle errors
         $.each(cardFields, function(i, field) {
             if (field && field.error === 1) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 $('#' + field.id).next('.invalid-feedback').show();
             }
         });
 
-        // Prevent submission
-        if (cardFields.length > 0) {
-            // Prevent the default button click behaviour
-            e.preventDefault();
-            e.stopImmediatePropagation();
-        }
     });
 }
 
