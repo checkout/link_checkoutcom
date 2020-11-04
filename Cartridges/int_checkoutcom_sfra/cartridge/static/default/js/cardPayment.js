@@ -37,19 +37,13 @@ function cardFormValidation() {
 
         // Handle errors
         $.each(cardFields, function(i, field) {
-            if (field.error === 1) {
+            if (field && field.error === 1) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 $('#' + field.id).next('.invalid-feedback').show();
             }
         });
 
-        // Prevent submission
-        for (var i = 0; i < cardFields.length; i++) {
-            if (cardFields[i].error == 1) {
-                // Prevent the default button click behaviour
-                e.preventDefault();
-                e.stopImmediatePropagation();
-            }
-        }
     });
 }
 
@@ -82,7 +76,7 @@ function checkCardExpirationMonth() {
     };
 
     // Check expiration month
-    if (targetField.val() === '') {
+    if (targetField.val() === '' || ($('#expirationYear').val() == new Date().getFullYear() && targetField.val() < new Date().getMonth() + 1)) {
         $('.dwfrm_billing_creditCardFields_expirationMonth .invalid-field-message').text(
             window.ckoLang.cardExpirationMonthInvalid
         );
