@@ -9,14 +9,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle payment tabs state
     initTabs();
+
+    // Filter APMs
+    if ($("#checkout-main").attr("data-checkout-stage") == "payment") {
+        filterApm();
+    } else {
+        $('.submit-shipping').on('click', function() {
+            $(function() {
+                // Filter APMs
+                filterApm();
+            });
+        });
+    }
 }, true);
 
-$('.submit-shipping').on('click', function() {
-    $(function() {
-        // Filter APMs
-        filterApm();
-    });
-});
+
 
 function initTabs() {
     // Handle the click navigation
