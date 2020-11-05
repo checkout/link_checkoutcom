@@ -29,9 +29,9 @@
 
 
 #apmsBox div img {
-width: 10%;
-display: inline;
-vertical-align: middle;
+    width: 10%;
+    display: inline;
+    vertical-align: middle;
 }
 
 .hideApm{
@@ -72,9 +72,9 @@ vertical-align: middle;
 }
 
 .klarnaLogo{
-	margin: auto;
+    margin: auto;
     margin-right: 0.5rem;
-	float: right;
+    float: right;
 }
 
 #klarnaConfirmBtn{
