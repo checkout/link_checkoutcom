@@ -9,7 +9,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle payment tabs state
     initTabs();
+
+    // Filter APMs
+    if ($("#checkout-main").attr("data-checkout-stage") == "payment") {
+        filterApm();
+    } else {
+        $('.submit-shipping').on('click', function() {
+            $(function() {
+                // Filter APMs
+                filterApm();
+            });
+        });
+    }
 }, true);
+
+
 
 function initTabs() {
     // Handle the click navigation
@@ -34,11 +48,6 @@ function initTabs() {
             // Add the selected payment method
             var methodId = $(this).parents('li').data('method-id');
             $('input[name="dwfrm_billing_paymentMethod"]').val(methodId);
-
-            // Run the APM filter if relevant
-            if (methodId === 'CHECKOUTCOM_APM') {
-                filterApm();
-            }
 
             // Initialize the form validation
             initFormValidation();
