@@ -62,6 +62,7 @@ function launchApplePay() {
             }
         );
     } else {
+        document.getElementById('is-CHECKOUTCOM_APPLE_PAY').parentElement.parentElement.style.display = 'none';
         jQuery('.ckoApplePayButton').hide();
         jQuery('.ckoApplePayIncompatible').show();
     }
