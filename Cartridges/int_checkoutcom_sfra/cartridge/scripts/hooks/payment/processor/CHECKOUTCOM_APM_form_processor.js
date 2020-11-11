@@ -11,6 +11,7 @@ function processForm(req, paymentForm, viewFormData) {
     var viewData = viewFormData;
     var ckoSelectedApm = paymentForm.apmForm ? paymentForm.apmForm.ckoSelectedApm.htmlValue : null;
     var error = true;
+    var fieldErrors = {};
 
     if (ckoSelectedApm) {
         error = false;
@@ -37,17 +38,30 @@ function processForm(req, paymentForm, viewFormData) {
                     };
                 }
             });
+
         } else {
             viewData.paymentInformation.type = {
                 value: ckoSelectedApm,
                 htmlName: paymentForm.apmForm.htmlName,
             };
         }
+
+        // Validate form value
+        if (viewData.paymentInformation) {
+            Object.keys(viewData.paymentInformation).forEach(function(key) {
+                var currentElement = viewData.paymentInformation[key];
+                if (currentElement.value === '') {
+                    error = true;
+                    fieldErrors[currentElement.htmlName] = 'required';
+                }
+            });
+        }
     }
 
     return {
         error: error,
         viewData: viewData,
+        fieldErrors: fieldErrors
     };
 }
 
