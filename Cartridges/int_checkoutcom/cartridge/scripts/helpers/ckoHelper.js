@@ -14,6 +14,9 @@ var Site = require('dw/system/Site');
 // Card Currency Config
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
 
+/* Sensitive Data Helper */
+var sensitiveDataHelper = require('~/cartridge/scripts/helpers/sensitiveDataHelper.js');
+
 /**
  * Module ckoHelper.
  */
@@ -122,14 +125,55 @@ var ckoHelper = {
      */
     log: function(dataType, gatewayData) {
         if (this.getValue('ckoDebugEnabled') === true) {
+            // Create's a deep copy gatewayData, this will prevent data being deleted.
+            var cloneGatewayData = JSON.parse(JSON.stringify(gatewayData));
+            
             var logger = Logger.getLogger('ckodebug');
+
+            // Remove sensitive data
+            var cleanData = this.removeSensitiveData(cloneGatewayData);
+
             if (logger) {
                 logger.debug(
                     this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}',
-                    JSON.stringify(gatewayData)
+                    JSON.stringify(cleanData)
                 );
             }
         }
+    },
+
+    /**
+     * Remove sentitive data from the logs.
+     * @param {Object} rawData The log data
+     * @returns {Object} The filtered data
+     */
+    removeSensitiveData: function(data) {
+        if (data) {
+            if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
+                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference'))
+                    data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*');
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'source_data')) {
+                data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'source')) {
+                data.source = sensitiveDataHelper.cleanSourceObject(data.source);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'customer')) {
+                data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'shipping')) {
+                data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) {
+                data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
+            }
+        }
+
+        return data;
     },
 
     /**
