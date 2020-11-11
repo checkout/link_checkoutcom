@@ -56,7 +56,7 @@ function verifyCard(req, card, form) {
     }
 
     if (creditCardStatus && creditCardStatus.error) {
-        collections.forEach(creditCardStatus.items, function (item) {
+        collections.forEach(creditCardStatus.items, function(item) {
             switch (item.code) {
                 case PaymentStatusCodes.CREDITCARD_INVALID_CARD_NUMBER:
                     formCardNumber.valid = false;
@@ -94,7 +94,7 @@ function getDetailsObject(paymentForm) {
         cardType: paymentForm.cardType.value,
         expirationMonth: paymentForm.expirationMonth.value,
         expirationYear: paymentForm.expirationYear.value,
-        paymentForm: paymentForm
+        paymentForm: paymentForm,
     };
 }
 
@@ -113,7 +113,7 @@ function getExpirationYears() {
     return creditCardExpirationYears;
 }
 
-server.get('List', userLoggedIn.validateLoggedIn, consentTracking.consent, function (req, res, next) {
+server.get('List', userLoggedIn.validateLoggedIn, consentTracking.consent, function(req, res, next) {
     var URLUtils = require('dw/web/URLUtils');
     var Resource = require('dw/web/Resource');
     var AccountModel = require('*/cartridge/models/account');
@@ -126,13 +126,13 @@ server.get('List', userLoggedIn.validateLoggedIn, consentTracking.consent, funct
         breadcrumbs: [
             {
                 htmlValue: Resource.msg('global.home', 'common', null),
-                url: URLUtils.home().toString()
+                url: URLUtils.home().toString(),
             },
             {
                 htmlValue: Resource.msg('page.title.myaccount', 'account', null),
-                url: URLUtils.url('Account-Show').toString()
-            }
-        ]
+                url: URLUtils.url('Account-Show').toString(),
+            },
+        ],
     });
     next();
 });
@@ -142,7 +142,7 @@ server.get(
     csrfProtection.generateToken,
     consentTracking.consent,
     userLoggedIn.validateLoggedIn,
-    function (req, res, next) {
+    function(req, res, next) {
         var URLUtils = require('dw/web/URLUtils');
         var Resource = require('dw/web/Resource');
 
@@ -159,25 +159,25 @@ server.get(
             breadcrumbs: [
                 {
                     htmlValue: Resource.msg('global.home', 'common', null),
-                    url: URLUtils.home().toString()
+                    url: URLUtils.home().toString(),
                 },
                 {
                     htmlValue: Resource.msg('page.title.myaccount', 'account', null),
-                    url: URLUtils.url('Account-Show').toString()
+                    url: URLUtils.url('Account-Show').toString(),
                 },
                 {
                     htmlValue: Resource.msg('page.heading.payments', 'payment', null),
-                    url: URLUtils.url('PaymentInstruments-List').toString()
-                }
-            ]
+                    url: URLUtils.url('PaymentInstruments-List').toString(),
+                },
+            ],
         });
 
         next();
     }
 );
 
-////////////////////////////////////////////       Modified         ///////////////////////////////////////////////
-server.post('SavePayment', csrfProtection.validateAjaxRequest, function (req, res, next) {
+// //////////////////////////////////////////       Modified         ///////////////////////////////////////////////
+server.post('SavePayment', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var formErrors = require('*/cartridge/scripts/formErrors');
     var HookMgr = require('dw/system/HookMgr');
     var PaymentMgr = require('dw/order/PaymentMgr');
@@ -189,7 +189,7 @@ server.post('SavePayment', csrfProtection.validateAjaxRequest, function (req, re
 
     if (paymentForm.valid && !verifyCard(req, result, paymentForm)) {
         res.setViewData(result);
-        this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
+        this.on('route:BeforeComplete', function(req, res) { // eslint-disable-line no-shadow
             var URLUtils = require('dw/web/URLUtils');
             var CustomerMgr = require('dw/customer/CustomerMgr');
             var Transaction = require('dw/system/Transaction');
@@ -200,7 +200,7 @@ server.post('SavePayment', csrfProtection.validateAjaxRequest, function (req, re
             );
             var wallet = customer.getProfile().getWallet();
 
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 var paymentInstrument = wallet.createPaymentInstrument(dwOrderPaymentInstrument.METHOD_CREDIT_CARD);
                 paymentInstrument.setCreditCardHolder(formInfo.name);
                 paymentInstrument.setCreditCardNumber(formInfo.cardNumber);
@@ -223,19 +223,19 @@ server.post('SavePayment', csrfProtection.validateAjaxRequest, function (req, re
 
             res.json({
                 success: true,
-                redirectUrl: URLUtils.url('PaymentInstruments-List').toString()
+                redirectUrl: URLUtils.url('PaymentInstruments-List').toString(),
             });
         });
     } else {
         res.json({
             success: false,
-            fields: formErrors.getFormErrors(paymentForm)
+            fields: formErrors.getFormErrors(paymentForm),
         });
     }
     return next();
 });
 
-server.get('DeletePayment', userLoggedIn.validateLoggedInAjax, function (req, res, next) {
+server.get('DeletePayment', userLoggedIn.validateLoggedInAjax, function(req, res, next) {
     var array = require('*/cartridge/scripts/util/array');
     var accountHelpers = require('*/cartridge/scripts/helpers/accountHelpers');
 
@@ -247,11 +247,11 @@ server.get('DeletePayment', userLoggedIn.validateLoggedInAjax, function (req, re
 
     var UUID = req.querystring.UUID;
     var paymentInstruments = req.currentCustomer.wallet.paymentInstruments;
-    var paymentToDelete = array.find(paymentInstruments, function (item) {
+    var paymentToDelete = array.find(paymentInstruments, function(item) {
         return UUID === item.UUID;
     });
     res.setViewData(paymentToDelete);
-    this.on('route:BeforeComplete', function () { // eslint-disable-line no-shadow
+    this.on('route:BeforeComplete', function() { // eslint-disable-line no-shadow
         var CustomerMgr = require('dw/customer/CustomerMgr');
         var Transaction = require('dw/system/Transaction');
         var Resource = require('dw/web/Resource');
@@ -261,7 +261,7 @@ server.get('DeletePayment', userLoggedIn.validateLoggedInAjax, function (req, re
             req.currentCustomer.profile.customerNo
         );
         var wallet = customer.getProfile().getWallet();
-        Transaction.wrap(function () {
+        Transaction.wrap(function() {
             wallet.removePaymentInstrument(payment.raw);
         });
 
@@ -271,7 +271,7 @@ server.get('DeletePayment', userLoggedIn.validateLoggedInAjax, function (req, re
         if (wallet.getPaymentInstruments().length === 0) {
             res.json({
                 UUID: UUID,
-                message: Resource.msg('msg.no.saved.payments', 'payment', null)
+                message: Resource.msg('msg.no.saved.payments', 'payment', null),
             });
         } else {
             res.json({ UUID: UUID });
@@ -281,9 +281,9 @@ server.get('DeletePayment', userLoggedIn.validateLoggedInAjax, function (req, re
     return next();
 });
 
-server.get('Header', server.middleware.include, function (req, res, next) {
+server.get('Header', server.middleware.include, function(req, res, next) {
     res.render('account/header', { name:
-        req.currentCustomer.profile ? req.currentCustomer.profile.firstName : null
+        req.currentCustomer.profile ? req.currentCustomer.profile.firstName : null,
     });
     next();
 });

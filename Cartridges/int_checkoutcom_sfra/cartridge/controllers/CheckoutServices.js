@@ -5,7 +5,7 @@ var server = require('server');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 
 
-server.get('Get', server.middleware.https, function (req, res, next) {
+server.get('Get', server.middleware.https, function(req, res, next) {
     var BasketMgr = require('dw/order/BasketMgr');
     var AccountModel = require('*/cartridge/models/account');
     var OrderModel = require('*/cartridge/models/order');
@@ -18,7 +18,7 @@ server.get('Get', server.middleware.https, function (req, res, next) {
     if (!currentBasket) {
         res.json({
             redirectUrl: URLUtils.url('Cart-Show').toString(),
-            error: true
+            error: true,
         });
 
         return next();
@@ -41,7 +41,7 @@ server.get('Get', server.middleware.https, function (req, res, next) {
         order: basketModel,
         customer: new AccountModel(req.currentCustomer),
         error: !allValid,
-        message: allValid ? '' : Resource.msg('error.message.shipping.addresses', 'checkout', null)
+        message: allValid ? '' : Resource.msg('error.message.shipping.addresses', 'checkout', null),
     });
 
     return next();
@@ -54,7 +54,7 @@ server.post(
     'SubmitPayment',
     server.middleware.https,
     csrfProtection.validateAjaxRequest,
-    function (req, res, next) {
+    function(req, res, next) {
         var PaymentManager = require('dw/order/PaymentMgr');
         var HookManager = require('dw/system/HookMgr');
         var Resource = require('dw/web/Resource');
@@ -78,7 +78,7 @@ server.post(
                 address2: { value: paymentForm.addressFields.address2.value },
                 city: { value: paymentForm.addressFields.city.value },
                 postalCode: { value: paymentForm.addressFields.postalCode.value },
-                countryCode: { value: paymentForm.addressFields.country.value }
+                countryCode: { value: paymentForm.addressFields.country.value },
             };
 
             if (Object.prototype.hasOwnProperty.call(paymentForm.addressFields, 'states')) {
@@ -90,7 +90,7 @@ server.post(
             formFieldErrors.push(contactInfoFormErrors);
         } else {
             viewData.email = {
-                value: paymentForm.contactInfoFields.email.value
+                value: paymentForm.contactInfoFields.email.value,
             };
 
             viewData.phone = { value: paymentForm.contactInfoFields.phone.value };
@@ -129,14 +129,14 @@ server.post(
                 form: paymentForm,
                 fieldErrors: formFieldErrors,
                 serverErrors: paymentFormResult.serverErrors ? paymentFormResult.serverErrors : [],
-                error: true
+                error: true,
             });
             return next();
         }
 
         res.setViewData(paymentFormResult.viewData);
 
-        this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
+        this.on('route:BeforeComplete', function(req, res) { // eslint-disable-line no-shadow
             var BasketMgr = require('dw/order/BasketMgr');
             var HookMgr = require('dw/system/HookMgr');
             var PaymentMgr = require('dw/order/PaymentMgr');
@@ -161,7 +161,7 @@ server.post(
                     cartError: true,
                     fieldErrors: [],
                     serverErrors: [],
-                    redirectUrl: URLUtils.url('Cart-Show').toString()
+                    redirectUrl: URLUtils.url('Cart-Show').toString(),
                 });
                 return;
             }
@@ -175,7 +175,7 @@ server.post(
                     cartError: true,
                     fieldErrors: [],
                     serverErrors: [],
-                    redirectUrl: URLUtils.url('Cart-Show').toString()
+                    redirectUrl: URLUtils.url('Cart-Show').toString(),
                 });
                 return;
             }
@@ -188,7 +188,7 @@ server.post(
             billingForm.creditCardFields.cardNumber.htmlValue = '';
             billingForm.creditCardFields.securityCode.htmlValue = '';
 
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 if (!billingAddress) {
                     billingAddress = currentBasket.createBillingAddress();
                 }
@@ -226,7 +226,7 @@ server.post(
                     form: billingForm,
                     fieldErrors: [noPaymentMethod],
                     serverErrors: [],
-                    error: true
+                    error: true,
                 });
                 return;
             }
@@ -262,7 +262,7 @@ server.post(
                     form: billingForm,
                     fieldErrors: result.fieldErrors,
                     serverErrors: result.serverErrors,
-                    error: true
+                    error: true,
                 });
                 return;
             }
@@ -279,7 +279,7 @@ server.post(
             }
 
             // Calculate the basket
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 basketCalculationHelpers.calculateTotals(currentBasket);
             });
 
@@ -293,7 +293,7 @@ server.post(
                     form: paymentForm,
                     fieldErrors: [],
                     serverErrors: [Resource.msg('error.technical', 'checkout', null)],
-                    error: true
+                    error: true,
                 });
                 return;
             }
@@ -304,7 +304,7 @@ server.post(
                 usingMultiShipping = false;
             }
 
-            hooksHelper('app.customer.subscription', 'subscribeTo', [paymentForm.subscribe.checked, paymentForm.contactInfoFields.email.htmlValue], function () {});
+            hooksHelper('app.customer.subscription', 'subscribeTo', [paymentForm.subscribe.checked, paymentForm.contactInfoFields.email.htmlValue], function() {});
 
             var currentLocale = Locale.getLocale(req.locale.id);
 
@@ -326,7 +326,7 @@ server.post(
                 customer: accountModel,
                 order: basketModel,
                 form: billingForm,
-                error: false
+                error: false,
             });
         });
 
@@ -335,7 +335,7 @@ server.post(
 );
 
 
-server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
+server.post('PlaceOrder', server.middleware.https, function(req, res, next) {
     var BasketMgr = require('dw/order/BasketMgr');
     var OrderMgr = require('dw/order/OrderMgr');
     var Resource = require('dw/web/Resource');
@@ -355,7 +355,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             cartError: true,
             fieldErrors: [],
             serverErrors: [],
-            redirectUrl: URLUtils.url('Cart-Show').toString()
+            redirectUrl: URLUtils.url('Cart-Show').toString(),
         });
         return next();
     }
@@ -367,7 +367,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             cartError: true,
             fieldErrors: [],
             serverErrors: [],
-            redirectUrl: URLUtils.url('Cart-Show').toString()
+            redirectUrl: URLUtils.url('Cart-Show').toString(),
         });
         return next();
     }
@@ -377,7 +377,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             error: true,
             cartError: true,
             redirectUrl: URLUtils.url('Error-ErrorCode', 'err', '01').toString(),
-            errorMessage: Resource.msg('error.technical', 'checkout', null)
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
 
         return next();
@@ -387,7 +387,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
     if (validationOrderStatus.error) {
         res.json({
             error: true,
-            errorMessage: validationOrderStatus.message
+            errorMessage: validationOrderStatus.message,
         });
         return next();
     }
@@ -398,9 +398,9 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             error: true,
             errorStage: {
                 stage: 'shipping',
-                step: 'address'
+                step: 'address',
             },
-            errorMessage: Resource.msg('error.no.shipping.address', 'checkout', null)
+            errorMessage: Resource.msg('error.no.shipping.address', 'checkout', null),
         });
         return next();
     }
@@ -411,15 +411,15 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             error: true,
             errorStage: {
                 stage: 'payment',
-                step: 'billingAddress'
+                step: 'billingAddress',
             },
-            errorMessage: Resource.msg('error.no.billing.address', 'checkout', null)
+            errorMessage: Resource.msg('error.no.billing.address', 'checkout', null),
         });
         return next();
     }
 
     // Calculate the basket
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         basketCalculationHelpers.calculateTotals(currentBasket);
     });
 
@@ -430,9 +430,9 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             error: true,
             errorStage: {
                 stage: 'payment',
-                step: 'paymentInstrument'
+                step: 'paymentInstrument',
             },
-            errorMessage: Resource.msg('error.payment.not.valid', 'checkout', null)
+            errorMessage: Resource.msg('error.payment.not.valid', 'checkout', null),
         });
         return next();
     }
@@ -442,7 +442,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
     if (calculatedPaymentTransactionTotal.error) {
         res.json({
             error: true,
-            errorMessage: Resource.msg('error.technical', 'checkout', null)
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
         return next();
     }
@@ -452,7 +452,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
     if (!order) {
         res.json({
             error: true,
-            errorMessage: Resource.msg('error.technical', 'checkout', null)
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
         return next();
     }
@@ -462,14 +462,14 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
     if (handlePaymentResult.error) {
         res.json({
             error: true,
-            errorMessage: Resource.msg('error.technical', 'checkout', null)
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
         return next();
     }
 
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
     if (fraudDetectionStatus.status === 'fail') {
-        Transaction.wrap(function () { OrderMgr.failOrder(order, true); });
+        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
 
         // fraud detection failed
         req.session.privacyCache.set('fraudDetectionStatus', true);
@@ -478,7 +478,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
             error: true,
             cartError: true,
             redirectUrl: URLUtils.url('Error-ErrorCode', 'err', fraudDetectionStatus.errorCode).toString(),
-            errorMessage: Resource.msg('error.technical', 'checkout', null)
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
 
         return next();
@@ -499,7 +499,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
     if (placeOrderResult.error) {
         res.json({
             error: true,
-            errorMessage: Resource.msg('error.technical', 'checkout', null)
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
         return next();
     }
@@ -507,7 +507,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
     if (req.currentCustomer.addressBook) {
         // save all used shipping addresses to address book of the logged in customer
         var allAddresses = addressHelpers.gatherShippingAddresses(order);
-        allAddresses.forEach(function (address) {
+        allAddresses.forEach(function(address) {
             if (!addressHelpers.checkIfAddressStored(address, req.currentCustomer.addressBook.addresses)) {
                 addressHelpers.saveAddress(address, req.currentCustomer, addressHelpers.generateAddressName(address));
             }
@@ -528,7 +528,7 @@ server.post('PlaceOrder', server.middleware.https, function (req, res, next) {
         error: false,
         orderID: order.orderNo,
         orderToken: order.orderToken,
-        continueUrl: URLUtils.url('Order-Confirm').toString()
+        continueUrl: URLUtils.url('Order-Confirm').toString(),
     });
 
     return next();

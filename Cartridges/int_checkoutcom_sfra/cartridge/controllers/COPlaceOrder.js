@@ -9,7 +9,7 @@ var Transaction = require('dw/system/Transaction');
 var Resource = require('dw/web/Resource');
 var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
 
-server.post('Submit', csrfProtection.generateToken, function (req, res, next) {
+server.post('Submit', csrfProtection.generateToken, function(req, res, next) {
     var order = OrderMgr.getOrder(req.querystring.order_id);
 
     if (!order && req.querystring.order_token !== order.getOrderToken()) {
@@ -18,7 +18,7 @@ server.post('Submit', csrfProtection.generateToken, function (req, res, next) {
 
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', order, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
     if (fraudDetectionStatus.status === 'fail') {
-        Transaction.wrap(function () { OrderMgr.failOrder(order); });
+        Transaction.wrap(function() { OrderMgr.failOrder(order); });
 
         // fraud detection failed
         req.session.privacyCache.set('fraudDetectionStatus', true);
@@ -32,7 +32,7 @@ server.post('Submit', csrfProtection.generateToken, function (req, res, next) {
     }
 
     var config = {
-        numberOfLineItems: '*'
+        numberOfLineItems: '*',
     };
     var orderModel = new OrderModel(order, { config: config });
     if (!req.currentCustomer.profile) {
@@ -41,12 +41,12 @@ server.post('Submit', csrfProtection.generateToken, function (req, res, next) {
         res.render('checkout/confirmation/confirmation', {
             order: orderModel,
             returningCustomer: false,
-            passwordForm: passwordForm
+            passwordForm: passwordForm,
         });
     } else {
         res.render('checkout/confirmation/confirmation', {
             order: orderModel,
-            returningCustomer: true
+            returningCustomer: true,
         });
     }
     return next();
