@@ -183,7 +183,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             securityCode: cardSecurityCode,
             storedPaymentUUID: paymentInformation.storedPaymentUUID,
             saveCard: paymentInformation.saveCard.value,
-            customerNo: req.currentCustomer.profile.customerNo,
+            customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null ,
         });
     });
 
