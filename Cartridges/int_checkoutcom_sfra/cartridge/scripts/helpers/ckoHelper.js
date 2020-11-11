@@ -908,23 +908,91 @@ var ckoHelper = {
         return address;
     },
 
+    // /**
+    //  * Return the order billing address.
+    //  * @param {Object} args The method arguments
+    //  * @returns {Object} The billing address
+    //  */
+    // getOrderAddress: function(args) {
+    //     var address = {
+    //         given_name: args.order.defaultShipment.shippingAddress.firstName,
+    //         family_name: args.order.defaultShipment.shippingAddress.lastName,
+    //         email: args.order.customerEmail,
+    //         title: args.order.defaultShipment.shippingAddress.title,
+    //         street_address: args.order.defaultShipment.shippingAddress.address1,
+    //         street_address2: args.order.defaultShipment.shippingAddress.address2,
+    //         postal_code: args.order.defaultShipment.shippingAddress.postalCode,
+    //         city: args.order.defaultShipment.shippingAddress.city,
+    //         phone: args.order.defaultShipment.shippingAddress.phone,
+    //         country: args.order.defaultShipment.shippingAddress.countryCode.valueOf(),
+    //     };
+
+    //     return address;
+    // },
+
+        /**
+     * Return the order billing address.
+     * @param {Object} billing The method arguments
+     * @returns {Object} The billing address
+     */
+    getBillingAddress: function() {
+        var basket = BasketMgr.getCurrentBasket();
+        var form = session.getForms();
+        var shippingForm = form.shipping; 
+        var addressFields = shippingForm.shippingAddress.addressFields;
+
+        // Address line 2
+        var address2 = addressFields.address2.htmlValue;
+
+        // Address Coutry 
+        var country1 = addressFields.country.htmlValue;
+        var country2 = basket.defaultShipment.shippingAddress.countryCode.valueOf();
+
+        var address = {
+            given_name: addressFields.firstName.htmlValue,
+            family_name: addressFields.lastName.htmlValue,
+            email: null,
+            title: null,
+            street_address: addressFields.address1.htmlValue,
+            street_address2: address2 ? address2 : null,
+            postal_code: addressFields.postalCode.htmlValue,
+            city: addressFields.city.htmlValue,
+            phone: addressFields.phone.htmlValue,
+            country: country1 ? country1 : country2,
+        };
+
+        return address;
+    },
+
     /**
      * Return the order billing address.
      * @param {Object} args The method arguments
      * @returns {Object} The billing address
      */
     getOrderAddress: function(args) {
+        var basket = BasketMgr.getCurrentBasket();
+        var form = session.getForms();
+        var shippingForm = form.shipping; 
+        var addressFields = shippingForm.shippingAddress.addressFields;
+
+        // Address line 2
+        var address2 = addressFields.address2.htmlValue;
+
+        // Address Coutry 
+        var country1 = addressFields.country.htmlValue;
+        var country2 = args.order.defaultShipment.shippingAddress.countryCode.valueOf();
+
         var address = {
-            given_name: args.order.defaultShipment.shippingAddress.firstName,
-            family_name: args.order.defaultShipment.shippingAddress.lastName,
+            given_name: addressFields.firstName.htmlValue,
+            family_name: addressFields.lastName.htmlValue,
             email: args.order.customerEmail,
-            title: args.order.defaultShipment.shippingAddress.title,
-            street_address: args.order.defaultShipment.shippingAddress.address1,
-            street_address2: args.order.defaultShipment.shippingAddress.address2,
-            postal_code: args.order.defaultShipment.shippingAddress.postalCode,
-            city: args.order.defaultShipment.shippingAddress.city,
-            phone: args.order.defaultShipment.shippingAddress.phone,
-            country: args.order.defaultShipment.shippingAddress.countryCode.valueOf(),
+            title: null,
+            street_address: addressFields.address1.htmlValue,
+            street_address2: address2 ? address2 : null,
+            postal_code: addressFields.postalCode.htmlValue,
+            city: addressFields.city.htmlValue,
+            phone: addressFields.phone.htmlValue,
+            country: country1 ? country1 : country2,
         };
 
         return address;
