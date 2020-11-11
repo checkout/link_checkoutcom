@@ -12,6 +12,9 @@ var Site = require('dw/system/Site');
 /* Card Currency Config */
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
 
+/* Sensitive Data Helper */
+var sensitiveDataHelper = require('~/cartridge/scripts/helpers/sensitiveDataHelper.js');
+
 /**
  * Utility functions.
  */
@@ -105,12 +108,14 @@ var ckoHelper = {
      * @param {Object} gatewayData The gateway data
      */
     log: function(dataType, gatewayData) {
+        // Create's a deep copy gatewayData, this will prevent data being deleted.
+        var cloneGatewayData = JSON.parse(JSON.stringify(gatewayData));
         if (this.getValue('ckoDebugEnabled') === true) {
             // Get the logger
             var logger = Logger.getLogger('ckodebug');
 
             // Remove sensitive data
-            var cleanData = this.removeSentisiveData(gatewayData);
+            var cleanData = this.removeSensitiveData(cloneGatewayData);
 
             // Log the data
             if (logger) {
@@ -127,22 +132,30 @@ var ckoHelper = {
      * @param {Object} rawData The log data
      * @returns {Object} The filtered data
      */
-    removeSentisiveData: function(rawData) {
-        // Card data
-        var data = rawData;
+    removeSensitiveData: function(data) {
         if (data) {
+            if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
+                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference'))
+                    data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*');
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'source_data')) {
+                data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
+            }
             if (Object.prototype.hasOwnProperty.call(data, 'source')) {
-                if (Object.prototype.hasOwnProperty.call(data.source, 'number')) data.source.number.replace(/^.{14}/g, '*');
-                if (Object.prototype.hasOwnProperty.call(data.source, 'cvv')) data.source.cvv.replace(/^.{3}/g, '*');
-                if (Object.prototype.hasOwnProperty.call(data.source, 'billing_address')) delete data.source.billing_address;
-                if (Object.prototype.hasOwnProperty.call(data.source, 'phone')) delete data.source.phone;
-                if (Object.prototype.hasOwnProperty.call(data.source, 'name')) delete data.source.name;
+                data.source = sensitiveDataHelper.cleanSourceObject(data.source);
             }
 
-            // Customer data
-            if (Object.prototype.hasOwnProperty.call(data, 'customer') && data.customer) delete data.customer;
-            if (Object.prototype.hasOwnProperty.call(data, 'shipping') && data.shipping) delete data.shipping;
-            if (Object.prototype.hasOwnProperty.call(data, 'billing') && data.billing) delete data.billing;
+            if (Object.prototype.hasOwnProperty.call(data, 'customer')) {
+                data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'shipping')) {
+                data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) {
+                data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
+            }
         }
 
         return data;
