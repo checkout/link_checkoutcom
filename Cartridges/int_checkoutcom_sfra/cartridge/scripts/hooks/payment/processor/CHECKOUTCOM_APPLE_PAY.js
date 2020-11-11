@@ -5,7 +5,7 @@ var Status = require('dw/system/Status');
 /** Utility **/
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
-exports.authorizeOrderPayment = function (order, event) {
+exports.authorizeOrderPayment = function(order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
     && order;
@@ -26,6 +26,6 @@ exports.authorizeOrderPayment = function (order, event) {
     return new Status(Status.ERROR);
 };
 
-exports.getRequest = function (basket, req) {
+exports.getRequest = function(basket, req) {
     session.custom.applepaysession = 'yes';  // eslint-disable-line
 };

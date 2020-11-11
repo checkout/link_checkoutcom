@@ -2,6 +2,7 @@
 
 /**
  * Verifies the required information for billing form is provided.
+ * @param {Object} req The request
  * @param {Object} paymentForm The payment form
  * @param {Object} viewFormData Object contains billing form data
  * @returns {Object} An object that has error information or payment information
@@ -23,27 +24,25 @@ function processForm(req, paymentForm, viewFormData) {
         viewData.paymentInformation = {};
 
         if (apmData) {
-
-            viewData.paymentInformation['type'] = {
+            viewData.paymentInformation.type = {
                 value: ckoSelectedApm,
-                htmlName: apmData.htmlName
+                htmlName: apmData.htmlName,
             };
             Object.keys(apmData).forEach(function(key) {
                 var type = typeof apmData[key];
-                if (type == 'object' && apmData[key] != null) {
+                if (type === 'object' && apmData[key] != null) {
                     viewData.paymentInformation[key] = {
                         value: apmData[key].htmlValue,
-                        htmlName: apmData[key].htmlName
+                        htmlName: apmData[key].htmlName,
                     };
                 }
             });
         } else {
-            viewData.paymentInformation['type'] = {
+            viewData.paymentInformation.type = {
                 value: ckoSelectedApm,
-                htmlName: paymentForm.apmForm.htmlName
+                htmlName: paymentForm.apmForm.htmlName,
             };
         }
-
     }
 
     return {

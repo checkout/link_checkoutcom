@@ -12,7 +12,6 @@ var OrderMgr = require('dw/order/OrderMgr');
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
 var apmConfig = require('~/cartridge/scripts/config/ckoApmConfig');
-var Site = require('dw/system/Site');
 
 /**
  * Verifies that the payment data is valid.
@@ -25,8 +24,8 @@ var Site = require('dw/system/Site');
 function Handle(basket, paymentInformation, paymentMethodID, req) {
     var currentBasket = basket;
     var apmErrors = {};
-    var fieldErrors = {};
     var serverErrors = [];
+    var invalidPaymentMethod;
 
     // Validate payment instrument
     if (paymentMethodID === 'CHECKOUTCOM_APM') {
@@ -34,15 +33,15 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
 
         if (!apmPaymentMethod) {
             // Invalid Payment Method
-            var invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
-            
+            invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
+
             return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
         }
     }
 
     if (!paymentInformation.type.value) {
         // Invalid Payment Type
-        var invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
+        invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
 
         return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
 
@@ -53,13 +52,13 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         // return { fieldErrors: [apmErrors], serverErrors: serverErrors, error: true };
     }
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         var paymentInstruments = currentBasket.getPaymentInstruments(
             'CHECKOUTCOM_APM'
         );
 
         // Remove any apm payment instruments
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -68,7 +67,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         );
 
         // Remove any credit card payment instuments
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -104,7 +103,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var args = {
         order: order,
         processorId: paymentProcessor.ID,
-        paymentData: formData
+        paymentData: formData,
     };
 
     // Get the selected APM request data
@@ -120,16 +119,18 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             serverErrors.push(
                 ckoHelper.getPaymentFailureMessage()
             );
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
                 paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                paymentInstrument.custom.ckoPaymentData = "";
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
             });
         } else {
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
                 paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                paymentInstrument.custom.ckoPaymentData = "";
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
             });
         }
     } catch (e) {
@@ -139,7 +140,8 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
-    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl};
+    // eslint-disable-next-line
+    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
 }
 
 exports.Handle = Handle;

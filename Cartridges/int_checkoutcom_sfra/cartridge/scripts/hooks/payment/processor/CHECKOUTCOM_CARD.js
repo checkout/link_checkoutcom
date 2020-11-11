@@ -16,6 +16,7 @@ var Site = require('dw/system/Site');
 
 /**
  * Creates a token. This should be replaced by utilizing a tokenization provider
+ * @param {Object} paymentData The data of the payment
  * @returns {string} a token
  */
 function createToken(paymentData) {
@@ -25,7 +26,7 @@ function createToken(paymentData) {
         number: paymentData.cardNumber.toString(),
         expiry_month: paymentData.expirationMonth,
         expiry_year: paymentData.expirationYear,
-        name: paymentData.name
+        name: paymentData.name,
     };
 
     // Perform the request to the payment gateway - get the card token
@@ -33,17 +34,17 @@ function createToken(paymentData) {
         'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
         JSON.stringify(requestData)
     );
-    
-    if(tokenResponse && tokenResponse != 400) {
+
+    if (tokenResponse && tokenResponse !== 400) {
         requestData = {
             source: {
-                type: "token",
-                token: tokenResponse.token
+                type: 'token',
+                token: tokenResponse.token,
             },
             currency: Site.getCurrent().getCurrencyCode(),
             risk: { enabled: false },
-            billing_descriptor: ckoHelper.getBillingDescriptor()
-        }
+            billing_descriptor: ckoHelper.getBillingDescriptor(),
+        };
     }
 
     var idResponse = ckoHelper.gatewayClientRequest(
@@ -51,9 +52,11 @@ function createToken(paymentData) {
         requestData
     );
 
-    if (idResponse && idResponse != 400) {
+    if (idResponse && idResponse !== 400) {
         return idResponse.source.id;
     }
+
+    return '';
 }
 
 /**
@@ -114,7 +117,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
 
         if (creditCardStatus.error) {
-            collections.forEach(creditCardStatus.items, function (item) {
+            collections.forEach(creditCardStatus.items, function(item) {
                 switch (item.code) {
                     case PaymentStatusCodes.CREDITCARD_INVALID_CARD_NUMBER:
                         cardErrors[paymentInformation.cardNumber.htmlName] =
@@ -143,12 +146,12 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
     }
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         var paymentInstruments = currentBasket.getPaymentInstruments(
             PaymentInstrument.METHOD_CREDIT_CARD
         );
 
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -175,12 +178,12 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
                         expirationYear: paymentInformation.expirationYear.value,
                     })
             );
-        };
+        }
         paymentInstrument.custom.ckoPaymentData = JSON.stringify({
-            'securityCode': cardSecurityCode,
-            'storedPaymentUUID': paymentInformation.storedPaymentUUID,
-            'saveCard': paymentInformation.saveCard.value,
-            'customerNo': req.currentCustomer.profile.customerNo
+            securityCode: cardSecurityCode,
+            storedPaymentUUID: paymentInformation.storedPaymentUUID,
+            saveCard: paymentInformation.saveCard.value,
+            customerNo: req.currentCustomer.profile.customerNo,
         });
     });
 
@@ -210,16 +213,18 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             serverErrors.push(
                 ckoHelper.getPaymentFailureMessage()
             );
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
                 paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                paymentInstrument.custom.ckoPaymentData = "";
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
             });
         } else {
-            Transaction.wrap(function () {
+            Transaction.wrap(function() {
                 paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
                 paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                paymentInstrument.custom.ckoPaymentData = "";
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
             });
         }
     } catch (e) {
@@ -229,6 +234,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
+    // eslint-disable-next-line
     return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
 }
 

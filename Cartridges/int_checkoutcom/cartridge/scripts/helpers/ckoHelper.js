@@ -127,7 +127,7 @@ var ckoHelper = {
         if (this.getValue('ckoDebugEnabled') === true) {
             // Create's a deep copy gatewayData, this will prevent data being deleted.
             var cloneGatewayData = JSON.parse(JSON.stringify(gatewayData));
-            
+
             var logger = Logger.getLogger('ckodebug');
 
             // Remove sensitive data
@@ -147,11 +147,11 @@ var ckoHelper = {
      * @param {Object} rawData The log data
      * @returns {Object} The filtered data
      */
-    removeSensitiveData: function(data) {
+    removeSensitiveData: function(rawData) {
+        var data = rawData;
         if (data) {
             if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
-                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference'))
-                    data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*');
+                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference')) { data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*'); }
             }
             if (Object.prototype.hasOwnProperty.call(data, 'source_data')) {
                 data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
