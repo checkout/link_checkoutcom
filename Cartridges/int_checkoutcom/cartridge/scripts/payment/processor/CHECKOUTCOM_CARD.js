@@ -40,11 +40,11 @@ function Handle(args) {
     };
 
     // Validate expiration date
-    if (cardData.year == new Date().getFullYear() && cardData.month < new Date().getMonth() + 1) {
+    if (cardData.year === new Date().getFullYear() && cardData.month < new Date().getMonth() + 1) {
         paymentForm.get('expiration.month').invalidateFormElement();
         paymentForm.get('expiration.year').invalidateFormElement();
 
-        return {error: true};
+        return { error: true };
     }
 
     // Save card feature

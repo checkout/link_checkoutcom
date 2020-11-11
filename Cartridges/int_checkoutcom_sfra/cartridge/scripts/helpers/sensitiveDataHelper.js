@@ -7,28 +7,27 @@ var sensitiveDataHelper = {
 
     /**
      * Hide sensitive data from the source_data object
-     * @param {Object} sourceData object from request/response
+     * @param {Object} data object from request/response
      * @returns {Object} filtered data
      */
-    cleanSourceDataObject: function(sourceData) {
-        if (Object.prototype.hasOwnProperty.call(sourceData, 'first_name'))
-            sourceData.first_name = String.prototype.replace.call(sourceData.first_name, /\w/gi, '*');
+    cleanSourceDataObject: function(data) {
+        var sourceData = data;
+        if (Object.prototype.hasOwnProperty.call(sourceData, 'first_name')) { sourceData.first_name = String.prototype.replace.call(sourceData.first_name, /\w/gi, '*'); }
 
-        if (Object.prototype.hasOwnProperty.call(sourceData, 'last_name'))
-            sourceData.last_name = String.prototype.replace.call(sourceData.last_name, /\w/gi, '*');
+        if (Object.prototype.hasOwnProperty.call(sourceData, 'last_name')) { sourceData.last_name = String.prototype.replace.call(sourceData.last_name, /\w/gi, '*'); }
 
-        if (Object.prototype.hasOwnProperty.call(sourceData, 'account_iban'))
-            sourceData.account_iban = String.prototype.replace.call(sourceData.account_iban, /\w/gi, '*');
+        if (Object.prototype.hasOwnProperty.call(sourceData, 'account_iban')) { sourceData.account_iban = String.prototype.replace.call(sourceData.account_iban, /\w/gi, '*'); }
 
         return sourceData;
     },
 
     /**
      * Hide sensitive data from the souce object
-     * @param {Object} source object from request/response
+     * @param {Object} sourceObject object from request/response
      * @returns {Object} filtered data
      */
-    cleanSourceObject: function(source) {
+    cleanSourceObject: function(sourceObject) {
+        var source = sourceObject;
         if (Object.prototype.hasOwnProperty.call(source, 'fingerprint')) {
             source.fingerprint = String.prototype.replace.call(source.fingerprint, /\w/gi, '*');
         }
@@ -56,10 +55,11 @@ var sensitiveDataHelper = {
 
     /**
      * Hide sensitive data from the billingAddress object
-     * @param {Object} billingAddress object from request/response
+     * @param {Object} billingAddressObject object from request/response
      * @returns {Object} filtered data
      */
-    cleanBillingAddress: function(billingAddress) {
+    cleanBillingAddress: function(billingAddressObject) {
+        var billingAddress = billingAddressObject;
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'given_name')) {
             billingAddress.given_name = String.prototype.replace.call(billingAddress.given_name, /\w/gi, '*');
         }
@@ -99,10 +99,11 @@ var sensitiveDataHelper = {
 
     /**
      * Hide sensitive data from the customer object
-     * @param {Object} customer object from request/response
+     * @param {Object} customerObject object from request/response
      * @returns {Object} filtered data
      */
-    cleanCustomerObject: function(customer) {
+    cleanCustomerObject: function(customerObject) {
+        var customer = customerObject;
         if (Object.prototype.hasOwnProperty.call(customer, 'id')) {
             customer.id = String.prototype.replace.call(customer.id, /\w/gi, '*');
         }
@@ -118,10 +119,11 @@ var sensitiveDataHelper = {
 
     /**
      * Hide sensitive data from the shipping object
-     * @param {Object} shipping object from request/response
+     * @param {Object} shippingObject object from request/response
      * @returns {Object} filtered data
      */
-    cleanShippingObject: function(shipping) {
+    cleanShippingObject: function(shippingObject) {
+        var shipping = shippingObject;
         if (Object.prototype.hasOwnProperty.call(shipping, 'address')) {
             shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*');
             shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
