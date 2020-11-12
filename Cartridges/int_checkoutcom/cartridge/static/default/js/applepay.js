@@ -52,8 +52,6 @@ function launchApplePay() {
             function(canMakePayments) {
                 if (canMakePayments) {
                     jQuery('.ckoApplePayButton').show();
-                } else {
-                    jQuery('.ckoApplePayUnavailable').show();
                 }
             }
         ).catch(
@@ -64,7 +62,6 @@ function launchApplePay() {
     } else {
         document.getElementById('is-CHECKOUTCOM_APPLE_PAY').parentElement.parentElement.style.display = 'none';
         jQuery('.ckoApplePayButton').hide();
-        jQuery('.ckoApplePayIncompatible').show();
     }
 
     // Handle the events
