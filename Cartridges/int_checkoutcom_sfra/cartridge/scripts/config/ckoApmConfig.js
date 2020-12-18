@@ -312,7 +312,19 @@ var ckoApmConfig = {
                         args.order.totalTax.value,
                         args.order.getCurrencyCode()
                     ),
-                    billing_address: {email: args.order.customerEmail},
+                    // billing_address: {email: args.order.customerEmail},
+                    billing_address: {
+                        given_name: args.order.billingAddress.firstName,
+                        family_name: args.order.billingAddress.lastName,
+                        email: args.order.customerEmail,
+                        title: null,
+                        street_address: args.order.billingAddress.address1,
+                        street_address2: args.order.billingAddress.address2,
+                        postal_code: args.order.billingAddress.postalCode,
+                        city: args.order.billingAddress.city,
+                        phone: args.order.billingAddress.phone,
+                        country: args.order.billingAddress.countryCode.value,
+                    },
                     products: ckoHelper.getOrderBasketObject(args),
                 },
             };
