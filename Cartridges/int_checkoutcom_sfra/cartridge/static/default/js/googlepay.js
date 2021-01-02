@@ -8,6 +8,34 @@ document.addEventListener('DOMContentLoaded', function() {
     launchGooglePay();
 }, false);
 
+/**
+ * Reset Form
+ */
+function resetFormErrors() {
+    $('.contact-info-block .is-invalid').each(function() {
+        $(this).removeClass('is-invalid');
+    });
+}
+
+/**
+ * Validate Email
+ */
+function validateEmail() {
+    var emailAddress = $('input[name$="dwfrm_billing_contactInfoFields_email"]');
+
+    // Check expiration month
+    if (emailAddress.val() === '') {
+        $('#emailInvalidMessage').text(
+            window.ckoLang.apmEmailInvalid
+        );
+        emailAddress.addClass('is-invalid');
+
+        return false;
+    }
+
+    return true;
+}
+
 function initCheckoutcomGooglePayValidation() {
     $('button.submit-payment').off('click touch').one('click touch', function(e) {
         if ($('input[name="dwfrm_billing_paymentMethod"]').val() === 'GOOGLE_PAY') {
@@ -30,7 +58,9 @@ function initCheckoutcomGooglePayValidation() {
 
 function launchGooglePay() {
     jQuery('.google-pay-button').click(function() {
-    // Prepare the payment parameters
+        var ckoGooglePayController = jQuery('[id="ckoGooglePayController"]').val();
+
+        // Prepare the payment parameters
         var allowedPaymentMethods = ['CARD', 'TOKENIZED_CARD'];
         var allowedCardNetworks = ['VISA', 'MASTERCARD', 'AMEX', 'JCB', 'DISCOVER'];
 
@@ -38,42 +68,80 @@ function launchGooglePay() {
             tokenizationType: 'PAYMENT_GATEWAY',
             parameters: {
                 gateway: 'checkoutltd',
-                gatewayMerchantId: jQuery('[id="ckoGatewayMerchantId"]').val(),
             },
         };
 
-        // Prepare the Google Pay client
-        onGooglePayLoaded();
+        resetFormErrors();
 
-        /**
-         * Show Google Pay chooser when Google Pay purchase button is clicked
-         */
-        var paymentDataRequest = getGooglePaymentDataConfiguration();
-        paymentDataRequest.transactionInfo = getGoogleTransactionInfo();
+        // valid email address and url is not empty
+        if (ckoGooglePayController !== '' && validateEmail() ) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState === 4 && this.status === 200) {
+                   // Typical action to be performed when the document is ready:
+                    var responseData = JSON.parse(this.responseText);
+                    tokenizationParameters.parameters.gatewayMerchantId = responseData.gatewayMerchantId;
+                    var paymentDataRequest = {
+                        merchantId: responseData.googlePayMerchantId,
+                        paymentMethodTokenizationParameters: tokenizationParameters,
+                        allowedPaymentMethods: allowedPaymentMethods,
+                        cardRequirements: {
+                            allowedCardNetworks: allowedCardNetworks,
+                        },
+                    };
 
-        var paymentsClient = getGooglePaymentsClient();
-        paymentsClient.loadPaymentData(paymentDataRequest)
-            .then(
-                function(paymentData) {
-                    // Handle the response
-                    processPayment(paymentData);
+                    // Prepare the Google Pay client
+                    onGooglePayLoaded(responseData);
+
+                    /**
+                     * Show Google Pay chooser when Google Pay purchase button is clicked
+                     */
+                    // var paymentDataRequest = getGooglePaymentDataConfiguration();
+                    // paymentDataRequest.transactionInfo = getGoogleTransactionInfo();
+
+                    paymentDataRequest.transactionInfo = {
+                        currencyCode: responseData.currency,
+                        totalPriceStatus: 'FINAL',
+                        totalPrice: responseData.totalAmount,
+                    };
+
+                    var paymentsClient = getGooglePaymentsClient(responseData.environment);
+                    paymentsClient.loadPaymentData(paymentDataRequest)
+                        .then(
+                            function(paymentData) {
+                                // Handle the response
+                                processPayment(paymentData);
+                            }
+                        )
+                        .catch(
+                            function(error) {
+                                console.log(error);
+                            }
+                        );
+
+
                 }
-            )
-            .catch(
-                function(error) {
-                    console.log(error);
-                }
-            );
+            };
+            xhttp.open("GET", ckoGooglePayController, true);
+            // Send the proper header information along with the request
+            // xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            xhttp.send();
+
+        }
+
+
+
+
 
         /**
          * Initialize a Google Pay API client
          *
          * @returns {google.payments.api.PaymentsClient} Google Pay API client
          */
-        function getGooglePaymentsClient() {
+        function getGooglePaymentsClient(env) {
             return (new google.payments.api.PaymentsClient(
                 {
-                    environment: jQuery('[id="ckoGooglePayEnvironment"]').val(),
+                    environment: env === 'live' ? 'PRODUCTION' : 'TEST',
                 }
             ));
         }
@@ -81,13 +149,13 @@ function launchGooglePay() {
         /**
          * Initialize Google PaymentsClient after Google-hosted JavaScript has loaded
          */
-        function onGooglePayLoaded() {
-            var paymentsClient = getGooglePaymentsClient();
+        function onGooglePayLoaded(responseData) {
+            var paymentsClient = getGooglePaymentsClient(responseData.environment);
             paymentsClient.isReadyToPay({ allowedPaymentMethods: allowedPaymentMethods })
                 .then(
                     function(response) {
                         if (response.result) {
-                            prefetchGooglePaymentData();
+                            prefetchGooglePaymentData(responseData);
                         }
                     }
                 )
@@ -104,9 +172,9 @@ function launchGooglePay() {
          * @see     {@link https://developers.google.com/pay/api/web/reference/object#PaymentDataRequest|PaymentDataRequest}
          * @returns {Object} PaymentDataRequest fields
          */
-        function getGooglePaymentDataConfiguration() {
+        function getGooglePaymentDataConfiguration(googlePayMerchantId) {
             return {
-                merchantId: jQuery('[id="ckoGooglePayMerchantId"]').val(),
+                merchantId: googlePayMerchantId,
                 paymentMethodTokenizationParameters: tokenizationParameters,
                 allowedPaymentMethods: allowedPaymentMethods,
                 cardRequirements: {
@@ -132,13 +200,13 @@ function launchGooglePay() {
         /**
          * Prefetch payment data to improve performance
          */
-        function prefetchGooglePaymentData() {
-            var paymentDataRequest = getGooglePaymentDataConfiguration();
+        function prefetchGooglePaymentData(responseData) {
+            var paymentDataRequest = getGooglePaymentDataConfiguration(responseData.googlePayMerchantId);
 
             // TransactionInfo must be set but does not affect cache
             paymentDataRequest.transactionInfo = {
                 totalPriceStatus: 'NOT_CURRENTLY_KNOWN',
-                currencyCode: jQuery('[id="ckoGooglePayCurrency"]').val(),
+                currencyCode: responseData.currency,
             };
 
             var paymentsClient = getGooglePaymentsClient();

@@ -15,11 +15,11 @@ function initKlarnaEvent() {
         resetFormErrors();
 
         // valid email address
-        if (validateEmail() && validatePhone()) {
+        if (validateEmail()) {
             callKlarnaController();
         }
     });
-}
+} 
 
 /**
  * Reset Form
@@ -127,7 +127,7 @@ function callKlarnaController() {
             }
         };
         xhttp.open('POST', controllerUrl, true);
-        //Send the proper header information along with the request
+        // Send the proper header information along with the request
         xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xhttp.send(billing);
     }
