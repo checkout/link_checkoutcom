@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <form xmlns="http://www.demandware.com/xml/form/2008-04-19">
 	<!-- Field for the Google Pay data -->          
-    <field formid="data" type="string" binding="googlePayData" />
+    <field formid="data" type="string" binding="ckoGooglePayData" />
 
 	<!-- Confirm action -->
     <action formid="confirm" valid-form="true"/>
