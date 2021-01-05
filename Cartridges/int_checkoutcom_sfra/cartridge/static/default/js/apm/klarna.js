@@ -15,11 +15,11 @@ function initKlarnaEvent() {
         resetFormErrors();
 
         // valid email address
-        if (validateEmail() && validatePhone()) {
+        if (validateEmail()) {
             callKlarnaController();
         }
     });
-}
+} 
 
 /**
  * Reset Form
@@ -28,6 +28,25 @@ function resetFormErrors() {
     $('.contact-info-block .is-invalid').each(function() {
         $(this).removeClass('is-invalid');
     });
+}
+
+/**
+ * Validate Email
+ */
+function getBillingAddress() {
+    var billingAddress = {
+        given_name : $('input[name$="dwfrm_billing_addressFields_firstName"]').val(),
+        family_name : $('input[name$="dwfrm_billing_addressFields_lastName"]').val(),
+        street_address : $('input[name$="dwfrm_billing_addressFields_address1"]').val(),
+        street_address2: null,
+        email: $('input[name$="dwfrm_billing_contactInfoFields_email"]').val(),
+        country : $('select[name$="dwfrm_billing_addressFields_country"]').val(),
+        city : $('input[name$="dwfrm_billing_addressFields_city"]').val(),
+        postal_code : $('input[name$="dwfrm_billing_addressFields_postalCode"]').val(),
+        title: null
+    }
+
+    return billingAddress;
 }
 
 /**
@@ -73,6 +92,7 @@ function validatePhone() {
  */
 function callKlarnaController() {
     var controllerUrl = jQuery('[id="ckoKlarnaController"]').val();
+    var billing = JSON.stringify(getBillingAddress());
     if (controllerUrl) {
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
@@ -106,8 +126,10 @@ function callKlarnaController() {
                 }
             }
         };
-        xhttp.open('GET', controllerUrl, true);
-        xhttp.send();
+        xhttp.open('POST', controllerUrl, true);
+        // Send the proper header information along with the request
+        xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xhttp.send(billing);
     }
 }
 
@@ -179,7 +201,6 @@ function klarnaAuthorize(sessionId, klarnaContainer, paymentMethod, address, req
         },
         // Callback
         function(response) {
-
             if (response.approved) {
                 $(klarnaContainer).empty();
                 $('#' + paymentMethod + '_image').hide();

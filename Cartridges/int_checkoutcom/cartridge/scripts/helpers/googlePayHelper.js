@@ -32,7 +32,7 @@ var googlePayHelper = {
         // Perform the request to the payment gateway
         var tokenResponse = ckoHelper.gatewayClientRequest(
             'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
-            requestData
+            JSON.stringify(requestData)
         );
 
         // If the request is valid, process the response
@@ -42,6 +42,10 @@ var googlePayHelper = {
                 amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
                 currency: ckoHelper.getCurrency(),
                 reference: args.OrderNo,
+                "3ds": {
+                    "enabled": true,
+                    "attempt_n3d": true
+                },
                 capture: ckoHelper.getValue('ckoAutoCapture'),
                 capture_on: ckoHelper.getCaptureTime(),
                 customer: ckoHelper.getCustomer(args),
