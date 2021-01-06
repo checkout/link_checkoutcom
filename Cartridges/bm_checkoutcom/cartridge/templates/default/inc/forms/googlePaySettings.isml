@@ -3,26 +3,6 @@
     <input type="hidden" name="ckoAccountSettingsUrl" class="ckoAccountSettingsUrl" value="${URLUtils.url('CKOSettings-GetCkoCustomProperties')}"/>
 
     <div class="form-group required">
-        <label>${Resource.msg('cko.googlePaySettings.enabledLabel', 'cko', null)} : </label> 
-        <input type="checkbox" id="ckoGooglePayEnabled" class="form-control" name="ckoGooglePayEnabled"/>
-    </div>
-
-    <div class="form-group required">
-        <label>${Resource.msg('cko.googlePaySettings.environmentLabel', 'cko', null)} : </label> 
-        <select type="" id="ckoGooglePayEnvironment" class="form-control" name="ckoGooglePayEnvironment" required="">
-
-            <option value="${Resource.msg('cko.googlePaySettings.environmentTestValue', 'cko', null)}">${Resource.msg('cko.googlePaySettings.environmentTest', 'cko', null)}</option>
-            <option value="${Resource.msg('cko.googlePaySettings.environmentProductionValue', 'cko', null)}">${Resource.msg('cko.googlePaySettings.environmentProduction', 'cko', null)}</option>
-
-        </select>
-    </div>
-
-    <div class="form-group required">
-        <label>${Resource.msg('cko.googlePaySettings.merchantIdLabel', 'cko', null)} : </label> 
-        <input type="text" id="ckoGooglePayMerchantId" class="form-control" name="ckoGooglePayMerchantId" required=""/>
-    </div>
-
-    <div class="form-group required">
         <label>${Resource.msg('cko.googlePaySettings.buttonStyleLabel', 'cko', null)} : </label> 
         <select type="" id="ckoGooglePayButton" class="form-control" name="ckoGooglePayButton" required="">
 

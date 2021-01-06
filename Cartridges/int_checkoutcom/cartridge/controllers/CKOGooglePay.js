@@ -25,7 +25,6 @@ function googlePaySession() {
         gPayData = {
             mode: dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value,
             environment: dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value,
-            googlePayMerchantId:  ckoHelper.getValue('ckoGooglePayMerchantId'),
             totalAmount: ckoHelper.getFormattedPrice(basket.getTotalGrossPrice().value, currency),
             currency: basket.getCurrencyCode(),
             gatewayMerchantId: ckoHelper.getValue('cko' + ckoMode.value.charAt(0).toUpperCase() + ckoMode.value.slice(1) + 'PublicKey')
