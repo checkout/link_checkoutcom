@@ -26,13 +26,13 @@ var googlePayHelper = {
         // Prepare the parameters
         var requestData = {
             type: 'googlepay',
-            token_data: JSON.parse(ckoGooglePayData),
+            token_data: JSON.parse(ckoGooglePayData)
         };
 
         // Perform the request to the payment gateway
         var tokenResponse = ckoHelper.gatewayClientRequest(
             'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
-            JSON.stringify(requestData)
+            requestData
         );
 
         // If the request is valid, process the response
