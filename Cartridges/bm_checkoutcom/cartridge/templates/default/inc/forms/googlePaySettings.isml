@@ -3,11 +3,6 @@
     <input type="hidden" name="ckoAccountSettingsUrl" class="ckoAccountSettingsUrl" value="${URLUtils.url('CKOSettings-GetCkoCustomProperties')}"/>
 
     <div class="form-group required">
-        <label>${Resource.msg('cko.googlePaySettings.enabledLabel', 'cko', null)} : </label> 
-        <input type="checkbox" id="ckoGooglePayEnabled" class="form-control" name="ckoGooglePayEnabled"/>
-    </div>
-
-    <div class="form-group required">
         <label>${Resource.msg('cko.googlePaySettings.environmentLabel', 'cko', null)} : </label> 
         <select type="" id="ckoGooglePayEnvironment" class="form-control" name="ckoGooglePayEnvironment" required="">
 
