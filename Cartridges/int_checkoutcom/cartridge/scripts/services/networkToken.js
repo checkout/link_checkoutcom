@@ -19,7 +19,7 @@ var wrapper = {
                 svc.addHeader('User-Agent', util.getCartridgeMeta());
                 svc.addHeader('Content-Type', 'application/json;charset=UTF-8');
 
-                return (args) ? JSON.stringify(args) : null;
+                return (args) || null;
             },
 
             parseResponse: function(svc, resp) {
@@ -48,7 +48,7 @@ var wrapper = {
                 svc.addHeader('User-Agent', util.getCartridgeMeta());
                 svc.addHeader('Content-Type', 'application/json;charset=UTF-8');
 
-                return (args) ? JSON.stringify(args) : null;
+                return (args) || null;
             },
 
             parseResponse: function(svc, resp) {

@@ -32,7 +32,7 @@ var googlePayHelper = {
         // Perform the request to the payment gateway
         var tokenResponse = ckoHelper.gatewayClientRequest(
             'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
-            requestData
+            JSON.stringify(requestData)
         );
 
         // If the request is valid, process the response
