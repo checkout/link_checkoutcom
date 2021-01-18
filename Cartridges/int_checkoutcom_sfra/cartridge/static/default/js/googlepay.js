@@ -82,9 +82,10 @@ function launchGooglePay() {
                     var responseData = JSON.parse(this.responseText);
                     tokenizationParameters.parameters.gatewayMerchantId = responseData.gatewayMerchantId;
                     var paymentDataRequest = {
+                        merchantId: responseData.googlePayMerchantId,
                         paymentMethodTokenizationParameters: tokenizationParameters,
                         allowedPaymentMethods: allowedPaymentMethods,
-                        cardRequirements: { 
+                        cardRequirements: {
                             allowedCardNetworks: allowedCardNetworks,
                         },
                     };
