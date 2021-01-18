@@ -25,15 +25,17 @@ server.get('GooglePaySession', function(req, res, next) {
         // Prepare the basket
         var basket = BasketMgr.getCurrentBasket();
         var ckoMode = ckoHelper.getValue('ckoMode');
+        var mode = dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode');
         var currency = basket.getCurrencyCode();
 
-        gPayData = {
-            mode: dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value,
-            environment: dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value,
+        var gPayData = {
+            mode: mode === '' || mode === 'sandbox' ? 'TEST' : 'PRODUCTION',
+            environment: dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnvironment'),
             googlePayMerchantId:  ckoHelper.getValue('ckoGooglePayMerchantId'),
-            totalAmount: ckoHelper.getFormattedPrice(basket.getTotalGrossPrice().value, currency),
-            currency: basket.getCurrencyCode(),
-            gatewayMerchantId: ckoHelper.getValue('cko' + ckoMode.value.charAt(0).toUpperCase() + ckoMode.value.slice(1) + 'PublicKey')
+            totalAmount: basket.getTotalGrossPrice().value.toString(),
+            currency: currency.toUpperCase(),
+            gatewayMerchantId: ckoHelper.getValue('cko' + ckoMode.charAt(0).toUpperCase() + ckoMode.slice(1) + 'PublicKey'),
+            merchantName: ckoHelper.getValue('ckoBusinessName')
         };
 
         res.json(gPayData);

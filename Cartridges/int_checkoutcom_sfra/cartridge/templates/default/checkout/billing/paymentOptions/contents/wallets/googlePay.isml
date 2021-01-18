@@ -6,7 +6,7 @@
 <isset name="googlePayForm" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
 
 <div class="tab-pane google-pay-content" id="google-pay-content" role="tabpanel">
-    <fieldset class="payment-form-fields">
+    <fieldset class="payment-form-fields" id="googlePayForm">
         <input type="hidden" class="form-control"
 				name="${pdict.forms.billingForm.paymentMethod.htmlName}"
 				value="GOOGLE_PAY"
@@ -20,9 +20,8 @@
                 <img alt="${Resource.msg('cko.googlepay.name','cko',null)}" id="googlepay_thumb" class="image imageright" src="${URLUtils.staticURL('/images/wallet-icons/googlepay.jpg')}"/>
             </div>
         </div>
-        <button id="ckoGooglePayButton" type="button" class="google-pay-button ${'google-pay-button-' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayButton')}"></button>
+
         <div class="invalid-field-message"></div>
-        <iscomment> <isinclude template="checkout/billing/forms/googlePayForm" /> </iscomment>
         <input type="hidden" id="ckoGooglePayController" value="${URLUtils.url('CKOGooglePay-GooglePaySession')}"/>
         <iscomment> field for Googlepay data </iscomment>
         <input type="hidden" class="form-control" id="ckoGooglePayData" name="${googlePayForm.ckoGooglePayData.htmlName}" value=""/>
