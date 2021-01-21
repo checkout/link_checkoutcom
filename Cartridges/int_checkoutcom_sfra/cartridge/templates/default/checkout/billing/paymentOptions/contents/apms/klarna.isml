@@ -1,4 +1,5 @@
 <style>
+    @import url("${URLUtils.staticURL('/css/apm.css')}");
 	@import url("${URLUtils.staticURL('/css/apm/klarna.css')}");
 </style>
 

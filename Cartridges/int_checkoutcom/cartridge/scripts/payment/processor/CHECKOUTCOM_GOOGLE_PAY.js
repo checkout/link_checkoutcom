@@ -61,7 +61,7 @@ function Authorize(args) {
     try {
         var paymentAuth = googlePayHelper.handleRequest(args);
 
-        if (paymentAuth !== '' && paymentAuth !== undefined && paymentAuth !== null) { 
+        if (paymentAuth !== '' && paymentAuth !== undefined && paymentAuth !== null) {
             Transaction.wrap(function () {
                 paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
                 paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;

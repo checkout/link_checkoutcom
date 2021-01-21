@@ -26,7 +26,7 @@ var googlePayHelper = {
         // Prepare the parameters
         var requestData = {
             type: 'googlepay',
-            token_data: JSON.parse(ckoGooglePayData),
+            token_data: JSON.parse(ckoGooglePayData)
         };
 
         // Perform the request to the payment gateway
