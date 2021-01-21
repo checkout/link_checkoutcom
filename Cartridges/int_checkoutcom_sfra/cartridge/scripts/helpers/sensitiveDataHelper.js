@@ -124,7 +124,9 @@ var sensitiveDataHelper = {
     cleanShippingObject: function(shipping) {
         if (Object.prototype.hasOwnProperty.call(shipping, 'address')) {
             shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*');
-            shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
+            if (shipping.address.address_line2 !== '' && shipping.address.address_line2 !== null) {
+                shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
+            }
             shipping.address.city = String.prototype.replace.call(shipping.address.city, /\w/gi, '*');
             shipping.address.zip = String.prototype.replace.call(shipping.address.zip, /\w/gi, '*');
         }
