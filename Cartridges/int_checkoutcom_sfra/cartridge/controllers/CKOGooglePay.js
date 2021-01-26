@@ -35,7 +35,7 @@ server.get('GooglePaySession', function(req, res, next) {
             totalAmount: basket.getTotalGrossPrice().value.toString(),
             currency: currency.toUpperCase(),
             gatewayMerchantId: ckoHelper.getValue('cko' + ckoMode.charAt(0).toUpperCase() + ckoMode.slice(1) + 'PublicKey'),
-            merchantName: ckoHelper.getValue('ckoBusinessName')
+            merchantName: ckoHelper.getValue('ckoBusinessName') !== null ? ckoHelper.getValue('ckoBusinessName') : ''
         };
 
         res.json(gPayData);
@@ -45,7 +45,7 @@ server.get('GooglePaySession', function(req, res, next) {
         return next(
             new Error(e.message)
         );
-        
+
     }
 
     return next();

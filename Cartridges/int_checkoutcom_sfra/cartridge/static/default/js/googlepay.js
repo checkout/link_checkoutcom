@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Launch Google Pay
     jQuery('.google-pay-tab').on('click touch', function() {
         var ckoGooglePayController = jQuery('[id="ckoGooglePayController"]').val();
-        console.log(ckoGooglePayController);
         resetFormErrors();
 
         const baseRequest = {
