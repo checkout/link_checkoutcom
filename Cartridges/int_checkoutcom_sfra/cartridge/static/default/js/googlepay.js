@@ -77,30 +77,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     paymentsClient.isReadyToPay(isReadyToPayRequest)
                     .then(function(response) {
                         if (response.result) {
-                            // add a Google Pay payment button
 
-                            const button = paymentsClient.createButton({onClick: () => {
+                            var button = jQuery('.gpay-button');
 
-                                paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData){
-                                    // if using gateway tokenization, pass this token without modification
-                                    var paymentToken = paymentData.paymentMethodData.tokenizationData.token;
-                                    // Prepare the payload
-                                    var payload = {
-                                        signature: JSON.parse(paymentToken).signature,
-                                        protocolVersion: JSON.parse(paymentToken).protocolVersion,
-                                        signedMessage: JSON.parse(paymentToken).signedMessage,
-                                    };
+                            if (button.length < 1) {
 
-                                    // Store the payload
-                                    jQuery('input[name$="dwfrm_billing_googlePayForm_ckoGooglePayData"]').val(JSON.stringify(payload));
-                                    jQuery('.gpay-button').hide();
-                                  }).catch(function(err){
-                                    // show error in developer console for debugging
-                                    console.error(err);
-                                  });
+                                // add a Google Pay payment button
+                                button = paymentsClient.createButton({onClick: () => {
 
-                            }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
-                            jQuery('#googlePayForm').append(button);
+                                    paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData){
+                                        // if using gateway tokenization, pass this token without modification
+                                        var paymentToken = paymentData.paymentMethodData.tokenizationData.token;
+                                        // Prepare the payload
+                                        var payload = {
+                                            signature: JSON.parse(paymentToken).signature,
+                                            protocolVersion: JSON.parse(paymentToken).protocolVersion,
+                                            signedMessage: JSON.parse(paymentToken).signedMessage,
+                                        };
+
+                                        // Store the payload
+                                        jQuery('input[name$="dwfrm_billing_googlePayForm_ckoGooglePayData"]').val(JSON.stringify(payload));
+                                        jQuery('.gpay-button').hide();
+                                    }).catch(function(err){
+                                        // show error in developer console for debugging
+                                        console.error(err);
+                                    });
+
+                                }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
+                                jQuery('#googlePayForm').append(button);
+
+                            }
                         }
                     })
                     .catch(function(err) {
