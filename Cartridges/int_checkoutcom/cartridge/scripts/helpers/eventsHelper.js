@@ -21,7 +21,7 @@ function setPaymentStatus(order) {
     var paymentInstruments = order.getPaymentInstruments().toArray(),
         amountPaid = 0,
         orderTotal = order.getTotalGrossPrice().getValue();
-    
+
     for(var i=0; i<paymentInstruments.length; i++) {
         var paymentTransaction = paymentInstruments[i].paymentTransaction;
         if(paymentTransaction.type.value === 'CAPTURE') {
@@ -33,7 +33,7 @@ function setPaymentStatus(order) {
             amountPaid -= paymentTransaction.amount.value;
         }
     }
-    
+
     if(amountPaid === orderTotal) {
         order.setPaymentStatus(order.PAYMENT_STATUS_PAID);
     } else if(amountPaid >= 0.01) {
@@ -60,7 +60,7 @@ var eventsHelper = {
         if (order) {
             // Prepare the webhook info
             var details = '';
-            
+
             if (Object.prototype.hasOwnProperty(hook.data, 'risk' ) && Object.prototype.hasOwnProperty(hook.data.risk, 'flagged')) {
                 details += ckoHelper._('cko.webhook.flagged', 'cko') + '\n';
                 details += ckoHelper._('cko.response.summary', 'cko') + ': ' + hook.data.response_summary + '\n';
@@ -234,7 +234,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = hook.data.metadata.payment_processor;
+        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
 
         // Get the  transaction amount
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
