@@ -85,7 +85,9 @@ var sensitiveDataHelper = {
             billingAddress.address_line1 = String.prototype.replace.call(billingAddress.address_line1, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'address_line2')) {
-            billingAddress.address_line2 = String.prototype.replace.call(billingAddress.address_line2, /\w/gi, '*');
+          if (billingAddress['address_line2'] !== '' && billingAddress['address_line2'] !== undefined && billingAddress['address_line2'] !== null ) {
+              billingAddress.address_line2 = String.prototype.replace.call(billingAddress.address_line2, /\w/gi, '*');
+          }
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'city')) {
             billingAddress.city = String.prototype.replace.call(billingAddress.city, /\w/gi, '*');
@@ -124,7 +126,7 @@ var sensitiveDataHelper = {
     cleanShippingObject: function(shipping) {
         if (Object.prototype.hasOwnProperty.call(shipping, 'address')) {
             shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*');
-            if (shipping.address.address_line2 !== '' && shipping.address.address_line2 !== null) {
+            if (shipping.address.address_line2 !== '' && shipping.address.address_line2 !== null && shipping.address.address_line2 !== undefined) {
                 shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
             }
             shipping.address.city = String.prototype.replace.call(shipping.address.city, /\w/gi, '*');
