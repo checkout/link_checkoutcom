@@ -73,7 +73,9 @@ var sensitiveDataHelper = {
             billingAddress.street_address = String.prototype.replace.call(billingAddress.street_address, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'street_address2')) {
-            billingAddress.street_address2 = String.prototype.replace.call(billingAddress.street_address2, /\w/gi, '*');
+            if (billingAddress.street_address2 !== '' && billingAddress.street_address2 !== null && billingAddress.street_address2 !== undefined) {
+                billingAddress.street_address2 = String.prototype.replace.call(billingAddress.street_address2, /\w/gi, '*');
+            }
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'postal_code')) {
             billingAddress.postal_code = String.prototype.replace.call(billingAddress.postal_code, /\w/gi, '*');
