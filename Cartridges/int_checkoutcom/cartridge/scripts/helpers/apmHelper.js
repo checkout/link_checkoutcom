@@ -106,13 +106,13 @@ var apmHelper = {
         // Creating billing address object
         var gatewayRequest = this.getApmRequest(payObject, args);
 
-        // Log the payment request data
-        ckoHelper.log(serviceName + ' ' + ckoHelper._('cko.request.data', 'cko'), gatewayRequest);
-
         // Prepare the service name (test for SEPA)
         serviceName = Object.prototype.hasOwnProperty.call(payObject, 'type') && payObject.type === 'sepa'
         ? 'cko.card.sources.'
         : 'cko.card.charge.';
+
+        // Log the payment request data
+        ckoHelper.log(serviceName + ' ' + ckoHelper._('cko.request.data', 'cko'), gatewayRequest);
 
         // Perform the request to the payment gateway
         serviceName += ckoHelper.getValue('ckoMode') + '.service';

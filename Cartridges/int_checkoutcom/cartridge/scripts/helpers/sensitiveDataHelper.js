@@ -73,7 +73,9 @@ var sensitiveDataHelper = {
             billingAddress.street_address = String.prototype.replace.call(billingAddress.street_address, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'street_address2')) {
-            billingAddress.street_address2 = String.prototype.replace.call(billingAddress.street_address2, /\w/gi, '*');
+            if (billingAddress['street_address2'] !== '' && billingAddress['street_address2'] !== null && billingAddress['street_address2'] !== undefined) {
+                billingAddress.street_address2 = String.prototype.replace.call(billingAddress.street_address2, /\w/gi, '*');
+            }
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'postal_code')) {
             billingAddress.postal_code = String.prototype.replace.call(billingAddress.postal_code, /\w/gi, '*');
@@ -85,7 +87,9 @@ var sensitiveDataHelper = {
             billingAddress.address_line1 = String.prototype.replace.call(billingAddress.address_line1, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'address_line2')) {
-            billingAddress.address_line2 = String.prototype.replace.call(billingAddress.address_line2, /\w/gi, '*');
+            if (billingAddress['address_line2'] !== '' &&  billingAddress['address_line2'] !== null && billingAddress['address_line2'] !== undefined ) {
+                billingAddress.address_line2 = String.prototype.replace.call(billingAddress.address_line2, /\w/gi, '*');
+            }
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'city')) {
             billingAddress.city = String.prototype.replace.call(billingAddress.city, /\w/gi, '*');
@@ -126,7 +130,9 @@ var sensitiveDataHelper = {
         var shipping = shippingObject;
         if (Object.prototype.hasOwnProperty.call(shipping, 'address')) {
             shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*');
-            shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
+            if (shipping.address.address_line2 !== '' && shipping.address.address_line2 !== null && shipping.address.address_line2 !== undefined) {
+                shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
+            }
             shipping.address.city = String.prototype.replace.call(shipping.address.city, /\w/gi, '*');
             shipping.address.zip = String.prototype.replace.call(shipping.address.zip, /\w/gi, '*');
         }

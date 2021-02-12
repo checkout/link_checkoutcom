@@ -182,7 +182,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = hook.data.metadata.payment_processor;
+        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
 
         // Create the refunded transaction
         Transaction.wrap(function() {
@@ -221,7 +221,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = hook.data.metadata.payment_processor;
+        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
 
         // Create the voided transaction
         Transaction.wrap(function() {
@@ -244,6 +244,15 @@ var eventsHelper = {
                 paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
             }
         });
+    },
+
+    /**
+     * Void Payment
+     * @param {Object} hook The gateway webhook data 
+     */
+    paymentCanceled: function(hook) {
+        // Utilize payment void method
+        this.paymentVoided(hook);
     },
 
     /**
