@@ -37,9 +37,10 @@ exports.authorizeOrderPayment = function (order, event) {
 
             if (result) {
                 order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
+            } else {
+                throw new Error({message: 'Payment Authorization error'});
             }
 
-            throw new Error({message: 'Payment Authorization error'});
         } catch (e) {
             order.addNote('Payment Authorization Request:', e.message);
             return new Status(Status.ERROR);
