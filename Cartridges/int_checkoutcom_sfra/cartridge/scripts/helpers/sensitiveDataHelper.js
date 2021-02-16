@@ -135,7 +135,9 @@ var sensitiveDataHelper = {
             shipping.address.zip = String.prototype.replace.call(shipping.address.zip, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(shipping, 'phone')) {
-            shipping.phone.number = String.prototype.replace.call(shipping.phone.number, /\d/gi, '*');
+            if (shipping.phone.number !== '' && shipping.phone.number !== null && shipping.phone.number !== undefined) {
+                shipping.phone.number = String.prototype.replace.call(shipping.phone.number, /\d/gi, '*');
+            }
         }
 
         return shipping;
