@@ -8,5 +8,5 @@
 </div>
 
 <div class="cko-apm-panel">
-	<isinputfield formfield="${pdict.CurrentForms.alternativePaymentForm.qpay_national_id}" id="qpay_national_id" type="text" />
+	<isinputfield formfield="${pdict.CurrentForms.qpayForm.qpay_national_id}" id="qpay_national_id" type="text" />
 </div>

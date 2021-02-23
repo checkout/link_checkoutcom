@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<form xmlns="http://www.demandware.com/xml/form/2008-04-19">
+
+	<!-- Checkout.com payment options -->
+	
+	<!-- Field for Ideal pay -->
+    <field formid="ideal_bic" label="ideal.bic" type="string" mandatory="true" max-length="40" binding="ideal_bic"/>	
+    
+</form>
