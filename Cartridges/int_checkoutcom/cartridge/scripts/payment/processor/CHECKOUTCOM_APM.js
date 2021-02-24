@@ -102,7 +102,7 @@ function Authorize(args) {
 
             return {authorized: true, error: false};
         } else {
-            throw new Error({mssage: 'Authorization Error'});
+            throw new Error('Authorization Error');
         }
     } catch(e) {
         Transaction.wrap(function () {
