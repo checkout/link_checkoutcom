@@ -25,13 +25,10 @@ function Handle(args) {
     var cart = Cart.get(args.Basket);
     var paymentMethod = args.PaymentMethodID;
     var apmForm = paymentMethod.toLowerCase() + 'Form';
-    
-    // Get apms form
-    var paymentForm = app.getForm(apmForm).object;
-    args.paymentInformation = {};
 
-    // If this apm have a form
-    if (paymentForm) {
+    try {
+        // Get apms form
+        paymentForm = app.getForm(apmForm).object;
         args.paymentInformation = {};
         Object.keys(paymentForm).forEach(function(key) {
             var type = typeof paymentForm[key];
@@ -42,7 +39,9 @@ function Handle(args) {
                 };
             }
         });
-
+        
+    } catch (e) {
+        var msg = e.message;
     }
 
     // Validate form value
