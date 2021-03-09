@@ -40,7 +40,7 @@ function Handle(args) {
             }
         });
         
-    } catch (e) {
+    } catch (e) { // Override getForm error for apms without form
         var msg = e.message;
     }
 
