@@ -196,6 +196,7 @@ var ckoHelper = {
         // Call the service
         var resp = serv.call(requestData);
         if (resp.status !== 'OK') {
+            Logger.error(resp.errorMessage);
             return false;
         }
 
