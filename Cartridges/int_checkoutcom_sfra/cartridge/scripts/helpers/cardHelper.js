@@ -7,7 +7,6 @@ var Site = require('dw/system/Site');
 
 /** Utility **/
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var savedCardHelper = require('~/cartridge/scripts/helpers/savedCardHelper');
 
 /**
  * Utility functions.
@@ -15,13 +14,12 @@ var savedCardHelper = require('~/cartridge/scripts/helpers/savedCardHelper');
 var cardHelper = {
     /**
      * Handle the payment request.
+     * @param {string} orderNumber The order number
      * @param {Object} paymentInstrument The payment data
      * @param {string} paymentProcessor The processor ID
-     * @param {string} orderNumber The order number
      * @returns {boolean} The request success or failure
      */
     handleRequest: function(orderNumber, paymentInstrument, paymentProcessor) {
-
         // Build the request data
         var gatewayRequest = this.buildRequest(orderNumber, paymentInstrument, paymentProcessor.ID);
 
@@ -75,15 +73,15 @@ var cardHelper = {
 
     /**
      * Build the gateway request.
+     * @param {string} orderNumber The order number
      * @param {Object} paymentInstrument The payment data
      * @param {string} paymentProcessor The processor ID
-     * @param {string} orderNumber The order number
      * @returns {Object} The payment request data
      */
     buildRequest: function(orderNumber, paymentInstrument, paymentProcessor) {
         // Load the order
         var order = OrderMgr.getOrder(orderNumber);
-        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData); 
+        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
 
         // Prepare the charge data
         var chargeData = {
@@ -103,11 +101,8 @@ var cardHelper = {
             metadata: ckoHelper.getMetadata({}, paymentProcessor),
         };
 
-        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
-
         // Handle the save card request
         if (paymentData.saveCard) {
-
             // Update the metadata
             chargeData.metadata.card_uuid = paymentData.storedPaymentUUID;
             chargeData.metadata.customer_id = paymentData.customerNo;
@@ -127,7 +122,6 @@ var cardHelper = {
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
 
         if (paymentData.securityCode && paymentData.saveCard) {
-
             cardSource = {
                 type: 'id',
                 id: paymentInstrument.creditCardToken,

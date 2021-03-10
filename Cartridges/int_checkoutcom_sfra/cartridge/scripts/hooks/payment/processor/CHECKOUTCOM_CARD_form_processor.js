@@ -23,51 +23,51 @@ function processForm(req, paymentForm, viewFormData) {
     if (Object.keys(creditCardErrors).length) {
         return {
             fieldErrors: creditCardErrors,
-            error: true
+            error: true,
         };
     }
 
     viewData.paymentMethod = {
         value: paymentForm.paymentMethod.value,
-        htmlName: paymentForm.paymentMethod.htmlName
+        htmlName: paymentForm.paymentMethod.htmlName,
     };
 
     viewData.paymentInformation = {
         saveCard: {
             value: paymentForm.creditCardFields.saveCard.value,
-            htmlName: paymentForm.creditCardFields.saveCard.htmlName  
+            htmlName: paymentForm.creditCardFields.saveCard.htmlName,
         },
         firstName: {
             value: paymentForm.addressFields.firstName.value,
-            htmlName: paymentForm.addressFields.firstName.htmlName  
+            htmlName: paymentForm.addressFields.firstName.htmlName,
         },
         lastName: {
             value: paymentForm.addressFields.lastName.value,
-            htmlName: paymentForm.addressFields.lastName.htmlName 
+            htmlName: paymentForm.addressFields.lastName.htmlName,
         },
         cardType: {
             value: paymentForm.creditCardFields.cardType.value,
-            htmlName: paymentForm.creditCardFields.cardType.htmlName
+            htmlName: paymentForm.creditCardFields.cardType.htmlName,
         },
         cardNumber: {
             value: paymentForm.creditCardFields.cardNumber.value,
-            htmlName: paymentForm.creditCardFields.cardNumber.htmlName
+            htmlName: paymentForm.creditCardFields.cardNumber.htmlName,
         },
         securityCode: {
             value: paymentForm.creditCardFields.securityCode.value,
-            htmlName: paymentForm.creditCardFields.securityCode.htmlName
+            htmlName: paymentForm.creditCardFields.securityCode.htmlName,
         },
         expirationMonth: {
             value: parseInt(
                 paymentForm.creditCardFields.expirationMonth.selectedOption,
                 10
             ),
-            htmlName: paymentForm.creditCardFields.expirationMonth.htmlName
+            htmlName: paymentForm.creditCardFields.expirationMonth.htmlName,
         },
         expirationYear: {
             value: parseInt(paymentForm.creditCardFields.expirationYear.value, 10),
-            htmlName: paymentForm.creditCardFields.expirationYear.htmlName
-        }
+            htmlName: paymentForm.creditCardFields.expirationYear.htmlName,
+        },
     };
 
     if (req.form.storedPaymentUUID && req.form.storedPaymentUUID !== 'undefined') {
@@ -82,7 +82,7 @@ function processForm(req, paymentForm, viewFormData) {
         && req.currentCustomer.raw.registered
     ) {
         var paymentInstruments = req.currentCustomer.wallet.paymentInstruments;
-        var paymentInstrument = array.find(paymentInstruments, function (item) {
+        var paymentInstrument = array.find(paymentInstruments, function(item) {
             return viewData.storedPaymentUUID === item.UUID;
         });
 
@@ -99,7 +99,7 @@ function processForm(req, paymentForm, viewFormData) {
 
     return {
         error: false,
-        viewData: viewData
+        viewData: viewData,
     };
 }
 
@@ -141,7 +141,7 @@ function savePaymentInformation(req, basket, billingData) {
             )
                 ? saveCardResult.creditCardNumber
                 : null,
-            raw: saveCardResult
+            raw: saveCardResult,
         });
     }
 }

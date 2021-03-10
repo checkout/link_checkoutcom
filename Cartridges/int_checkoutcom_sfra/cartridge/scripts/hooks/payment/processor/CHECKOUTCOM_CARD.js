@@ -19,7 +19,7 @@ var Site = require('dw/system/Site');
  * @returns {string} a token
  */
 function createToken() {
-    var paymentForm = session.getForms().billing;
+    var paymentForm = session.getForms().billing; //eslint-disable-line
     var cardForm = paymentForm.creditCardFields;
     var requestData;
 
@@ -53,7 +53,7 @@ function createToken() {
             'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
             requestData
         );
-    
+
         if (idResponse && idResponse !== 400 && idResponse !== 422) {
             return idResponse.source.id;
         }
@@ -125,7 +125,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
 
         if (creditCardStatus.error) {
-            collections.forEach(creditCardStatus.items, function (item) {
+            collections.forEach(creditCardStatus.items, function(item) {
                 switch (item.code) {
                     case PaymentStatusCodes.CREDITCARD_INVALID_CARD_NUMBER:
                         cardErrors[paymentInformation.cardNumber.htmlName] =
@@ -154,12 +154,12 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
     }
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         var paymentInstruments = currentBasket.getPaymentInstruments(
             PaymentInstrument.METHOD_CREDIT_CARD
         );
 
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -182,14 +182,14 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             );
         } else if (paymentInformation.storedPaymentUUID) {
             paymentInstrument.setCreditCardToken(paymentInformation.creditCardToken);
-        };
+        }
 
         paymentInstrument.custom.ckoPaymentData = JSON.stringify({
-            'securityCode': cardSecurityCode,
-            'storedPaymentUUID': paymentInformation.storedPaymentUUID,
-            'saveCard': paymentInformation.creditCardToken ? true : false,
-            'customerNo': req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null ,
-            'madaCard': madaCard
+            securityCode: cardSecurityCode,
+            storedPaymentUUID: paymentInformation.storedPaymentUUID,
+            saveCard: paymentInformation.creditCardToken ? true : false, //eslint-disable-line
+            customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null,
+            madaCard: madaCard,
         });
     });
 
@@ -212,21 +212,18 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
 
     var ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
         paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.custom.ckoPaymentData = "";
+        paymentInstrument.custom.ckoPaymentData = ''; //eslint-disable-line
     });
 
     if (ckoPaymentRequest) {
-
         try {
             // Handle errors
             if (ckoPaymentRequest.error) {
-    
                 throw new Error(ckoPaymentRequest.message);
             }
-               
         } catch (e) {
             error = true;
             if (ckoPaymentRequest.code) {
@@ -235,7 +232,6 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
                 Resource.msg('error.technical', 'checkout', null);
             }
         }
-
     } else {
         error = true;
         Resource.msg('error.technical', 'checkout', null);

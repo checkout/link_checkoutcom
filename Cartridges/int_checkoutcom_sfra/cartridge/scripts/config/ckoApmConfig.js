@@ -3,7 +3,6 @@
 /* Business Name */
 var Site = require('dw/system/Site');
 var businessName = Site.getCurrent().getCustomPreferenceValue('ckoBusinessName');
-var BasketMgr = require('dw/order/BasketMgr');
 
 /* Utility */
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');

@@ -22,8 +22,7 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
  * @param {Object} args The method arguments
  * @returns {Object} The form validation result
  */
-function Handle(args) { 
-
+function Handle(args) {
     var cart = Cart.get(args.Basket);
     var creditCardForm = app.getForm('billing.paymentMethods.creditCard');
     var PaymentMgr = require('dw/order/PaymentMgr');
@@ -33,18 +32,18 @@ function Handle(args) {
     var cardSecurityCode = creditCardForm.get('cvn').value();
     var cardType = creditCardForm.get('type').value();
     var expirationMonth = creditCardForm.get('expiration.month').value();
-    var expirationYear = creditCardForm.get('expiration.year').value(); 
+    var expirationYear = creditCardForm.get('expiration.year').value();
     var madaCardType = creditCardForm.get('madaCardType').value();
     var paymentCard = PaymentMgr.getPaymentCard(cardType);
 
     var creditCardStatus = paymentCard.verify(expirationMonth, expirationYear, cardNumber, cardSecurityCode);
 
     if (creditCardStatus.error) {
-
         var invalidatePaymentCardFormElements = require('*/cartridge/scripts/checkout/InvalidatePaymentCardFormElements');
+        // eslint-disable-next-line
         invalidatePaymentCardFormElements.invalidatePaymentCardForm(creditCardStatus, session.forms.billing.paymentMethods.creditCard);
 
-        return {error: true};
+        return { error: true };
     }
 
     // Save card feature
@@ -78,8 +77,10 @@ function Handle(args) {
         });
     }
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
+        // eslint-disable-next-line
         cart.removeExistingPaymentInstruments(dw.order.PaymentInstrument.METHOD_CREDIT_CARD);
+        // eslint-disable-next-line
         var paymentInstrument = cart.createPaymentInstrument(dw.order.PaymentInstrument.METHOD_CREDIT_CARD, cart.getNonGiftCertificateAmount());
 
         paymentInstrument.creditCardHolder = creditCardHolder;
@@ -87,10 +88,10 @@ function Handle(args) {
         paymentInstrument.creditCardType = cardType;
         paymentInstrument.creditCardExpirationMonth = expirationMonth;
         paymentInstrument.creditCardExpirationYear = expirationYear;
-        paymentInstrument.custom.ckoPaymentData = JSON.stringify({cvn: cardSecurityCode, madaCard: madaCardType ? 'yes' : ''});
+        paymentInstrument.custom.ckoPaymentData = JSON.stringify({ cvn: cardSecurityCode, madaCard: madaCardType ? 'yes' : '' });
     });
 
-    return {success: true};
+    return { success: true };
 }
 
 
@@ -110,24 +111,21 @@ function Authorize(args) {
     var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
     try {
-
         var paymentAuth = cardHelper.cardAuthorization(paymentInstrument, args);
 
-        Transaction.wrap(function () {
+        Transaction.wrap(function() {
             paymentInstrument.paymentTransaction.transactionID = orderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
             paymentInstrument.custom.ckoPaymentData = '';
         });
 
-        if (paymentAuth) { 
-
-            return {authorized: true, error: false};
-        } else {
-            throw new Error({mssage: 'Authorization Error'});
+        if (paymentAuth) {
+            return { authorized: true, error: false };
         }
-    } catch(e) {
 
-        return {authorized: false, error: true, message: e.message };
+        throw new Error({ mssage: 'Authorization Error' });
+    } catch (e) {
+        return { authorized: false, error: true, message: e.message };
     }
 }
 

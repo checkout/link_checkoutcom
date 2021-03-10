@@ -10,15 +10,15 @@ module.exports = [{
     entry: sgmfScripts.createJsPath(),
     output: {
         path: path.resolve('./Cartridges/int_checkoutcom_sfra/cartridge/static'),
-        filename: '[name].js'
-    }
+        filename: '[name].js',
+    },
 }, {
     mode: 'none',
     name: 'scss',
     entry: sgmfScripts.createScssPath(),
     output: {
         path: path.resolve('./Cartridges/int_checkoutcom_sfra/cartridge/static'),
-        filename: '[name].css'
+        filename: '[name].css',
     },
     module: {
         rules: [{
@@ -28,15 +28,15 @@ module.exports = [{
                     loader: 'css-loader',
                     options: {
                         url: false,
-                        minimize: true
-                    }
+                        minimize: true,
+                    },
                 }, {
                     loader: 'postcss-loader',
                     options: {
                         plugins: [
-                            require('autoprefixer')()
-                        ]
-                    }
+                            require('autoprefixer')(),
+                        ],
+                    },
                 }, {
                     loader: 'sass-loader',
                     options: {
@@ -45,17 +45,16 @@ module.exports = [{
                                 process.cwd(),
                                 '../link_checkoutcom/node_modules/'
                             ),
-                            path.resolve(
-                                process.cwd(), // eslint-disable-next-line max-len
+                            path.resolve(process.cwd(), // eslint-disable-next-line max-len
                                 '../link_checkoutcom/node_modules/flag-icon-css/sass'
-                            )
-                        ]
-                    }
-                }]
-            })
-        }]
+                            ),
+                        ],
+                    },
+                }],
+            }),
+        }],
     },
     plugins: [
-        new ExtractTextPlugin({ filename: '[name].css' })
-    ]
+        new ExtractTextPlugin({ filename: '[name].css' }),
+    ],
 }];

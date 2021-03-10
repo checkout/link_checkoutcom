@@ -28,20 +28,20 @@ function Handle(args) {
 
     try {
         // Get apms form
-        paymentForm = app.getForm(apmForm).object;
+        var paymentForm = app.getForm(apmForm).object;
+        // eslint-disable-next-line
         args.paymentInformation = {};
         Object.keys(paymentForm).forEach(function(key) {
             var type = typeof paymentForm[key];
             if (type === 'object' && paymentForm[key] != null) {
+                // eslint-disable-next-line
                 args.paymentInformation[key] = {
                     value: paymentForm[key].htmlValue,
                     htmlName: paymentForm[key].htmlName,
                 };
             }
         });
-        
     } catch (e) { // Override getForm error for apms without form
-        var msg = e.message;
     }
 
     // Validate form value
@@ -55,7 +55,7 @@ function Handle(args) {
         });
 
         if (error) {
-            return { error: true }
+            return { error: true };
         }
     }
 
@@ -91,26 +91,25 @@ function Authorize(args) {
     try {
         var paymentAuth = apmHelper.apmAuthorization(payObject, args);
 
-        Transaction.wrap(function () {
+        Transaction.wrap(function() {
             order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
             paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
-        if (paymentAuth) { 
-
-            return {authorized: true, error: false};
-        } else {
-            throw new Error('Authorization Error');
+        if (paymentAuth) {
+            return { authorized: true, error: false };
         }
-    } catch(e) {
-        Transaction.wrap(function () {
+
+        throw new Error('Authorization Error');
+    } catch (e) {
+        Transaction.wrap(function() {
             order.addNote('Payment Authorization Request:', e.message);
             paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
-        return {authorized: false, error: true, message: e.message };
+        return { authorized: false, error: true, message: e.message };
     }
 }
 

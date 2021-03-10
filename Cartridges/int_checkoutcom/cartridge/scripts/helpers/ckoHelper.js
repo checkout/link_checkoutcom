@@ -342,11 +342,11 @@ var ckoHelper = {
      */
     paymentSuccess: function(gatewayResponse) {
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'response_code')) {
-            return gatewayResponse.response_code === "10000" || gatewayResponse.response_code === "10100" || gatewayResponse.response_code === "10200";
+            return gatewayResponse.response_code === '10000' || gatewayResponse.response_code === '10100' || gatewayResponse.response_code === '10200';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions')) {
-            return gatewayResponse.actions[0].response_code === "10000" || gatewayResponse.actions[0].response_code === "10100" || gatewayResponse.actions[0].response_code === "10200";
+            return gatewayResponse.actions[0].response_code === '10000' || gatewayResponse.actions[0].response_code === '10100' || gatewayResponse.actions[0].response_code === '10200';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            return gatewayResponse.source.type === "sofort" || "bancontact" || "token";
+            return gatewayResponse.source.type === 'sofort' || 'bancontact' || 'token';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'reference')) {
             return gatewayResponse.reference === this.getOrderId();
         }
@@ -744,14 +744,12 @@ var ckoHelper = {
         }
 
         // Get the payment processor
-        var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+        var paymentProcessor = PaymentMgr.getPaymentMethod(args.PaymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
         // Add the payment processor to the metadata
         meta.payment_processor = paymentProcessor.getID();
 
         return meta;
-
     },
 
     /**
@@ -818,8 +816,7 @@ var ckoHelper = {
         }
 
         // Get the payment processor
-        var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+        var paymentProcessor = PaymentMgr.getPaymentMethod(args.PaymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
         // Add the payment processor to the metadata
         meta += 'payment_processor' + paymentProcessor.getID();

@@ -57,7 +57,7 @@ var ckoApmConfig = {
                 payer: {
                     name: ckoHelper.getCustomerName(args),
                     email: ckoHelper.getCustomer(args).email,
-                    document: form.get('boleto_cpf').value()
+                    document: form.get('boleto_cpf').value(),
                 },
             },
             purpose: businessName,
@@ -197,7 +197,7 @@ var ckoApmConfig = {
                 description: businessName,
                 language: ckoHelper.getLanguage().substr(0, 2),
                 quantity: ckoHelper.getProductQuantity(args),
-                national_id: form.get('qpay_national_id').value()
+                national_id: form.get('qpay_national_id').value(),
             },
             purpose: businessName,
             currency: ckoHelper.getCurrency(args),
@@ -376,7 +376,7 @@ var ckoApmConfig = {
                 payer: {
                     name: ckoHelper.getCustomerName(args),
                     email: ckoHelper.getCustomer(args).email,
-                    document: form.get('oxxo_identification').value()
+                    document: form.get('oxxo_identification').value(),
                 },
             },
             currency: ckoHelper.getCurrency(args),

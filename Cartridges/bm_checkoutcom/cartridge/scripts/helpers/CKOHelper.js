@@ -17,6 +17,19 @@ var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
  */
 var CKOHelper = {
     /**
+     * CKO Response object.
+     * @param {Object} data Format a gateway response
+     * @returns {string} The response JSON string
+     */
+    ckoResponse: function(data) {
+        response.setBuffered(false); // eslint-disable-line
+        response.setContentType('text/plain'); // eslint-disable-line
+        var out = response.writer; // eslint-disable-line
+
+        return out.println(JSON.stringify(data)); // eslint-disable-line
+    },
+
+    /**
      * Handles string translation with language resource files.
      * @param {string} strValue The strin to translate
      * @param {string} strFile The translation file
@@ -314,6 +327,7 @@ var CKOHelper = {
     /**
      * Returns a price formatted for processing by the gateway.
      * @param {number} amount The amount to format
+     * @param {string} currency The currency value
      * @returns {number} The formatted amount
      */
     getFormattedPrice: function(amount, currency) {
@@ -321,12 +335,12 @@ var CKOHelper = {
         if (currency) {
             var ckoFormateBy = this.getCkoFormatedValue(currency);
             totalFormated = amount * ckoFormateBy;
-    
-            return totalFormated.toFixed();
-        } else {
-            totalFormated = amount * 100;
+
             return totalFormated.toFixed();
         }
+
+        totalFormated = amount * 100;
+        return totalFormated.toFixed();
     },
 
     /**
@@ -367,7 +381,6 @@ var CKOHelper = {
     getAccountKeys: function() {
         var keys = {};
         var str = this.getValue('ckoMode') === 'sandbox' ? 'Sandbox' : 'Live';
-        
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
@@ -399,11 +412,9 @@ var CKOHelper = {
                     }
                 }
             });
-            var message = {error: false, message: 'properties saved successfully'};
-            return message;
+            return { error: false, message: 'properties saved successfully' };
         } catch (e) {
-            var message = { error: true, message: e.message };
-            return message;
+            return { error: true, message: e.message };
         }
     },
 
@@ -438,7 +449,8 @@ var CKOHelper = {
 
     /**
      * Get product quantities from an order.
-     * @param {Object} args The method arguments
+     * @param {Object} order The current order
+     * @param {string} currency code value
      * @returns {Array} The list of quantities
      */
     getOrderBasketObject: function(order, currency) {
@@ -482,7 +494,7 @@ var CKOHelper = {
 
         return productsQuantites;
     },
-    
+
 };
 
 /*
