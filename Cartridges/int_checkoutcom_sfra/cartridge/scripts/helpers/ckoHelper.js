@@ -141,6 +141,17 @@ var ckoHelper = {
     },
 
     /**
+     * Write gateway information to the website's info log file.
+     * @param {string} dataType The data type
+     * @param {Object} gatewayData The gateway data
+     */
+    infoLog: function(dataType, gatewayData) {
+        if (this.getValue('ckoDebugEnabled') === true) {
+            Logger.info(this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}', JSON.stringify(gatewayData));
+        }
+    },
+
+    /**
      * Remove sentitive data from the logs.
      * @param {Object} rawData The log data
      * @returns {Object} The filtered data
