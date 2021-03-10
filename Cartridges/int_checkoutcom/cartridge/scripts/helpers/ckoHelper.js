@@ -133,6 +133,17 @@ var ckoHelper = {
     },
 
     /**
+     * Write gateway information to the website's info log file.
+     * @param {string} dataType The data type
+     * @param {Object} gatewayData The gateway data
+     */
+    infoLog: function(dataType, gatewayData) {
+        if (this.getValue('ckoDebugEnabled') === true) {
+            Logger.info(this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}', JSON.stringify(gatewayData));
+        }
+    },
+
+    /**
      * Return an order id.
      * @returns {string} The order id
      */
