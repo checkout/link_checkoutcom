@@ -3,16 +3,16 @@
 var Cleave = require('cleave.js').default;
 
 module.exports = {
-    handleCreditCardNumber: function (cardFieldSelector, cardTypeSelector) {
+    handleCreditCardNumber: function(cardFieldSelector, cardTypeSelector) {
         var cleave = new Cleave(cardFieldSelector, {
             creditCard: true,
-            onCreditCardTypeChanged: function (type) {
+            onCreditCardTypeChanged: function(type) {
                 var creditCardTypes = {
                     visa: 'Visa',
                     mastercard: 'Master Card',
                     amex: 'Amex',
                     discover: 'Discover',
-                    unknown: 'Unknown'
+                    unknown: 'Unknown',
                 };
 
                 var cardType = creditCardTypes[Object.keys(creditCardTypes).indexOf(type) > -1
@@ -25,21 +25,21 @@ module.exports = {
                 } else {
                     $('#securityCode').attr('maxlength', 4);
                 }
-            }
+            },
         });
 
         $(cardFieldSelector).data('cleave', cleave);
     },
 
-    serializeData: function (form) {
+    serializeData: function(form) {
         var serializedArray = form.serializeArray();
 
-        serializedArray.forEach(function (item) {
+        serializedArray.forEach(function(item) {
             if (item.name.indexOf('cardNumber') > -1) {
                 item.value = $('#cardNumber').data('cleave').getRawValue(); // eslint-disable-line
             }
         });
 
         return $.param(serializedArray);
-    }
+    },
 };

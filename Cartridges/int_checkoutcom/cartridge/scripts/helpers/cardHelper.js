@@ -142,7 +142,7 @@ var cardHelper = {
             currency: ckoHelper.getCurrency(),
             reference: args.OrderNo,
             capture: ckoHelper.getValue('ckoAutoCapture'),
-            capture_on: ckoHelper.getCaptureTime(),
+            capture_on: ckoHelper.getValue('ckoAutoCapture') ? ckoHelper.getCaptureTime() : null,
             customer: ckoHelper.getCustomer(args),
             billing_descriptor: ckoHelper.getBillingDescriptorObject(),
             shipping: this.getShippingObject(args),

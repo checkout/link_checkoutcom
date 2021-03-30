@@ -20,9 +20,9 @@ function processForm(req, paymentForm, viewFormData) {
         error = false;
         viewData.paymentMethod = {
             value: paymentForm.paymentMethod.value,
-            htmlName: paymentForm.paymentMethod.htmlName
+            htmlName: paymentForm.paymentMethod.htmlName,
         };
-        
+
         var googlePayForm = paymentForm.googlePayForm;
         viewData.paymentInformation = {};
 
@@ -37,7 +37,6 @@ function processForm(req, paymentForm, viewFormData) {
                     };
                 }
             });
-
         } else {
             viewData.paymentInformation.type = {
                 value: paymentForm.paymentMethod.value,
@@ -60,7 +59,7 @@ function processForm(req, paymentForm, viewFormData) {
     return {
         error: error,
         viewData: viewData,
-        fieldErrors: fieldErrors
+        fieldErrors: fieldErrors,
     };
 }
 

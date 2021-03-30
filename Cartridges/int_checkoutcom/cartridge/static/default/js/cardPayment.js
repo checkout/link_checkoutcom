@@ -5,6 +5,11 @@ var ckoIsSetId = document.getElementById('default_thumb');
 
 // set event on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Clear form
+    clearForm();
+
+    document.getElementById('is-CREDIT_CARD').checked = true;
+
     // Set schema box
     setBox();
 
@@ -36,6 +41,9 @@ var clearForm = function() {
     
     // Cvn input
     $('.cvn :input').val('');
+
+    // Reset error message
+    $('.error-message').hide();
 }
 
 /**

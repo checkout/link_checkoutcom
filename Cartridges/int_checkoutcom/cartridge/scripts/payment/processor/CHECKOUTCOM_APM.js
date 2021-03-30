@@ -24,6 +24,40 @@ function Handle(args) {
     // Proceed with transaction
     var cart = Cart.get(args.Basket);
     var paymentMethod = args.PaymentMethodID;
+    var apmForm = paymentMethod.toLowerCase() + 'Form';
+
+    try {
+        // Get apms form
+        var paymentForm = app.getForm(apmForm).object;
+        // eslint-disable-next-line
+        args.paymentInformation = {};
+        Object.keys(paymentForm).forEach(function(key) {
+            var type = typeof paymentForm[key];
+            if (type === 'object' && paymentForm[key] != null) {
+                // eslint-disable-next-line
+                args.paymentInformation[key] = {
+                    value: paymentForm[key].htmlValue,
+                    htmlName: paymentForm[key].htmlName,
+                };
+            }
+        });
+    } catch (e) { // Override getForm error for apms without form
+    }
+
+    // Validate form value
+    if (args.paymentInformation) {
+        var error = false;
+        Object.keys(args.paymentInformation).forEach(function(key) {
+            var currentElement = args.paymentInformation[key];
+            if (currentElement.value === '') {
+                error = true;
+            }
+        });
+
+        if (error) {
+            return { error: true };
+        }
+    }
 
     // Proceed with transact
     Transaction.wrap(function() {
@@ -57,26 +91,25 @@ function Authorize(args) {
     try {
         var paymentAuth = apmHelper.apmAuthorization(payObject, args);
 
-        Transaction.wrap(function () {
+        Transaction.wrap(function() {
             order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
             paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
-        if (paymentAuth) { 
-
-            return {authorized: true, error: false};
-        } else {
-            throw new Error({mssage: 'Authorization Error'});
+        if (paymentAuth) {
+            return { authorized: true, error: false };
         }
-    } catch(e) {
-        Transaction.wrap(function () {
+
+        throw new Error('Authorization Error');
+    } catch (e) {
+        Transaction.wrap(function() {
             order.addNote('Payment Authorization Request:', e.message);
             paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
-        return {authorized: false, error: true, message: e.message };
+        return { authorized: false, error: true, message: e.message };
     }
 }
 

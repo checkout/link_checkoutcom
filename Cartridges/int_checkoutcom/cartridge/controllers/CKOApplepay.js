@@ -11,13 +11,12 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 
 /**
  * Returns the Order Informaton for apple pay
- * @returns {object} The Apple Pay Order response
+ * @returns {Object} The Apple Pay Order response
  */
 function applePayOrder() {
     // Prepare the basket
     var basket = BasketMgr.getCurrentBasket();
     if (basket) {
-
         // Prepare the request object
         var orderObject = {
             countryCode: ckoHelper.getBasketCountyCode(basket),

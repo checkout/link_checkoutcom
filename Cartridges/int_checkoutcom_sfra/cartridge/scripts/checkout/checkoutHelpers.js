@@ -100,7 +100,7 @@ function copyCustomerAddressToShipment(address, shipmentOrNull) {
     var shipment = shipmentOrNull || currentBasket.defaultShipment;
     var shippingAddress = shipment.shippingAddress;
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         if (shippingAddress === null) {
             shippingAddress = shipment.createShippingAddress();
         }
@@ -126,7 +126,7 @@ function copyCustomerAddressToBilling(address) {
     var currentBasket = BasketMgr.getCurrentBasket();
     var billingAddress = currentBasket.billingAddress;
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         if (!billingAddress) {
             billingAddress = currentBasket.createBillingAddress();
         }
@@ -157,7 +157,7 @@ function copyShippingAddressToShipment(shippingData, shipmentOrNull) {
 
     var shippingAddress = shipment.shippingAddress;
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         if (shippingAddress === null) {
             shippingAddress = shipment.createShippingAddress();
         }
@@ -185,7 +185,7 @@ function copyShippingAddressToShipment(shippingData, shipmentOrNull) {
 function copyBillingAddressToBasket(address, currentBasket) {
     var billingAddress = currentBasket.billingAddress;
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         if (!billingAddress) {
             billingAddress = currentBasket.createBillingAddress();
         }
@@ -231,7 +231,7 @@ function getFirstNonDefaultShipmentWithProductLineItems(currentBasket) {
  */
 function ensureValidShipments(lineItemContainer) {
     var shipments = lineItemContainer.shipments;
-    var allValid = collections.every(shipments, function (shipment) {
+    var allValid = collections.every(shipments, function(shipment) {
         if (shipment) {
             var address = shipment.shippingAddress;
             return address && address.address1;
@@ -247,7 +247,7 @@ function ensureValidShipments(lineItemContainer) {
  * @param {Object} req - the request object needed to access session.privacyCache
  */
 function ensureNoEmptyShipments(req) {
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         var currentBasket = BasketMgr.getCurrentBasket();
 
         var iter = currentBasket.shipments.iterator();
@@ -268,7 +268,7 @@ function ensureNoEmptyShipments(req) {
                     req.session.privacyCache.set(currentBasket.defaultShipment.UUID, altValid);
 
                     collections.forEach(altShipment.productLineItems,
-                        function (lineItem) {
+                        function(lineItem) {
                             lineItem.setShipment(currentBasket.defaultShipment);
                         });
 
@@ -307,7 +307,7 @@ function ensureNoEmptyShipments(req) {
  */
 function recalculateBasket(currentBasket) {
     // Calculate the basket
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         basketCalculationHelpers.calculateTotals(currentBasket);
     });
 }
@@ -373,7 +373,7 @@ function calculatePaymentTransaction(currentBasket) {
 
     try {
         // TODO: This function will need to account for gift certificates at a later date
-        Transaction.wrap(function () {
+        Transaction.wrap(function() {
             var paymentInstruments = currentBasket.paymentInstruments;
 
             if (!paymentInstruments.length) {
@@ -415,7 +415,7 @@ function validatePayment(req, currentBasket) {
     // Get coutrycode from currentBasket
     // Else get countrycode from Request Geolocation
     var ckoMode = ckoHelper.getValue('ckoMode');
-    if (ckoMode.value === 'sandbox') {
+    if (ckoMode === 'sandbox') {
         countryCode = currentBasket.billingAddress.countryCode.value;
     }
 
@@ -472,7 +472,7 @@ function createOrder(currentBasket) {
     var order;
 
     try {
-        order = Transaction.wrap(function () {
+        order = Transaction.wrap(function() {
             return OrderMgr.createOrder(currentBasket);
         });
     } catch (error) {
@@ -481,7 +481,7 @@ function createOrder(currentBasket) {
     return order;
 }
 
-//////////////////////////////     Modified    ////////////////////////////////////////////////
+// Modified    ////////////////////////////////////////////////
 /**
  * handles the payment authorization for each payment instrument
  * @param {dw.order.Order} order - the order object
@@ -495,7 +495,7 @@ function handlePayments(order, orderNumber) {
         var paymentInstruments = order.paymentInstruments;
 
         if (paymentInstruments.length === 0) {
-            Transaction.wrap(function () { OrderMgr.failOrder(order, true); });
+            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
             result.error = true;
         }
 
@@ -528,8 +528,8 @@ function handlePayments(order, orderNumber) {
                     }
 
                     if (authorizationResult.error) {
-                        Transaction.wrap(function () { OrderMgr.failOrder(order, true); });
-                        result = authorizationResult
+                        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+                        result = authorizationResult;
                         break;
                     } else {
                         result = authorizationResult;
@@ -563,7 +563,7 @@ function sendConfirmationEmail(order, locale) {
         to: order.customerEmail,
         subject: Resource.msg('subject.order.confirmation.email', 'order', null),
         from: Site.current.getCustomPreferenceValue('customerServiceEmail') || 'no-reply@testorganization.com',
-        type: emailHelpers.emailTypes.orderConfirmation
+        type: emailHelpers.emailTypes.orderConfirmation,
     };
 
     emailHelpers.sendEmail(emailObj, 'checkout/confirmation/confirmationEmail', orderObject);
@@ -588,7 +588,7 @@ function placeOrder(order, fraudDetectionStatus) {
         order.setExportStatus(Order.EXPORT_STATUS_READY);
         Transaction.commit();
     } catch (e) {
-        Transaction.wrap(function () { OrderMgr.failOrder(order, true); });
+        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
         result.error = true;
     }
 
@@ -605,7 +605,7 @@ function placeOrder(order, fraudDetectionStatus) {
 function savePaymentInstrumentToWallet(billingData, currentBasket, customer) {
     var wallet = customer.getProfile().getWallet();
 
-    return Transaction.wrap(function () {
+    return Transaction.wrap(function() {
         var storedPaymentInstrument = wallet.createPaymentInstrument(PaymentInstrument.METHOD_CREDIT_CARD);
 
         storedPaymentInstrument.setCreditCardHolder(
@@ -632,7 +632,7 @@ function savePaymentInstrumentToWallet(billingData, currentBasket, customer) {
                 cardNumber: billingData.paymentInformation.cardNumber.value,
                 expirationMonth: billingData.paymentInformation.expirationMonth.value,
                 expirationYear: billingData.paymentInformation.expirationYear.value,
-                name: currentBasket.billingAddress.fullName
+                name: currentBasket.billingAddress.fullName,
             }
         );
 
@@ -680,7 +680,7 @@ function setGift(shipment, isGift, giftMessage) {
     var result = { error: false, errorMessage: null };
 
     try {
-        Transaction.wrap(function () {
+        Transaction.wrap(function() {
             shipment.setGift(isGift);
 
             if (isGift && giftMessage) {
@@ -722,5 +722,5 @@ module.exports = {
     getRenderedPaymentInstruments: getRenderedPaymentInstruments,
     sendConfirmationEmail: sendConfirmationEmail,
     ensureValidShipments: ensureValidShipments,
-    setGift: setGift
+    setGift: setGift,
 };

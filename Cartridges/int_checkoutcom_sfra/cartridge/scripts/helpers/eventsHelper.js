@@ -7,7 +7,6 @@ var PaymentMgr = require('dw/order/PaymentMgr');
 
 /* Checkout.com Helper functions */
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var savedCardHelper = require('~/cartridge/scripts/helpers/savedCardHelper');
 var transactionHelper = require('~/cartridge/scripts/helpers/transactionHelper');
 
 /**
@@ -16,32 +15,30 @@ var transactionHelper = require('~/cartridge/scripts/helpers/transactionHelper')
  * based on the type of the transaction.
  * @param {dw.order.Order} order - The order the customer placed
  */
-
 function setPaymentStatus(order) {
-    var paymentInstruments = order.getPaymentInstruments().toArray(),
-        amountPaid = 0,
-        orderTotal = order.getTotalGrossPrice().getValue();
-    
-    for(var i=0; i<paymentInstruments.length; i++) {
+    var paymentInstruments = order.getPaymentInstruments().toArray();
+    var amountPaid = 0;
+    var orderTotal = order.getTotalGrossPrice().getValue();
+
+    for (var i = 0; i < paymentInstruments.length; i++) {
         var paymentTransaction = paymentInstruments[i].paymentTransaction;
-        if(paymentTransaction.type.value === 'CAPTURE') {
+        if (paymentTransaction.type.value === 'CAPTURE') {
             amountPaid += paymentTransaction.amount.value;
-            if(amountPaid > orderTotal) {
+            if (amountPaid > orderTotal) {
                 amountPaid = orderTotal;
             }
-        } else if(paymentTransaction.type.value === 'CREDIT') {
+        } else if (paymentTransaction.type.value === 'CREDIT') {
             amountPaid -= paymentTransaction.amount.value;
         }
     }
-    
-    if(amountPaid === orderTotal) {
+
+    if (amountPaid === orderTotal) {
         order.setPaymentStatus(order.PAYMENT_STATUS_PAID);
-    } else if(amountPaid >= 0.01) {
+    } else if (amountPaid >= 0.01) {
         order.setPaymentStatus(order.PAYMENT_STATUS_PARTPAID);
     } else {
         order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
     }
-
 }
 
 /**
@@ -57,11 +54,14 @@ var eventsHelper = {
     addWebhookInfo: function(hook, paymentStatus, orderStatus) {
         // Load the order
         var order = OrderMgr.getOrder(hook.data.reference);
+        var flagged = hook.data.risk ? hook.data.risk.flagged : false;
+
         if (order) {
             // Prepare the webhook info
             var details = '';
 
-            if (Object.prototype.hasOwnProperty(hook.data, 'risk' ) && Object.prototype.hasOwnProperty(hook.data.risk, 'flagged')) {
+            // Payment is flagged
+            if (flagged) {
                 details += ckoHelper._('cko.webhook.flagged', 'cko') + '\n';
                 details += ckoHelper._('cko.response.summary', 'cko') + ': ' + hook.data.response_summary + '\n';
                 order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
@@ -74,7 +74,7 @@ var eventsHelper = {
             details += ckoHelper._('cko.transaction.eventId', 'cko') + ': ' + hook.id + '\n';
             details += ckoHelper._('cko.response.code', 'cko') + ': ' + hook.data.response_code + '\n';
 
-            
+
             // Add the details to the order
             order.addNote(ckoHelper._('cko.webhook.info', 'cko'), details);
 
@@ -136,17 +136,16 @@ var eventsHelper = {
 
         // If order Status is fail void the transaction
         if (order.getStatus().toString() === 'FAILED') {
-            
             var gatewayVoid = ckoHelper.gatewayClientRequest(
                 'cko.transaction.void.' + ckoHelper.getValue('ckoMode') + '.service',
                 {
-                    "chargeId": hook.data.id,
+                    chargeId: hook.data.id,
                 }
             );
-            
+
             // If Void is Successfull
             if (gatewayVoid) {
-                return 0;
+                return;
             }
         }
 
@@ -157,9 +156,6 @@ var eventsHelper = {
 
         // Create the authorized transaction
         transactionHelper.createAuthorization(hook);
-
-        // Save the card if needed
-        // savedCardHelper.updateSavedCard(hook);
     },
 
     /**
@@ -258,6 +254,15 @@ var eventsHelper = {
             parentTransaction.custom.ckoTransactionOpened = false;
             paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
         }
+    },
+
+    /**
+     * Void Payment
+     * @param {Object} hook The gateway webhook data
+     */
+    paymentCanceled: function(hook) {
+        // Utilize payment void method
+        this.paymentVoided(hook);
     },
 
     /**

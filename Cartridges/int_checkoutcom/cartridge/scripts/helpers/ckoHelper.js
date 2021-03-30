@@ -133,6 +133,17 @@ var ckoHelper = {
     },
 
     /**
+     * Write gateway information to the website's info log file.
+     * @param {string} dataType The data type
+     * @param {Object} gatewayData The gateway data
+     */
+    infoLog: function(dataType, gatewayData) {
+        if (this.getValue('ckoDebugEnabled') === true) {
+            Logger.info(this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}', JSON.stringify(gatewayData));
+        }
+    },
+
+    /**
      * Return an order id.
      * @returns {string} The order id
      */
@@ -161,7 +172,7 @@ var ckoHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
+        var str = this.getValue('ckoMode') === 'sandbox' ? 'Sandbox' : 'Live';
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
@@ -196,6 +207,7 @@ var ckoHelper = {
         // Call the service
         var resp = serv.call(requestData);
         if (resp.status !== 'OK') {
+            Logger.error(resp.errorMessage);
             return false;
         }
 
@@ -330,11 +342,11 @@ var ckoHelper = {
      */
     paymentSuccess: function(gatewayResponse) {
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'response_code')) {
-            return gatewayResponse.response_code === "10000" || gatewayResponse.response_code === "10100" || gatewayResponse.response_code === "10200";
+            return gatewayResponse.response_code === '10000' || gatewayResponse.response_code === '10100' || gatewayResponse.response_code === '10200';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions')) {
-            return gatewayResponse.actions[0].response_code === "10000" || gatewayResponse.actions[0].response_code === "10100" || gatewayResponse.actions[0].response_code === "10200";
+            return gatewayResponse.actions[0].response_code === '10000' || gatewayResponse.actions[0].response_code === '10100' || gatewayResponse.actions[0].response_code === '10200';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            return gatewayResponse.source.type === "sofort" || "bancontact" || "token";
+            return gatewayResponse.source.type === 'sofort' || 'bancontact' || 'token';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'reference')) {
             return gatewayResponse.reference === this.getOrderId();
         }
@@ -732,14 +744,12 @@ var ckoHelper = {
         }
 
         // Get the payment processor
-        var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+        var paymentProcessor = PaymentMgr.getPaymentMethod(args.PaymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
         // Add the payment processor to the metadata
         meta.payment_processor = paymentProcessor.getID();
 
         return meta;
-
     },
 
     /**
@@ -806,8 +816,7 @@ var ckoHelper = {
         }
 
         // Get the payment processor
-        var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+        var paymentProcessor = PaymentMgr.getPaymentMethod(args.PaymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
         // Add the payment processor to the metadata
         meta += 'payment_processor' + paymentProcessor.getID();

@@ -78,12 +78,12 @@ var ckoHelper = {
 
     /**
      * Converts gateway error message to a localized message
-     * @param {string} error_message from  auth request
+     * @param {string} message from  auth request
      * @returns {string} localized error message
      */
     errorMessage: function(message) {
         var msg = 'error.';
-        msg += message.replace(/[^A-Z0-9]+/ig, "_");
+        msg += message.replace(/[^A-Z0-9]+/ig, '_');
 
         return Resource.msg(msg, 'cko', null);
     },
@@ -141,33 +141,45 @@ var ckoHelper = {
     },
 
     /**
+     * Write gateway information to the website's info log file.
+     * @param {string} dataType The data type
+     * @param {Object} gatewayData The gateway data
+     */
+    infoLog: function(dataType, gatewayData) {
+        if (this.getValue('ckoDebugEnabled') === true) {
+            Logger.info(this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}', JSON.stringify(gatewayData));
+        }
+    },
+
+    /**
      * Remove sentitive data from the logs.
-     * @param {Object} rawData The log data
+     * @param {Object} data The log data
      * @returns {Object} The filtered data
      */
     removeSentisiveData: function(data) {
         if (data) {
             if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
-                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference'))
+                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference')) { //eslint-disable-next-line
                     data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*');
+                }
             }
             if (Object.prototype.hasOwnProperty.call(data, 'source_data')) {
-                data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
+                data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data); //eslint-disable-line
             }
             if (Object.prototype.hasOwnProperty.call(data, 'source')) {
-                data.source = sensitiveDataHelper.cleanSourceObject(data.source);
+                data.source = sensitiveDataHelper.cleanSourceObject(data.source); //eslint-disable-line
             }
 
             if (Object.prototype.hasOwnProperty.call(data, 'customer')) {
-                data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer);
+                data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer); //eslint-disable-line
             }
 
             if (Object.prototype.hasOwnProperty.call(data, 'shipping')) {
-                data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping);
+                data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping); //eslint-disable-line
             }
 
             if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) {
-                data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
+                data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address); //eslint-disable-line
             }
         }
 
@@ -216,7 +228,7 @@ var ckoHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
+        var str = this.getValue('ckoMode') === 'sandbox' ? 'Sandbox' : 'Live';
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
@@ -251,6 +263,7 @@ var ckoHelper = {
         // Call the service
         var resp = serv.call(requestData);
         if (resp.status !== 'OK') {
+            Logger.error(resp.errorMessage);
             return resp.error;
         }
 
@@ -445,9 +458,9 @@ var ckoHelper = {
         }
 
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-          if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && gatewayResponse.source.type === 'sofort') {
-            return true;
-          }
+            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && gatewayResponse.source.type === 'sofort') {
+                return true;
+            }
         }
 
         return false;
@@ -725,7 +738,7 @@ var ckoHelper = {
 
         // Get the capture time configured, or min time 0.5 minute if 0
         var configCaptureTime = this.getValue('ckoAutoCaptureTime');
-        var captureOnMin = configCaptureTime < 2 ? 2 : configCaptureTime;
+        var captureOnMin = configCaptureTime < 2 || configCaptureTime === 'undefined' ? 2 : configCaptureTime;
 
         // Convert the capture time from minutes to milliseconds
         var captureOnMs = now + (parseInt(captureOnMin) * 60000);
@@ -774,28 +787,27 @@ var ckoHelper = {
 
     /**
      * Returns true if card is a mada card
-     * @param {string} card number 
+     * @param {string} card number
      * @returns {boolean} card type
      */
     isMadaCard: function(card) {
-
         if (this.getValue('ckoMada')) {
             // First 6 card number
-            var cardNumber = card.slice(0,6);
+            var cardNumber = card.slice(0, 6);
             // First card number
             var firstNumber = card.charAt(0);
-            
-            switch(firstNumber) {
+
+            switch (firstNumber) {
                 case '4':
-                    return madaBins.four.some(function(element){ return element === cardNumber });
+                    return madaBins.four.some(function(element) { return element === cardNumber; });
                 case '5':
-                    return madaBins.five.some(function(element){ return element === cardNumber });
+                    return madaBins.five.some(function(element) { return element === cardNumber; });
                 case '6':
-                    return madaBins.six.some(function(element){ return element === cardNumber });
+                    return madaBins.six.some(function(element) { return element === cardNumber; });
                 case '9':
-                    return madaBins.nine.some(function(element){ return element === cardNumber });
+                    return madaBins.nine.some(function(element) { return element === cardNumber; });
                 default:
-                    return false
+                    return false;
             }
         } else {
             return false;
@@ -1003,7 +1015,7 @@ var ckoHelper = {
             postal_code: billingAddress.postalCode,
             city: billingAddress.city,
             phone: billingAddress.phone,
-            country: billingAddress.countryCode.value
+            country: billingAddress.countryCode.value,
         };
 
         return address;
