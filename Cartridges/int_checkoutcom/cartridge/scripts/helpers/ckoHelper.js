@@ -88,7 +88,7 @@ var ckoHelper = {
      * @returns {string} The field value
      */
     getValue: function(field) {
-        var customPref = Site.getCurrent().getCustomPreferenceValue(fieldName);
+        var customPref = Site.getCurrent().getCustomPreferenceValue(field);
 
         if(typeof(customPref) == 'object') {
             return customPref.value;
