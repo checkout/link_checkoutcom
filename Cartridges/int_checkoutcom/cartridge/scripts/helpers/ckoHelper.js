@@ -88,7 +88,13 @@ var ckoHelper = {
      * @returns {string} The field value
      */
     getValue: function(field) {
-        return Site.getCurrent().getCustomPreferenceValue(field);
+        var customPref = Site.getCurrent().getCustomPreferenceValue(fieldName);
+
+        if(typeof(customPref) == 'object') {
+            return customPref.value;
+        } else {
+            return customPref;
+        }
     },
 
     /**

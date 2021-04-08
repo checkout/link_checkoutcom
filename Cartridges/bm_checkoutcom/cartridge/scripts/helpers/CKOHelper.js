@@ -378,7 +378,14 @@ var CKOHelper = {
      * @returns {string} The configuration field value
      */
     getValue: function(fieldName) {
-        return Site.getCurrent().getCustomPreferenceValue(fieldName);
+        var customPref = Site.getCurrent().getCustomPreferenceValue(fieldName);
+
+        if(typeof(customPref) == 'object') {
+            return customPref.value;
+        } else {
+            return customPref;
+        }
+        
     },
 
     /**
