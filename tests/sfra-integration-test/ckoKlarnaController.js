@@ -1,14 +1,12 @@
-'use strict';
-
-const { assert } = require('chai');
+const {assert, expect} = require('chai');
 const Request = require('superagent');
 const config = require('../config');
 const Url = config.sfraUrl;
 
-describe('CKO Klarna Controller Tests', () => { //eslint-disable-line
-    context('Klarna Session', () => { //eslint-disable-line
-        const Path = 'CKOKlarna-KlarnaSession';
-        it('Should return a 500 response statusCode', () => { //eslint-disable-line
+describe('CKO Klarna Controller Tests', () => {
+    context('Klarna Session', () => {
+        const Path = "CKOKlarna-KlarnaSession";
+        it('Should return a 500 response statusCode', () => {
             return Request.get(Url + Path)
                 .set('content-type', 'applicaiton/json')
                 .end((data) => {

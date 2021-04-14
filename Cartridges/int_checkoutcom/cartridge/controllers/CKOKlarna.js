@@ -43,11 +43,12 @@ function klarnaSession() {
             requestObject
         );
 
+        // Store variables in session
+        gSession.requestObject = requestObject;
+        gSession.addressInfo = ckoHelper.getBasketAddress(basket);
+
         // Write the session
         if (gSession) {
-            // Store variables in session
-            gSession.requestObject = requestObject;
-            gSession.addressInfo = ckoHelper.getBasketAddress(basket);
             return ckoHelper.ckoResponse(gSession);
         }
     } else {

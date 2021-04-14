@@ -24,6 +24,7 @@ server.post('KlarnaSession', function(req, res, next) {
     var countryCode = basket.defaultShipment.shippingAddress.countryCode.valueOf();
     var parameterMap = req.httpParameterMap;
     var reqAddress = JSON.parse(parameterMap.parameterNames[0]);
+    // requestBodyAsString 
 
     if (Object.keys(basket).length !== 0) {
         // Prepare the variables

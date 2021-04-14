@@ -162,8 +162,9 @@ function klarnaAuthorize(sessionId, klarnaContainer, paymentMethod, address, req
                 $('#' + paymentMethod + '_rejected').hide();
 
                 // Save value to hidden klarna form
-                $('#dwfrm_klarnaForm_klarna__token').val(response.authorization_token);
-                $('#dwfrm_klarnaForm_klarna__approved').val(response.approved);
+                $('#dwfrm_alternativePaymentForm_klarna__token').val(response.authorization_token);
+                $('#dwfrm_alternativePaymentForm_klarna__approved').val(response.approved);
+                $('#dwfrm_alternativePaymentForm_klarna__finalize__required').val(response.finalize_required);
             }
 
             // Authorization not Successful
@@ -181,8 +182,9 @@ function klarnaAuthorize(sessionId, klarnaContainer, paymentMethod, address, req
                 $('#' + paymentMethod + '_aproved').hide();
 
                 // Save value to hidden klarna form
-                // $('#dwfrm_klarnaForm_klarna__token').val(response.authorization_token);
-                // $('#dwfrm_klarnaForm_klarna__approved').val(response.approved);
+                $('#dwfrm_alternativePaymentForm_klarna__token').val(response.authorization_token);
+                $('#dwfrm_alternativePaymentForm_klarna__approved').val(response.approved);
+                $('#dwfrm_alternativePaymentForm_klarna__finalize__required').val(response.finalize_required);
             }
         }
     );

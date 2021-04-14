@@ -8,5 +8,5 @@
 </div>
 
 <div class="cko-apm-panel">
-	<isinputfield formfield="${pdict.CurrentForms.idealForm.ideal_bic}" id="ideal_bic" type="text" dynamicname="true" />
+	<isinputfield formfield="${pdict.CurrentForms.alternativePaymentForm.ideal_bic}" id="ideal_bic" type="text" dynamicname="true" />
 </div>

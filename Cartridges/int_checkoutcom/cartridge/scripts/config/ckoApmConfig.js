@@ -5,11 +5,14 @@ var Site = require('dw/system/Site');
 var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
 
 // API Includes
-var app = require(SiteControllerName + '/cartridge/scripts/app');
 var OrderMgr = require('dw/order/OrderMgr');
+var app = require(SiteControllerName + '/cartridge/scripts/app');
 
 // Business Name
 var businessName = Site.getCurrent().getCustomPreferenceValue('ckoBusinessName');
+
+// Get apms form
+var paymentForm = app.getForm('alternativePaymentForm');
 
 // Utility
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -24,19 +27,17 @@ var ckoApmConfig = {
      * @returns {Object} The payment parameters
      */
     idealPayAuthorization: function(args) {
-        var form = app.getForm('idealForm');
         // building ideal pay object
         var payObject = {
             source: {
                 type: 'ideal',
-                bic: form.get('ideal_bic').value(),
+                bic: paymentForm.get('ideal_bic').value(),
                 description: args.OrderNo,
                 language: ckoHelper.getLanguage(),
             },
             purpose: businessName,
             currency: ckoHelper.getCurrency(args),
         };
-        form.clear();
 
         return payObject;
     },
@@ -47,7 +48,6 @@ var ckoApmConfig = {
      * @returns {Object} The payment parameters
      */
     boletoPayAuthorization: function(args) {
-        var form = app.getForm('boletoForm');
         // Building pay object
         var payObject = {
             source: {
@@ -57,13 +57,12 @@ var ckoApmConfig = {
                 payer: {
                     name: ckoHelper.getCustomerName(args),
                     email: ckoHelper.getCustomer(args).email,
-                    document: form.get('boleto_cpf').value(),
+                    document: paymentForm.get('boleto_cpf').value(),
                 },
             },
             purpose: businessName,
             currency: ckoHelper.getCurrency(args),
         };
-        form.clear();
 
         return payObject;
     },
@@ -189,7 +188,6 @@ var ckoApmConfig = {
      * @returns {Object} The payment parameters
      */
     qpayPayAuthorization: function(args) {
-        var form = app.getForm('qpayForm');
         // Building pay object
         var payObject = {
             source: {
@@ -197,12 +195,11 @@ var ckoApmConfig = {
                 description: businessName,
                 language: ckoHelper.getLanguage().substr(0, 2),
                 quantity: ckoHelper.getProductQuantity(args),
-                national_id: form.get('qpay_national_id').value(),
+                national_id: paymentForm.get('qpay_national_id').value(),
             },
             purpose: businessName,
             currency: ckoHelper.getCurrency(args),
         };
-        form.clear();
 
         return payObject;
     },
@@ -235,7 +232,6 @@ var ckoApmConfig = {
      * @returns {Object} The payment parameters
      */
     sepaPayAuthorization: function(args) {
-        var form = app.getForm('sepaForm');
         // Building pay object
         var payObject = {
             type: 'sepa',
@@ -243,12 +239,11 @@ var ckoApmConfig = {
             source_data: {
                 first_name: ckoHelper.getCustomerFirstName(args),
                 last_name: ckoHelper.getCustomerLastName(args),
-                account_iban: form.get('sepa_iban').value(),
+                account_iban: paymentForm.get('sepa_iban').value(),
                 billing_descriptor: businessName,
                 mandate_type: 'single',
             },
         };
-        form.clear();
 
         return payObject;
     },
@@ -317,29 +312,32 @@ var ckoApmConfig = {
      * @returns {Object} The payment parameters
      */
     klarnaPayAuthorization: function(args) {
-        var form = app.getForm('klarnaForm');
-
         // Gdt the order
         var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
 
-        // Build the payment object
-        var payObject = {
-            amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency(args)),
-            currency: ckoHelper.getCurrency(args),
-            capture: false,
-            source: {
-                type: 'klarna',
-                authorization_token: form.get('klarna_token').value(), // eslint-disable-line
-                locale: ckoHelper.getLanguage(),
-                purchase_country: ckoHelper.getBillingObject(args).country,
-                tax_amount: ckoHelper.getFormattedPrice(order.totalTax.value, ckoHelper.getCurrency(args)),
-                billing_address: ckoHelper.getOrderBasketAddress(args),
-                products: ckoHelper.getOrderBasketObject(args),
-            },
-        };
-        form.clear();
+        // Klarna form fields
+        var klarnaApproved = paymentForm.get('klarna_approved').value();
+        if (klarnaApproved) {
+            // Build the payment object
+            var payObject = {
+                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency(args)),
+                currency: ckoHelper.getCurrency(args),
+                capture: false,
+                source: {
+                    type: 'klarna',
+                    authorization_token: paymentForm.get('klarna_token').value(), // eslint-disable-line
+                    locale: ckoHelper.getLanguage(),
+                    purchase_country: ckoHelper.getBillingObject(args).country,
+                    tax_amount: ckoHelper.getFormattedPrice(order.totalTax.value, ckoHelper.getCurrency(args)),
+                    billing_address: ckoHelper.getOrderBasketAddress(args),
+                    products: ckoHelper.getOrderBasketObject(args),
+                },
+            };
 
-        return payObject;
+            return payObject;
+        }
+
+        return { success: false };
     },
 
     /**
@@ -366,7 +364,6 @@ var ckoApmConfig = {
      * @returns {Object} The payment parameters
      */
     oxxoPayAuthorization: function(args) {
-        var form = app.getForm('oxxoForm');
         // Build the payment object
         var payObject = {
             source: {
@@ -376,12 +373,11 @@ var ckoApmConfig = {
                 payer: {
                     name: ckoHelper.getCustomerName(args),
                     email: ckoHelper.getCustomer(args).email,
-                    document: form.get('oxxo_identification').value(),
+                    document: paymentForm.get('oxxo_identification').value(),
                 },
             },
             currency: ckoHelper.getCurrency(args),
         };
-        form.clear();
 
         return payObject;
     },
