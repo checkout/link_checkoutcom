@@ -18,6 +18,18 @@
         <password/>
     </service-credential>
 
+    <service-credential service-credential-id="cko.klarna_transaction.capture.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/klarna-external/orders/chargeId/captures</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.klarna_transaction.void.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/klarna-external/orders/chargeId/voids</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
     <service-credential service-credential-id="cko.card.charge.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments</url>
         <user-id/>
@@ -68,6 +80,18 @@
 
     <service-credential service-credential-id="cko.klarna.session.live.credential">
         <url>https://api.checkout.com/klarna/credit-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.klarna_transaction.capture.live.credential">
+        <url>https://api.checkout.com/klarna/orders/chargeId/captures</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.klarna_transaction.void.live.credential">
+        <url>https://api.checkout.com/klarna/orders/chargeId/voids</url>
         <user-id/>
         <password/>
     </service-credential>
@@ -190,6 +214,24 @@
         <credential-id>cko.klarna.session.sandbox.credential</credential-id>
     </service>
 
+    <service service-id="cko.klarna_transaction.capture.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.klarna_transaction.capture.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.klarna_transaction.void.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.klarna_transaction.void.sandbox.credential</credential-id>
+    </service>
+
     <service service-id="cko.verify.charges.sandbox.service">
         <service-type>HTTP</service-type>
         <enabled>true</enabled>
@@ -269,6 +311,24 @@
         <comm-log-enabled>false</comm-log-enabled>
         <profile-id>CheckoutCom</profile-id>
         <credential-id>cko.klarna.session.live.credential</credential-id>
+    </service>
+
+    <service service-id="cko.klarna_transaction.capture.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.klarna_transaction.capture.live.credential</credential-id>
+    </service>
+
+    <service service-id="cko.klarna_transaction.void.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.klarna_transaction.void.live.credential</credential-id>
     </service>
 
     <service service-id="cko.verify.charges.live.service">

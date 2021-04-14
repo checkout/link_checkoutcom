@@ -434,6 +434,53 @@ var CKOHelper = {
             return JSON.stringify(error);
         }
     },
+
+    /**
+     * Get product quantities from an order.
+     * @param {Object} args The method arguments
+     * @returns {Array} The list of quantities
+     */
+     getOrderBasketObject: function(order, currency) {
+        // Prepare some variables
+        var it = order.productLineItems.iterator();
+        var productsQuantites = [];
+
+        // Iterate through the products
+        while (it.hasNext()) {
+            var pli = it.next();
+            var productTaxRate = pli.taxRate * 100 * 100;
+            var productQuantity = pli.quantityValue;
+            var unitPrice = Math.round(this.getFormattedPrice(pli.adjustedGrossPrice.value.toFixed(2), currency) / productQuantity);
+            var totalAmount = this.getFormattedPrice(pli.adjustedGrossPrice.value, currency);
+            var products = {
+                name: pli.productName,
+                quantity: productQuantity.toString(),
+                unit_price: unitPrice.toString(),
+                tax_rate: productTaxRate.toString(),
+                total_amount: totalAmount.toString(),
+                total_tax_amount: this.getFormattedPrice(pli.adjustedTax.value, currency),
+            };
+
+            productsQuantites.push(products);
+        }
+
+        // Set the shipping variables
+        var shippingTaxRate = order.defaultShipment.standardShippingLineItem.getTaxRate() * 100 * 100;
+        var shipping = {
+            name: order.defaultShipment.shippingMethod.displayName + ' Shipping',
+            quantity: '1',
+            unit_price: this.getFormattedPrice(order.shippingTotalGrossPrice.value, currency),
+            tax_rate: shippingTaxRate.toString(),
+            total_amount: this.getFormattedPrice(order.shippingTotalGrossPrice.value, currency),
+            total_tax_amount: this.getFormattedPrice(order.shippingTotalTax.value, currency),
+        };
+
+        if (order.shippingTotalPrice.value > 0) {
+            productsQuantites.push(shipping);
+        }
+
+        return productsQuantites;
+    },
 };
 
 /*
