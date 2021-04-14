@@ -2,7 +2,7 @@
 
 require('base/checkout');
 
-$(document).ready(function() {
+$(document).ready(function () {
     if (window.dw &&
         window.dw.applepay &&
         window.ApplePaySession &&

@@ -26,7 +26,7 @@ var googlePayHelper = {
         // Prepare the parameters
         var requestData = {
             type: 'googlepay',
-            token_data: JSON.parse(ckoGooglePayData),
+            token_data: JSON.parse(ckoGooglePayData)
         };
 
         // Perform the request to the payment gateway
@@ -42,9 +42,9 @@ var googlePayHelper = {
                 amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
                 currency: ckoHelper.getCurrency(),
                 reference: args.OrderNo,
-                '3ds': {
-                    enabled: true,
-                    attempt_n3d: true,
+                "3ds": {
+                    "enabled": true,
+                    "attempt_n3d": true
                 },
                 capture: ckoHelper.getValue('ckoAutoCapture'),
                 capture_on: ckoHelper.getCaptureTime(),

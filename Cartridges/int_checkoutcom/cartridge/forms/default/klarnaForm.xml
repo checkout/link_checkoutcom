@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<form xmlns="http://www.demandware.com/xml/form/2008-04-19">
-
-	<!-- Checkout.com payment options -->
-    
-    <!-- Field for Klarna pay -->
-    <field formid="klarna_token" type="string" max-length="40" binding="klarna_token"/>
-    <field formid="klarna_approved" type="string" max-length="40" binding="klarna_approved"/>
-</form>
