@@ -49,9 +49,9 @@ var googlePayHelper = {
                     token: tokenResponse.token,
                 },
                 amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
-                '3ds': {
-                    enabled: true,
-                    attempt_n3d: true,
+                "3ds": {
+                    "enabled": true,
+                    "attempt_n3d": true
                 },
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,

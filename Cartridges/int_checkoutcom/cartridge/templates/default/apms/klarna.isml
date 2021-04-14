@@ -24,9 +24,11 @@
 			<button id='klarnaConfirmBtn' type='button'>${Resource.msg('cko.klarna.confirmation','cko',null)}</button>
 		</div>
 		<!-- field for Klarna token -->
-		<isinputfield type="hidden" formfield="${pdict.CurrentForms.klarnaForm.klarna_token}" />
+		<isinputfield type="hidden" formfield="${pdict.CurrentForms.alternativePaymentForm.klarna_token}" />
 		<!-- field for Klarna approved -->
-		<isinputfield type="hidden" formfield="${pdict.CurrentForms.klarnaForm.klarna_approved}" />
+		<isinputfield type="hidden" formfield="${pdict.CurrentForms.alternativePaymentForm.klarna_approved}" />
+		<!-- field for Klarna finalize required -->
+		<isinputfield type="hidden" formfield="${pdict.CurrentForms.alternativePaymentForm.klarna_finalize_required}" />
 	</div>
 	
 </div>

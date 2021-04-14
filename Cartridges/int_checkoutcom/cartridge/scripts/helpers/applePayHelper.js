@@ -14,9 +14,7 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var applePayHelper = {
     /**
      * Handle full charge Request to CKO API
-     * @param {Object} paymentData The request arguments
-     * @param {Object} processorId The request arguments
-     * @param {Object} orderNumber The request arguments
+     * @param {Object} args The request arguments
      * @returns {Object} The gateway response
      */
     handleRequest: function(paymentData, processorId, orderNumber) {
@@ -46,8 +44,8 @@ var applePayHelper = {
         // If the request is valid, process the response
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
             var args = {
-                OrderNo: orderNumber,
-            };
+                OrderNo: orderNumber
+            }
             gatewayRequest = {
                 source: {
                     type: 'token',
@@ -61,7 +59,7 @@ var applePayHelper = {
                 customer: ckoHelper.getCustomer(args),
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
                 shipping: ckoHelper.getShippingObject(args),
-                metadata: ckoHelper.getApplePayMetadata({}, processorId),
+                metadata: ckoHelper.getApplePayMetadata({}, processorId)
             };
 
             // Log the payment request data
@@ -78,16 +76,15 @@ var applePayHelper = {
         ckoHelper.log(processorId + ' ' + ckoHelper._('cko.response.data', 'cko'), gatewayRequest);
 
         // Process the response
-        return this.handleResponse(gatewayResponse, order);
+        return this.handleResponse(gatewayResponse);
     },
 
     /**
      * Handle the payment response.
      * @param {Object} gatewayResponse The gateway response data
-     * @param {Object} order The order object
-     * @returns {boolean} The payment success or failure
+     * @returns {Object} The payment success or failure
      */
-    handleResponse: function(gatewayResponse, order) {
+    handleResponse: function(gatewayResponse) {
         // Prepare the result
         var result = ckoHelper.paymentSuccess(gatewayResponse);
 

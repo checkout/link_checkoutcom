@@ -8,9 +8,10 @@ var Logger = require('dw/system/Logger');
 /** Utility **/
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
-exports.authorizeOrderPayment = function(order, event) {
+exports.authorizeOrderPayment = function (order, event) {
+
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
-    && event.isTrusted === true
+    && event.isTrusted === true 
     && order;
 
     if (condition) {
@@ -37,15 +38,17 @@ exports.authorizeOrderPayment = function(order, event) {
             );
 
             if (result.error) {
-                throw new Error({ message: 'Payment Authorization error' });
-            } else {
-                order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
+                throw new Error({message: 'Payment Authorization error'});
             }
+
+            order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
+            return new Status(Status.OK);
+
         } catch (e) {
             order.addNote('Payment Authorization Request:', e.message);
             return new Status(Status.ERROR);
         }
     }
 
-    return new Status(Status.OK);
+    return new Status(Status.ERROR);
 };

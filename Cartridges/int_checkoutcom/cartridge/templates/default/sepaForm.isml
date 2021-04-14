@@ -1,4 +1,4 @@
-<!--- TEMPLATENAME: SepaMandateform.isml --->
+<!--- TEMPLATENAME: Sepaform.isml --->
 <style>
 	@import url("${URLUtils.staticURL('/css/sepa.css')}");
 </style>
@@ -61,7 +61,7 @@
 	 		</div>
 	 		
 	 		<div class="cko-sepa-tandc">
-					<isinputfield formfield="${pdict.CurrentForms.sepaMandateForm.mandate}" type="checkbox"/>
+					<isinputfield formfield="${pdict.CurrentForms.sepaForm.mandate}" type="checkbox"/>
 					${Resource.msg('cko.sepa.tandc','cko',null)}
 	 		
 	 		</div>
@@ -79,8 +79,8 @@
 
 	<div class="cko-sepa-button-container">
 		<fieldset class="cko-button-group">
-			<button type="submit" name="${pdict.CurrentForms.sepaMandateForm.submit.htmlName}" value="submit" class="cko-sepa-submit-btn">${Resource.msg('cko.sepa.paynow','cko',null)}</button>
-			<button type="cancel" name="${pdict.CurrentForms.sepaMandateForm.cancel.htmlName}" value="submit" class="cko-sepa-cancel-btn">${Resource.msg('cko.sepa.cancel','cko',null)}</button>
+			<button type="submit" name="${pdict.CurrentForms.sepaForm.submit.htmlName}" value="submit" class="cko-sepa-submit-btn">${Resource.msg('cko.sepa.paynow','cko',null)}</button>
+			<button type="cancel" name="${pdict.CurrentForms.sepaForm.cancel.htmlName}" value="submit" class="cko-sepa-cancel-btn">${Resource.msg('cko.sepa.cancel','cko',null)}</button>
 		</fieldset>
 	</div>
 </form>

@@ -5,10 +5,12 @@ var PaymentInstrument = require('dw/order/PaymentInstrument');
 var PaymentMgr = require('dw/order/PaymentMgr');
 var Resource = require('dw/web/Resource');
 var Transaction = require('dw/system/Transaction');
+var OrderMgr = require('dw/order/OrderMgr');
 
 /** CKO Util */
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
+var Site = require('dw/system/Site');
 
 /**
  * Verifies that the payment data is valid.
@@ -19,17 +21,21 @@ var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
  * @returns {Object} The form validation result
  */
 function Handle(basket, paymentInformation, paymentMethodID, req) {
+
     var currentBasket = basket;
     var googleErrors = {};
+    var fieldErrors = {};
     var serverErrors = [];
 
     // Validate payment instrument
-    if (paymentMethodID) {
+    if (paymentMethodID) { 
         var paymentMethod = PaymentMgr.getPaymentMethod(paymentMethodID);
 
         if (!paymentMethod) {
             // Invalid Payment Method
-            return { fieldErrors: [], serverErrors: [Resource.msg('error.payment.not.valid', 'checkout', null)], error: true };
+            var invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
+            
+            return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
         }
     } else {
         // Invalid Payment Type
@@ -38,13 +44,13 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
     }
 
-    Transaction.wrap(function() {
+    Transaction.wrap(function () {
         var paymentInstruments = currentBasket.getPaymentInstruments(
             paymentMethodID
         );
 
         // Remove any google payment instruments
-        collections.forEach(paymentInstruments, function(item) {
+        collections.forEach(paymentInstruments, function (item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -53,7 +59,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         );
 
         // Remove any credit card payment instuments
-        collections.forEach(paymentInstruments, function(item) {
+        collections.forEach(paymentInstruments, function (item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -65,6 +71,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
     });
 
     return { fieldErrors: googleErrors, serverErrors: serverErrors, error: false };
+
 }
 
 /**
@@ -77,15 +84,16 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
  * @return {Object} returns an error object
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
+
     var serverErrors = [];
     var fieldErrors = {};
     var error = false;
     var formData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
 
-    Transaction.wrap(function() {
+    Transaction.wrap(function () {
         paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
         paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.custom.ckoPaymentData = ''; //eslint-disable-line
+        paymentInstrument.custom.ckoPaymentData = "";
     });
 
     try {
@@ -98,17 +106,42 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             } else {
                 throw new Error(ckoHelper.getPaymentFailureMessage());
             }
+            
         }
 
         return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
+
     } catch (e) {
         error = true;
         serverErrors.push(
             e.message
         );
-
         return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: false };
     }
+
+    // var serverErrors = [];
+    // var fieldErrors = {};
+
+    // // Payment request
+    // var result = googlePayHelper.handleRequest(
+    //     billingForm.googlePayForm.ckoGooglePayData.htmlValue,
+    //     processorId,
+    //     orderNumber
+    // );
+
+    // // Handle errors
+    // if (result.error) {
+    //     serverErrors.push(
+    //         ckoHelper.getPaymentFailureMessage()
+    //     );
+    // }
+
+    // return {
+    //     fieldErrors: fieldErrors,
+    //     serverErrors: serverErrors,
+    //     error: result.error,
+    //     redirectUrl: result.redirectUrl,
+    // };
 }
 
 exports.Handle = Handle;

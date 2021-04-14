@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Launch Google Pay
     jQuery('.google-pay-tab').on('click touch', function() {
         var ckoGooglePayController = jQuery('[id="ckoGooglePayController"]').val();
+        console.log(ckoGooglePayController);
         resetFormErrors();
 
         const baseRequest = {
@@ -77,36 +78,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     paymentsClient.isReadyToPay(isReadyToPayRequest)
                     .then(function(response) {
                         if (response.result) {
+                            // add a Google Pay payment button
 
-                            var button = jQuery('.gpay-button');
+                            const button = paymentsClient.createButton({onClick: () => {
 
-                            if (button.length < 1) {
+                                paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData){
+                                    // if using gateway tokenization, pass this token without modification
+                                    var paymentToken = paymentData.paymentMethodData.tokenizationData.token;
+                                    // Prepare the payload
+                                    var payload = {
+                                        signature: JSON.parse(paymentToken).signature,
+                                        protocolVersion: JSON.parse(paymentToken).protocolVersion,
+                                        signedMessage: JSON.parse(paymentToken).signedMessage,
+                                    };
 
-                                // add a Google Pay payment button
-                                button = paymentsClient.createButton({onClick: () => {
+                                    // Store the payload
+                                    jQuery('input[name$="dwfrm_billing_googlePayForm_ckoGooglePayData"]').val(JSON.stringify(payload));
+                                    jQuery('.gpay-button').hide();
+                                  }).catch(function(err){
+                                    // show error in developer console for debugging
+                                    console.error(err);
+                                  });
 
-                                    paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData){
-                                        // if using gateway tokenization, pass this token without modification
-                                        var paymentToken = paymentData.paymentMethodData.tokenizationData.token;
-                                        // Prepare the payload
-                                        var payload = {
-                                            signature: JSON.parse(paymentToken).signature,
-                                            protocolVersion: JSON.parse(paymentToken).protocolVersion,
-                                            signedMessage: JSON.parse(paymentToken).signedMessage,
-                                        };
-
-                                        // Store the payload
-                                        jQuery('input[name$="dwfrm_billing_googlePayForm_ckoGooglePayData"]').val(JSON.stringify(payload));
-                                        jQuery('.gpay-button').hide();
-                                    }).catch(function(err){
-                                        // show error in developer console for debugging
-                                        console.error(err);
-                                    });
-
-                                }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
-                                jQuery('#googlePayForm').append(button);
-
-                            }
+                            }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
+                            jQuery('#googlePayForm').append(button);
                         }
                     })
                     .catch(function(err) {

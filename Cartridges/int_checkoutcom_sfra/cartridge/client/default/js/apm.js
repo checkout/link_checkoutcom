@@ -5,12 +5,19 @@ var validations = {
     sepa: require('./apm/sepa.js'),
     ideal: require('./apm/ideal.js'),
     boleto: require('./apm/boleto.js'),
-    qpay: require('./apm/qpay.js'),
-};
+    qpay: require('./apm/qpay.js')
+}
 
 /**
+ * jQuery APM helpers and initialise accordion on DOM ready.
+ */
+$(function() {
+    initApmAccordion();
+    processInclude(require('./apm/klarna'));
+});
+
+/*
  * Set APM Forms
- * @return {void} no return value
  */
 function initApmAccordion() {
     // List item radio click action
@@ -61,29 +68,24 @@ function initApmAccordion() {
     });
 }
 
-/**
- * jQuery APM helpers and initialise accordion on DOM ready.
- */
-$(function() {
-    initApmAccordion();
-    processInclude(require('./apm/klarna'));
-});
-
 // Submit event
 $('button.submit-payment').off('click touch').on('click touch', function(e) {
     if ($('input[name="dwfrm_billing_paymentMethod"]').val() === 'CHECKOUTCOM_APM') {
         // Remove all previous errors
         $('.apm-list-item .is-invalid').removeClass('is-invalid');
         $('.apm-list-item .invalid-field-message').hide();
-
+        
         // Errors count
         var errors = [];
 
         // Get the APM container id
         var apmId = $('.cko-apm-active').parents('.apm-list-item').attr('id');
 
+        // Build the form validation function name
+        var func = apmId + 'FormValidation';
+
         // Run the form validation
-        if (apmId !== 'klarna') {
+        if(apmId != 'klarna') {
             errors = validations[apmId].formValidation();
         }
 
@@ -133,7 +135,7 @@ module.exports = {
 
                 // Display only the allowed APM for the user
                 var dataArray = apmList.ckoApmFilterConfig;
-                for (var item in dataArray) { //eslint-disable-line
+                for (var item in dataArray) {
                     var condition1 = dataArray[item].countries.includes(userData.country.toUpperCase());
                     var condition2 = dataArray[item].countries.includes('*');
                     var condition3 = dataArray[item].currencies.includes(userData.currency);
@@ -146,5 +148,5 @@ module.exports = {
 
         xhttpFilter.open('GET', controllerUrl, true);
         xhttpFilter.send();
-    },
-};
+    }
+}

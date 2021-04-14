@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<form xmlns="http://www.demandware.com/xml/form/2008-04-19">
-
-	<!-- Checkout.com payment options -->
-    
-    <!-- Field for Qpay pay -->
-    <field formid="qpay_national_id" type="string" mandatory="true" label="qpay.label.id" max-length="40" binding="qpay_national_id"/>
-    
-</form>
