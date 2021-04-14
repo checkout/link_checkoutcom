@@ -289,7 +289,7 @@
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
+                <default-value>Test1</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBillingDescriptor2">
                 <display-name xml:lang="x-default">Billing Descriptor 2</display-name>
@@ -298,7 +298,7 @@
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
+                <default-value>Test2</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBusinessName">
                 <display-name xml:lang="x-default">Buisness Name</display-name>
@@ -307,7 +307,6 @@
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBusinessAddressLine1">
                 <display-name xml:lang="x-default">Buisness Address 1</display-name>
@@ -316,7 +315,6 @@
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBusinessAddressLine2">
                 <display-name xml:lang="x-default">Buisness Address 2</display-name>
@@ -325,7 +323,6 @@
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBusinessCity">
                 <display-name xml:lang="x-default">City</display-name>
@@ -334,7 +331,6 @@
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBusinessCountry">
                 <display-name xml:lang="x-default">Country</display-name>
@@ -343,7 +339,6 @@
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value></default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoMode">
                 <display-name xml:lang="x-default">Mode</display-name>
@@ -371,7 +366,7 @@
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
-                <default-value>sitegenesis_storefront_core</default-value>
+                <default-value>demo_core</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSgStorefrontControllers">
                 <display-name xml:lang="x-default">Site Genesis Storefront Controllers</display-name>
@@ -380,7 +375,7 @@
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
-                <default-value>sitegenesis_storefront_controllers</default-value>
+                <default-value>demo_controllers</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSfraStorefrontBase">
                 <display-name xml:lang="x-default">SFRA Storefront Base</display-name>
