@@ -234,7 +234,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = hook.data.metadata.payment_processor;
+        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
 
         // Get the  transaction amount
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
