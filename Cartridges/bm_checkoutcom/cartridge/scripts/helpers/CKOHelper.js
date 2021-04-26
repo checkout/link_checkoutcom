@@ -52,7 +52,7 @@ var CKOHelper = {
         var query = this.parseQuery(request.httpQueryString);
         var page = query.page,
             pagination = query.size,
-            start = 1 + (page - 1) * pagination;
+            start = (page - 1) * pagination;
 
 
         // Query the orders
