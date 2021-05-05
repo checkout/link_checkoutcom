@@ -83,8 +83,8 @@ var CKOHelper = {
                     var row = {
                         id: i,
                         order_no: result[j].orderNo,
-                        transaction_id: paymentTransaction.transactionID,
-                        payment_id: paymentTransaction.custom.ckoPaymentId,
+                        transaction_id: paymentTransaction.custom.ckoActionId || paymentTransaction.custom.ckoPaymentId,
+                        payment_id: paymentTransaction.transactionID,
                         opened: paymentTransaction.custom.ckoTransactionOpened,
                         amount: paymentTransaction.amount.value,
                         currency: paymentTransaction.amount.currencyCode,
@@ -124,7 +124,7 @@ var CKOHelper = {
 
         // Loop through the payment instruments
         // eslint-disable-next-line
-        for (var i = 0; i < paymentInstruments.length; i++) {
+        for (var i = 0; i < paymentInstruments.length; i++) {0
             // Get the payment transaction
             var paymentTransaction = paymentInstruments[i].getPaymentTransaction();
 
@@ -145,7 +145,7 @@ var CKOHelper = {
     },
 
     /**
-     * Checks if a transaction should be returned in the reaults.
+     * Checks if a transaction should be returned in the results.
      * @param {Object} paymentTransaction The paymentTransaction object
      * @param {Object} paymentInstrument The paymentInstrument object
      * @returns {boolean} The status of the current transaction
@@ -153,13 +153,13 @@ var CKOHelper = {
     isTransactionNeeded: function(paymentTransaction, paymentInstrument) {
         // Get an optional transaction id
         // eslint-disable-next-line
-        var tid = request.httpParameterMap.get('tid').stringValue;
+        var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (tid && paymentTransaction.transactionID === tid) || !tid;
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
         var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition3 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
-        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition4 = (paymentTransaction.custom.ckoActionId && paymentTransaction.custom.ckoActionId  != '') || (paymentTransaction.custom.ckoPaymentId && paymentTransaction.custom.ckoPaymentId != '');
 
         if (condition1 && condition2 && condition3 && condition4) {
             return true;
