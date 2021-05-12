@@ -24,6 +24,41 @@ function Handle(args) {
     // Proceed with transaction
     var cart = Cart.get(args.Basket);
     var paymentMethod = args.PaymentMethodID;
+    var apmForm = paymentMethod.toLowerCase() + 'Form';
+    
+    // Get apms form
+    var paymentForm = app.getForm(apmForm).object;
+    args.paymentInformation = {};
+
+    // If this apm have a form
+    if (paymentForm) {
+        args.paymentInformation = {};
+        Object.keys(paymentForm).forEach(function(key) {
+            var type = typeof paymentForm[key];
+            if (type === 'object' && paymentForm[key] != null) {
+                args.paymentInformation[key] = {
+                    value: paymentForm[key].htmlValue,
+                    htmlName: paymentForm[key].htmlName,
+                };
+            }
+        });
+
+    }
+
+    // Validate form value
+    if (args.paymentInformation) {
+        var error = false;
+        Object.keys(args.paymentInformation).forEach(function(key) {
+            var currentElement = args.paymentInformation[key];
+            if (currentElement.value === '') {
+                error = true;
+            }
+        });
+
+        if (error) {
+            return { error: true }
+        }
+    }
 
     // Proceed with transact
     Transaction.wrap(function() {

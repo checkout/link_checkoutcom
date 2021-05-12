@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<form xmlns="http://www.demandware.com/xml/form/2008-04-19">
+
+	<!-- Checkout.com payment options -->
+    
+    <!-- Field for Ali pay -->
+    <field formid="alipay_identification" type="string" label="alipay.label.id" max-length="40" binding="alipay_identification"/>
+</form>

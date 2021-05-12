@@ -10,3 +10,7 @@
         <img alt="${Resource.msg('cko.alipay.name','cko',null)}" id="alipay_thumb" class="image imageright" src="${URLUtils.staticURL('/images/apm-icons/alipay.jpg')}"/>
     </div>
 </div>
+
+<div class="cko-apm-panel">
+	<isinputfield formfield="${pdict.CurrentForms.alipayForm.alipay_identification}" id="alipay_identification" type="text" dynamicname="true" />
+</div>
