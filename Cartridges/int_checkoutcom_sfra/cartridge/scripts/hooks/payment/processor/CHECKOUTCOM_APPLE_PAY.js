@@ -39,10 +39,9 @@ exports.authorizeOrderPayment = function (order, event) {
 
             if (result.error) {
                 throw new Error({message: 'Payment Authorization error'});
+            } else {
+                order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
             }
-
-            order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
-            return new Status(Status.OK);
 
         } catch (e) {
             order.addNote('Payment Authorization Request:', e.message);
@@ -50,5 +49,5 @@ exports.authorizeOrderPayment = function (order, event) {
         }
     }
 
-    return new Status(Status.ERROR);
+    return new Status(Status.OK);
 };
