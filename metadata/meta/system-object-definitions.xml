@@ -298,7 +298,7 @@
                 <mandatory-flag>false</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>3</min-length>
-                <default-value>Test2</default-value>
+                <default-value>London</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBusinessName">
                 <display-name xml:lang="x-default">Buisness Name</display-name>
