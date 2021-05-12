@@ -57,11 +57,13 @@ var eventsHelper = {
     addWebhookInfo: function(hook, paymentStatus, orderStatus) {
         // Load the order
         var order = OrderMgr.getOrder(hook.data.reference);
+        var flagged = hook.data.risk ? hook.data.risk.flagged : false;
+
         if (order) {
             // Prepare the webhook info
             var details = '';
             
-            if (Object.prototype.hasOwnProperty(hook.data, 'risk' ) && Object.prototype.hasOwnProperty(hook.data.risk, 'flagged')) {
+            if (flagged) {
                 details += ckoHelper._('cko.webhook.flagged', 'cko') + '\n';
                 details += ckoHelper._('cko.response.summary', 'cko') + ': ' + hook.data.response_summary + '\n';
                 order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
