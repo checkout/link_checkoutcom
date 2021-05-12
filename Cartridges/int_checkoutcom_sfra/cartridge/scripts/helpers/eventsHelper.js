@@ -261,6 +261,15 @@ var eventsHelper = {
     },
 
     /**
+     * Void Payment
+     * @param {Object} hook The gateway webhook data 
+     */
+     paymentCanceled: function(hook) {
+        // Utilize payment void method
+        this.paymentVoided(hook);
+    },
+    
+    /**
      * Payment pending event.
      * @param {Object} hook The gateway webhook data
      */

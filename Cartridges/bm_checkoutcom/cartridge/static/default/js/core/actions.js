@@ -1,4 +1,4 @@
-'use strict';
+ 'use strict';
 
 /**
  * jQuery Ajax helpers on DOM ready.
@@ -154,6 +154,9 @@ function performAction(task) {
     // Prepare the action URL
     var actionUrl = jQuery('[id="actionControllerUrl"]').val();
 
+    // Set order number
+    var order = jQuery('[id="' + task + '_order_no"]').text();
+
     // Set the transaction id
     var paymentId = jQuery('[id="' + task + '_payment_id"]').text();
 
@@ -168,7 +171,8 @@ function performAction(task) {
         pid: paymentId,
         task: task,
         amount: amount,
-        currency: currency
+        currency: currency,
+        orderNo: order
     };
 
     // Send the AJAX request
