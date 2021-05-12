@@ -415,7 +415,7 @@ function validatePayment(req, currentBasket) {
     // Get coutrycode from currentBasket
     // Else get countrycode from Request Geolocation
     var ckoMode = ckoHelper.getValue('ckoMode');
-    if (ckoMode.value === 'sandbox') {
+    if (ckoMode === 'sandbox') {
         countryCode = currentBasket.billingAddress.countryCode.value;
     }
 
