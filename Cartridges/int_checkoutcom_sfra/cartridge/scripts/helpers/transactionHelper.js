@@ -48,9 +48,9 @@ var transactionHelper = {
 
             // Create the authorization transaction
             paymentInstrument.paymentTransaction.setAmount(transactionAmount);
-            paymentInstrument.paymentTransaction.transactionID = hook.data.action_id;
+            paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.paymentTransaction.custom.ckoPaymentId = hook.data.id;
+            paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
             paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
             paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Authorization';
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH);
@@ -113,7 +113,7 @@ var transactionHelper = {
                 var paymentTransaction = paymentInstruments[j].getPaymentTransaction();
 
                 // Prepare the filter condition
-                var isIdMatch = paymentTransaction.transactionID === transactionId;
+                var isIdMatch = paymentTransaction.custom.ckoActionId === transactionId;
 
                 // Add the payment transaction to the output
                 if (isIdMatch) {
