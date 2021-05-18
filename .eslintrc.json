@@ -7,11 +7,7 @@
     "env": {
         "browser": true,
         "node": true,
-		"jquery": true,
-        "es6": true
-    },
-    "parserOptions": {
-        "ecmaVersion": 2017
+		"jquery": true
     },
     "rules": {
         "import/no-unresolved": "off",

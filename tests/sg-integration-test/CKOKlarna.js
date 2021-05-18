@@ -1,13 +1,11 @@
-'use strict';
-
 const request = require('request-promise');
-const { expect } = require('chai');
+const { assert, expect } = require('chai');
 const config = require('../config');
 const Url = config.sgUrl;
 
-describe('CKO Klarna Controller Test', function() { //eslint-disable-line
+describe('CKO Klarna Controller Test', function() {
     this.timeout(25000);
-    beforeEach(function() { //eslint-disable-line
+    beforeEach(function() {
         // ...some logic before each test is run
     });
     var options = {
@@ -15,18 +13,20 @@ describe('CKO Klarna Controller Test', function() { //eslint-disable-line
         uri: '',
         json: true,
         headers: {
-            'User-Agent': 'Request-Promise',
-        },
+            'User-Agent': 'Request-Promise'
+        }
     };
-    context('CKO Klarna Session', function() { //eslint-disable-line
-        const path = 'CKOKlarna-KlarnaSession';
-        it('CKOKlarna-KlarnaSession should return a string that includes: Basket Not Found', function() { //eslint-disable-line
+    context('CKO Klarna Session', function() {
+        const path = "CKOKlarna-KlarnaSession";
+        it('CKOKlarna-KlarnaSession should return a string that includes: Basket Not Found', function() {
             options.uri = Url + path;
             options.method = 'GET';
             return request(options)
-                .then(function(response) {
+                .then(function (response) {
                     expect(response).to.be.a('string').that.include('Basket Not Found');
                 });
         });
+
+
     });
 });

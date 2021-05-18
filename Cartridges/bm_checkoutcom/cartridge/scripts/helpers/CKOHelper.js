@@ -19,19 +19,6 @@ var totalPages;
  */
 var CKOHelper = {
     /**
-     * CKO Response object.
-     * @param {Object} data Format a gateway response
-     * @returns {string} The response JSON string
-     */
-    ckoResponse: function(data) {
-        response.setBuffered(false); // eslint-disable-line
-        response.setContentType('text/plain'); // eslint-disable-line
-        var out = response.writer; // eslint-disable-line
-
-        return out.println(JSON.stringify(data)); // eslint-disable-line
-    },
-
-    /**
      * Handles string translation with language resource files.
      * @param {string} strValue The strin to translate
      * @param {string} strFile The translation file
@@ -80,30 +67,36 @@ var CKOHelper = {
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
             var k = paymentInstruments.length - 1;
                 // Get the payment transaction
-            var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
-            // Add the payment transaction to the output
-            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
-                // Build the row data
-                var row = {
-                    id: i,
-                    order_no: result[j].orderNo,
-                    transaction_id: paymentTransaction.transactionID,
-                    payment_id: paymentTransaction.custom.ckoPaymentId,
-                    opened: paymentTransaction.custom.ckoTransactionOpened,
-                    amount: paymentTransaction.amount.value,
-                    currency: paymentTransaction.amount.currencyCode,
-                    creation_date: paymentTransaction.getCreationDate().toDateString(),
-                    type: paymentTransaction.type.displayValue,
-                    processor: this.getProcessorId(paymentInstruments[k]),
-                    refundable_amount: 0,
-                    data_type: paymentTransaction.type.toString(),
-                };
+                var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
 
-                // Calculate the refundable amount
-                var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
-                var condition2 = row.opened !== false;
-                if (condition1 && condition2) {
-                    row.refundable_amount = this.getRefundableAmount(paymentInstruments);
+                // Add the payment transaction to the output
+                if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
+                    // Build the row data
+                    var row = {
+                        id: i,
+                        order_no: result[j].orderNo,
+                        transaction_id: paymentTransaction.custom.ckoActionId || paymentTransaction.custom.ckoPaymentId,
+                        payment_id: paymentTransaction.transactionID,
+                        opened: paymentTransaction.custom.ckoTransactionOpened,
+                        amount: paymentTransaction.amount.value,
+                        currency: paymentTransaction.amount.currencyCode,
+                        creation_date: paymentTransaction.getCreationDate().toDateString(),
+                        type: paymentTransaction.type.displayValue,
+                        processor: this.getProcessorId(paymentInstruments[k]),
+                        refundable_amount: 0,
+                        data_type: paymentTransaction.type.toString(),
+                    };
+
+                    // Calculate the refundable amount
+                    var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
+                    var condition2 = row.opened !== false;
+                    if (condition1 && condition2) {
+                        row.refundable_amount = this.getRefundableAmount(paymentInstruments);
+                    }
+
+                    // Add the transaction
+                    data.push(row);
+                    i++;
                 }
 
                 // Add the transaction
@@ -144,7 +137,7 @@ var CKOHelper = {
 
         // Loop through the payment instruments
         // eslint-disable-next-line
-        for (var i = 0; i < paymentInstruments.length; i++) {
+        for (var i = 0; i < paymentInstruments.length; i++) {0
             // Get the payment transaction
             var paymentTransaction = paymentInstruments[i].getPaymentTransaction();
 
@@ -165,7 +158,7 @@ var CKOHelper = {
     },
 
     /**
-     * Checks if a transaction should be returned in the reaults.
+     * Checks if a transaction should be returned in the results.
      * @param {Object} paymentTransaction The paymentTransaction object
      * @param {Object} paymentInstrument The paymentInstrument object
      * @returns {boolean} The status of the current transaction
@@ -173,13 +166,13 @@ var CKOHelper = {
     isTransactionNeeded: function(paymentTransaction, paymentInstrument) {
         // Get an optional transaction id
         // eslint-disable-next-line
-        var tid = request.httpParameterMap.get('tid').stringValue;
+        var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (tid && paymentTransaction.transactionID === tid) || !tid;
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
         var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition3 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
-        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition4 = (paymentTransaction.custom.ckoActionId && paymentTransaction.custom.ckoActionId  != '') || (paymentTransaction.custom.ckoPaymentId && paymentTransaction.custom.ckoPaymentId != '');
 
         if (condition1 && condition2 && condition3 && condition4) {
             return true;
@@ -334,7 +327,6 @@ var CKOHelper = {
     /**
      * Returns a price formatted for processing by the gateway.
      * @param {number} amount The amount to format
-     * @param {string} currency The currency value
      * @returns {number} The formatted amount
      */
     getFormattedPrice: function(amount, currency) {
@@ -342,12 +334,12 @@ var CKOHelper = {
         if (currency) {
             var ckoFormateBy = this.getCkoFormatedValue(currency);
             totalFormated = amount * ckoFormateBy;
-
+    
+            return totalFormated.toFixed();
+        } else {
+            totalFormated = amount * 100;
             return totalFormated.toFixed();
         }
-
-        totalFormated = amount * 100;
-        return totalFormated.toFixed();
     },
 
     /**
@@ -394,7 +386,7 @@ var CKOHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'sandbox' ? 'Sandbox' : 'Live';
+        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
@@ -426,9 +418,11 @@ var CKOHelper = {
                     }
                 }
             });
-            return { error: false, message: 'properties saved successfully' };
+            var message = {error: false, message: 'properties saved successfully'};
+            return message;
         } catch (e) {
-            return { error: true, message: e.message };
+            var message = { error: true, message: e.message };
+            return message;
         }
     },
 
@@ -463,11 +457,10 @@ var CKOHelper = {
 
     /**
      * Get product quantities from an order.
-     * @param {Object} order The current order
-     * @param {string} currency code value
+     * @param {Object} args The method arguments
      * @returns {Array} The list of quantities
      */
-    getOrderBasketObject: function(order, currency) {
+     getOrderBasketObject: function(order, currency) {
         // Prepare some variables
         var it = order.productLineItems.iterator();
         var productsQuantites = [];
@@ -508,7 +501,6 @@ var CKOHelper = {
 
         return productsQuantites;
     },
-
 };
 
 /*

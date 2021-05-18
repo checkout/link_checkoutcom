@@ -37,10 +37,10 @@ function saveCkoCustomPropertie() {
     } catch (e) {
         result = e.message;
         Transaction.rollback();
-        CKOHelper.ckoResponse(result);
+        response.getWriter().println(result);
     }
     Transaction.commit();
-    CKOHelper.ckoResponse(result);
+    response.getWriter().println(result);
 }
 
 /**
@@ -49,7 +49,7 @@ function saveCkoCustomPropertie() {
 function getCkoCustomPropertie() {
     var ckoCustomObjects = CKOHelper.getCkoCustomProperties(requestObject);
 	// eslint-disable-next-line
-    CKOHelper.ckoResponse(ckoCustomObjects);
+    response.getWriter().println(ckoCustomObjects);
 }
 
 /*

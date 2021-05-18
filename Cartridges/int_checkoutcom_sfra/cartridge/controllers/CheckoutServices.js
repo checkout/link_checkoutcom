@@ -3,6 +3,9 @@
 var server = require('server');
 server.extend(module.superModule);
 
+var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
+
+
 server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
     var BasketMgr = require('dw/order/BasketMgr');
     var OrderMgr = require('dw/order/OrderMgr');
@@ -161,7 +164,7 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
             error: false,
             continueUrl: handlePaymentResult.redirectUrl,
         });
-
+        
         this.emit('route:Complete', req, res);
         // eslint-disable-next-line
         return;

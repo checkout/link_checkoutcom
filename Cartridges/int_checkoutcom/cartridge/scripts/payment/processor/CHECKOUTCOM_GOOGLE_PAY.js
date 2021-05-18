@@ -1,7 +1,9 @@
 'use strict';
 
 // API Includes
+var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
+var PaymentTransaction = require('dw/order/PaymentTransaction');
 
 // Site controller
 var Site = require('dw/system/Site');
@@ -22,6 +24,7 @@ var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
  * @returns {Object} The form validation result
  */
 function Handle(args) {
+
     var cart = Cart.get(args.Basket);
     var paymentMethod = args.PaymentMethodID;
 
@@ -44,6 +47,7 @@ function Handle(args) {
  * @returns {Object} The payment success or failure
  */
 function Authorize(args) {
+
     // Add order Number to session
     // eslint-disable-next-line
     session.privacy.ckoOrderId = args.OrderNo;
@@ -58,25 +62,25 @@ function Authorize(args) {
         var paymentAuth = googlePayHelper.handleRequest(args);
 
         if (paymentAuth !== '' && paymentAuth !== undefined && paymentAuth !== null) {
-            Transaction.wrap(function() {
+            Transaction.wrap(function () {
                 paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
                 paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
                 paymentInstrument.paymentTransaction.custom.ckoGooglePayData = '';
             });
 
-            return { authorized: true, error: false };
+            return {authorized: true, error: false};
+        } else {
+            throw new Error('Authorization Error');
         }
-
-        throw new Error('Authorization Error');
-    } catch (e) {
-        Transaction.wrap(function() {
+    } catch(e) {
+        Transaction.wrap(function () {
             order.addNote('Payment Authorization Request:', e.message);
             paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
             paymentInstrument.paymentTransaction.custom.ckoGooglePayData = '';
         });
 
-        return { authorized: false, error: true, message: e.message };
+        return {authorized: false, error: true, message: e.message };
     }
 }
 

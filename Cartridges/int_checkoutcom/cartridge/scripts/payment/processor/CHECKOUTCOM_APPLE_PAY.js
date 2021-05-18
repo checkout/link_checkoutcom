@@ -6,7 +6,8 @@ var PaymentInstrument = require('dw/order/PaymentInstrument');
 var Logger = require('dw/system/Logger');
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 
-exports.authorizeOrderPayment = function(order, event) {
+exports.authorizeOrderPayment = function (order, event) {
+
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
     && order;
@@ -37,7 +38,7 @@ exports.authorizeOrderPayment = function(order, event) {
             if (result) {
                 order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
             } else {
-                throw new Error({ message: 'Payment Authorization error' });
+                throw new Error({message: 'Payment Authorization error'});
             }
         } catch (e) {
             order.addNote('Payment Authorization Request:', e.message);
