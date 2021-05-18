@@ -83,12 +83,18 @@ var ckoHelper = {
     },
 
     /**
-     * Get value from custom preferences
-     * @param {string} field The field id
-     * @returns {string} The field value
+     * Retrieves a custom preference value from the configuration.
+     * @param {string} fieldName The configuration field name
+     * @returns {string} The configuration field value
      */
-    getValue: function(field) {
-        return Site.getCurrent().getCustomPreferenceValue(field);
+     getValue: function(fieldName) {
+        var customPref = Site.getCurrent().getCustomPreferenceValue(fieldName);
+
+        if(typeof(customPref) == 'object') {
+            return customPref.value;
+        } else {
+            return customPref;
+        }
     },
 
     /**
