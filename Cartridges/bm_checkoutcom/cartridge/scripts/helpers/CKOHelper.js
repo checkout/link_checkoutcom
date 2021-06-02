@@ -12,6 +12,8 @@ var Site = require('dw/system/Site');
 // Card Currency Config
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
 
+var totalPages;
+
 /**
  * Helper functions for the Checkout.com cartridge integration.
  */
@@ -34,32 +36,24 @@ var CKOHelper = {
         // Prepare the output array
         var data = [];
 
+        var query = this.parseQuery(request.httpQueryString);
+        var page = query.page,
+            pagination = query.size,
+            start = (page - 1) * pagination;
+
+
         // Query the orders
         var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
+        totalPages = Math.ceil(result.getCount() / pagination);
 
-        // Loop through the results
-        while (result.hasNext()) {
-            var item = result.next();
-
-            // Get the payment instruments
-            var paymentInstruments = item.getPaymentInstruments().toArray();
-
-            // Loop through the payment instruments
-            for (var i = 0; i < paymentInstruments.length; i++) {
-                if (this.isCkoItem(this.getProcessorId(paymentInstruments[i])) && !this.containsObject(item, data)) {
-                    data.push(item);
-                }
-            }
-        }
-
-        return data;
+        return result.asList(start, pagination)
     },
 
     /**
      * Get the Checkout.com transactions.
      * @returns {array} Retuns the transactions array
      */
-    getCkoTransactions: function() {
+     getCkoTransactions: function() {
         // Prepare the output array
         var data = [];
 
@@ -71,45 +65,58 @@ var CKOHelper = {
         for (var j = 0; j < result.length; j++) {
             // Get the payment instruments
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
-
-            // Loop through the payment instruments
-            for (var k = 0; k < paymentInstruments.length; k++) {
+            var k = paymentInstruments.length - 1;
                 // Get the payment transaction
-                var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            // Add the payment transaction to the output
+            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
+                // Build the row data
+                var row = {
+                    id: i,
+                    order_no: result[j].orderNo,
+                    transaction_id: paymentTransaction.transactionID,
+                    payment_id: paymentTransaction.custom.ckoPaymentId,
+                    opened: paymentTransaction.custom.ckoTransactionOpened,
+                    amount: paymentTransaction.amount.value,
+                    currency: paymentTransaction.amount.currencyCode,
+                    creation_date: paymentTransaction.getCreationDate().toDateString(),
+                    type: paymentTransaction.type.displayValue,
+                    processor: this.getProcessorId(paymentInstruments[k]),
+                    refundable_amount: 0,
+                    data_type: paymentTransaction.type.toString(),
+                };
 
-                // Add the payment transaction to the output
-                if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
-                    // Build the row data
-                    var row = {
-                        id: i,
-                        order_no: result[j].orderNo,
-                        transaction_id: paymentTransaction.custom.ckoActionId || paymentTransaction.custom.ckoPaymentId,
-                        payment_id: paymentTransaction.transactionID,
-                        opened: paymentTransaction.custom.ckoTransactionOpened,
-                        amount: paymentTransaction.amount.value,
-                        currency: paymentTransaction.amount.currencyCode,
-                        creation_date: paymentTransaction.getCreationDate().toDateString(),
-                        type: paymentTransaction.type.displayValue,
-                        processor: this.getProcessorId(paymentInstruments[k]),
-                        refundable_amount: 0,
-                        data_type: paymentTransaction.type.toString(),
-                    };
-
-                    // Calculate the refundable amount
-                    var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
-                    var condition2 = row.opened !== false;
-                    if (condition1 && condition2) {
-                        row.refundable_amount = this.getRefundableAmount(paymentInstruments);
-                    }
-
-                    // Add the transaction
-                    data.push(row);
-                    i++;
+                // Calculate the refundable amount
+                var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
+                var condition2 = row.opened !== false;
+                if (condition1 && condition2) {
+                    row.refundable_amount = this.getRefundableAmount(paymentInstruments);
                 }
+
+                // Add the transaction
+                data.push(row);
+                i++;
             }
         }
 
-        return data;
+        return {
+            "last_page" : totalPages,
+            "data" : data
+        };
+    },
+
+    /**
+     * Parse a query string 
+     * @param {String} queryString The query string of the URL
+     */
+    parseQuery: function(queryString) {
+        var query = {};
+        var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].split('=');
+            query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+        }
+        return query;
     },
 
     /**
