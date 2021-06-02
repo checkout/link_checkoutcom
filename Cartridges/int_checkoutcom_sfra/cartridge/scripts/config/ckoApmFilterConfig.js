@@ -65,8 +65,8 @@ var ckoApmFilterConfig = {
         currencies: ['EUR', 'DKK', 'GBP', 'NOK', 'SEK'],
     },
     alipay: {
-        countries: ['CN', 'US'],
-        currencies: ['USD', 'CNY'],
+        countries: ['CN'],
+        currencies: ['USD'],
     },
     paypal: {
         countries: ['*'],
