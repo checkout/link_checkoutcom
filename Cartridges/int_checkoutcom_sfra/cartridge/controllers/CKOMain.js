@@ -171,6 +171,7 @@ server.post('HandleWebhook', function(req, res, next) {
                 null
             ),
         });
+        res.setStatusCode(200);
     } else {
         // Set a failure response
         res.json({
@@ -195,24 +196,25 @@ server.get('GetApmFilter', server.middleware.https, function(req, res, next) {
     if (basket) {
         var currencyCode = basket.getCurrencyCode();
         var countryCode = basket.defaultShipment.shippingAddress.countryCode.valueOf();
-
+    
         // Prepare the filter object
         var filterObject = {
             country: countryCode,
             currency: currencyCode,
         };
-
+    
         // Prepare the response object
         var responseObject = {
             filterObject: filterObject,
             ckoApmFilterConfig: ckoApmFilterConfig,
         };
-
+    
         // Write the response
         res.json(responseObject);
     }
 
     return next();
+
 });
 
 /*

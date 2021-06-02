@@ -2,8 +2,7 @@
 
 //  API Includes
 var Site = require('dw/system/Site');
-var siteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-var guard = require(siteControllerName + '/cartridge/scripts/guard');
+var guard = require('*/cartridge/scripts/guard');
 var BasketMgr = require('dw/order/BasketMgr');
 
 // Utility
@@ -11,12 +10,13 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 
 /**
  * Returns the Order Informaton for apple pay
- * @returns {Object} The Apple Pay Order response
+ * @returns {object} The Apple Pay Order response
  */
 function applePayOrder() {
     // Prepare the basket
     var basket = BasketMgr.getCurrentBasket();
     if (basket) {
+
         // Prepare the request object
         var orderObject = {
             countryCode: ckoHelper.getBasketCountyCode(basket),

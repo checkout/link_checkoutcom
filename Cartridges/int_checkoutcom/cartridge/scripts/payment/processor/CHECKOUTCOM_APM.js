@@ -2,12 +2,11 @@
 
 // Site controller
 var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
-var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var Cart = require('*/cartridge/scripts/models/CartModel');
+var app = require('*/cartridge/scripts/app');
 
 // Utility
 var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
@@ -25,23 +24,24 @@ function Handle(args) {
     var cart = Cart.get(args.Basket);
     var paymentMethod = args.PaymentMethodID;
     var apmForm = paymentMethod.toLowerCase() + 'Form';
+    
+    // Get apms form
+    var paymentForm = app.getForm(apmForm).object;
+    args.paymentInformation = {};
 
-    try {
-        // Get apms form
-        var paymentForm = app.getForm(apmForm).object;
-        // eslint-disable-next-line
+    // If this apm have a form
+    if (paymentForm) {
         args.paymentInformation = {};
         Object.keys(paymentForm).forEach(function(key) {
             var type = typeof paymentForm[key];
             if (type === 'object' && paymentForm[key] != null) {
-                // eslint-disable-next-line
                 args.paymentInformation[key] = {
                     value: paymentForm[key].htmlValue,
                     htmlName: paymentForm[key].htmlName,
                 };
             }
         });
-    } catch (e) { // Override getForm error for apms without form
+
     }
 
     // Validate form value
@@ -55,7 +55,7 @@ function Handle(args) {
         });
 
         if (error) {
-            return { error: true };
+            return { error: true }
         }
     }
 
@@ -91,25 +91,24 @@ function Authorize(args) {
     try {
         var paymentAuth = apmHelper.apmAuthorization(payObject, args);
 
-        Transaction.wrap(function() {
+        Transaction.wrap(function () {
             order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
-            paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
-        if (paymentAuth) {
-            return { authorized: true, error: false };
+        if (paymentAuth) { 
+
+            return {authorized: true, error: false};
+        } else {
+            throw new Error({mssage: 'Authorization Error'});
         }
-
-        throw new Error('Authorization Error');
-    } catch (e) {
-        Transaction.wrap(function() {
+    } catch(e) {
+        Transaction.wrap(function () {
             order.addNote('Payment Authorization Request:', e.message);
-            paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
-        return { authorized: false, error: true, message: e.message };
+        return {authorized: false, error: true, message: e.message };
     }
 }
 

@@ -11,15 +11,15 @@ var sensitiveDataHelper = {
      * @returns {Object} filtered data
      */
     cleanSourceDataObject: function(sourceData) {
-        if (Object.prototype.hasOwnProperty.call(sourceData, 'first_name')) {
-            sourceData.first_name = String.prototype.replace.call(sourceData.first_name, /\w/gi, '*'); //eslint-disable-line
-        }
-        if (Object.prototype.hasOwnProperty.call(sourceData, 'last_name')) {
-            sourceData.last_name = String.prototype.replace.call(sourceData.last_name, /\w/gi, '*'); //eslint-disable-line
-        }
-        if (Object.prototype.hasOwnProperty.call(sourceData, 'account_iban')) {
-            sourceData.account_iban = String.prototype.replace.call(sourceData.account_iban, /\w/gi, '*'); //eslint-disable-line
-        }
+        if (Object.prototype.hasOwnProperty.call(sourceData, 'first_name'))
+            sourceData.first_name = String.prototype.replace.call(sourceData.first_name, /\w/gi, '*');
+
+        if (Object.prototype.hasOwnProperty.call(sourceData, 'last_name'))
+            sourceData.last_name = String.prototype.replace.call(sourceData.last_name, /\w/gi, '*');
+
+        if (Object.prototype.hasOwnProperty.call(sourceData, 'account_iban'))
+            sourceData.account_iban = String.prototype.replace.call(sourceData.account_iban, /\w/gi, '*');
+
         return sourceData;
     },
 
@@ -30,25 +30,25 @@ var sensitiveDataHelper = {
      */
     cleanSourceObject: function(source) {
         if (Object.prototype.hasOwnProperty.call(source, 'fingerprint')) {
-            source.fingerprint = String.prototype.replace.call(source.fingerprint, /\w/gi, '*'); //eslint-disable-line
+            source.fingerprint = String.prototype.replace.call(source.fingerprint, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(source, 'authorization_token')) {
-            source.authorization_token = String.prototype.replace.call(source.authorization_token, /\w/gi, '*'); //eslint-disable-line
+            source.authorization_token = String.prototype.replace.call(source.authorization_token, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(source, 'id')) {
-            source.id = String.prototype.replace.call(source.id, /\w/gi, '*'); //eslint-disable-line
+            source.id = String.prototype.replace.call(source.id, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(source, 'phone')) {
-            source.phone.number = String.prototype.replace.call(source.phone.number, /\d/gi, '*'); //eslint-disable-line
+            source.phone.number = String.prototype.replace.call(source.phone.number, /\d/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(source, 'billing_address')) {
-            source.billing_address = this.cleanBillingAddress(source.billing_address); //eslint-disable-line
+            source.billing_address = this.cleanBillingAddress(source.billing_address);
         }
         if (Object.prototype.hasOwnProperty.call(source, 'number')) {
-            source.number = String.prototype.replace.call(source.number, /\d/gi, '*'); //eslint-disable-line
+            source.number = String.prototype.replace.call(source.number, /\d/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(source, 'cvv')) {
-            source.cvv = String.prototype.replace.call(source.cvv, /\d/gi, '*'); //eslint-disable-line
+            source.cvv = String.prototype.replace.call(source.cvv, /\d/gi, '*');
         }
 
         return source;
@@ -61,41 +61,41 @@ var sensitiveDataHelper = {
      */
     cleanBillingAddress: function(billingAddress) {
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'given_name')) {
-            billingAddress.given_name = String.prototype.replace.call(billingAddress.given_name, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.given_name = String.prototype.replace.call(billingAddress.given_name, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'family_name')) {
-            billingAddress.family_name = String.prototype.replace.call(billingAddress.family_name, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.family_name = String.prototype.replace.call(billingAddress.family_name, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'email')) {
-            billingAddress.email = String.prototype.replace.call(billingAddress.email, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.email = String.prototype.replace.call(billingAddress.email, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'street_address')) {
-            billingAddress.street_address = String.prototype.replace.call(billingAddress.street_address, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.street_address = String.prototype.replace.call(billingAddress.street_address, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'street_address2')) {
             if (billingAddress.street_address2 !== '' && billingAddress.street_address2 !== null && billingAddress.street_address2 !== undefined) {
-                billingAddress.street_address2 = String.prototype.replace.call(billingAddress.street_address2, /\w/gi, '*'); //eslint-disable-line
+                billingAddress.street_address2 = String.prototype.replace.call(billingAddress.street_address2, /\w/gi, '*');
             }
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'postal_code')) {
-            billingAddress.postal_code = String.prototype.replace.call(billingAddress.postal_code, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.postal_code = String.prototype.replace.call(billingAddress.postal_code, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'phone')) {
-            billingAddress.phone = String.prototype.replace.call(billingAddress.phone, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.phone = String.prototype.replace.call(billingAddress.phone, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'address_line1')) {
-            billingAddress.address_line1 = String.prototype.replace.call(billingAddress.address_line1, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.address_line1 = String.prototype.replace.call(billingAddress.address_line1, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'address_line2')) {
-            if (billingAddress.address_line2 !== '' && billingAddress.address_line2 !== undefined && billingAddress.address_line2 !== null) {
-              billingAddress.address_line2 = String.prototype.replace.call(billingAddress.address_line2, /\w/gi, '*'); //eslint-disable-line
+            if (billingAddress['address_line2'] !== '' && billingAddress['address_line2'] !== undefined && billingAddress['address_line2'] !== null ) {
+                billingAddress.address_line2 = String.prototype.replace.call(billingAddress.address_line2, /\w/gi, '*');
             }
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'city')) {
-            billingAddress.city = String.prototype.replace.call(billingAddress.city, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.city = String.prototype.replace.call(billingAddress.city, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(billingAddress, 'zip')) {
-            billingAddress.zip = String.prototype.replace.call(billingAddress.zip, /\w/gi, '*'); //eslint-disable-line
+            billingAddress.zip = String.prototype.replace.call(billingAddress.zip, /\w/gi, '*');
         }
 
         return billingAddress;
@@ -108,13 +108,13 @@ var sensitiveDataHelper = {
      */
     cleanCustomerObject: function(customer) {
         if (Object.prototype.hasOwnProperty.call(customer, 'id')) {
-            customer.id = String.prototype.replace.call(customer.id, /\w/gi, '*'); //eslint-disable-line
+            customer.id = String.prototype.replace.call(customer.id, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(customer, 'email')) {
-            customer.email = String.prototype.replace.call(customer.email, /\w/gi, '*'); //eslint-disable-line
+            customer.email = String.prototype.replace.call(customer.email, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(customer, 'name')) {
-            customer.name = String.prototype.replace.call(customer.name, /\w/gi, '*'); //eslint-disable-line
+            customer.name = String.prototype.replace.call(customer.name, /\w/gi, '*');
         }
 
         return customer;
@@ -127,16 +127,16 @@ var sensitiveDataHelper = {
      */
     cleanShippingObject: function(shipping) {
         if (Object.prototype.hasOwnProperty.call(shipping, 'address')) {
-            shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*'); //eslint-disable-line
+            shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*');
             if (shipping.address.address_line2 !== '' && shipping.address.address_line2 !== null && shipping.address.address_line2 !== undefined) {
-                shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*'); //eslint-disable-line
+                shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
             }
-            shipping.address.city = String.prototype.replace.call(shipping.address.city, /\w/gi, '*'); //eslint-disable-line
-            shipping.address.zip = String.prototype.replace.call(shipping.address.zip, /\w/gi, '*'); //eslint-disable-line
+            shipping.address.city = String.prototype.replace.call(shipping.address.city, /\w/gi, '*');
+            shipping.address.zip = String.prototype.replace.call(shipping.address.zip, /\w/gi, '*');
         }
         if (Object.prototype.hasOwnProperty.call(shipping, 'phone')) {
             if (shipping.phone.number !== '' && shipping.phone.number !== null && shipping.phone.number !== undefined) {
-                shipping.phone.number = String.prototype.replace.call(shipping.phone.number, /\d/gi, '*'); //eslint-disable-line
+                shipping.phone.number = String.prototype.replace.call(shipping.phone.number, /\d/gi, '*');
             }
         }
 

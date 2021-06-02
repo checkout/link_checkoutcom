@@ -49,9 +49,9 @@ var googlePayHelper = {
                     token: tokenResponse.token,
                 },
                 amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
-                '3ds': {
-                    enabled: true,
-                    attempt_n3d: true,
+                "3ds": {
+                    "enabled": true,
+                    "attempt_n3d": true
                 },
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
@@ -92,6 +92,7 @@ var googlePayHelper = {
             message: gatewayResponse.response_summary ? ckoHelper.errorMessage(gatewayResponse.response_summary.toLowerCase()) : '',
             code: gatewayResponse.response_code,
             redirectUrl: false,
+            id: gatewayResponse.id
         };
 
         // Update customer data

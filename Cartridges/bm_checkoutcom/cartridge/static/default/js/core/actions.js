@@ -1,4 +1,4 @@
-'use strict';
+ 'use strict';
 
 /**
  * jQuery Ajax helpers on DOM ready.
@@ -60,7 +60,7 @@ function openModal(elt) {
 
     // Get the transaction data
     var tidExists = members[2] !== null && members[2] !== 'undefined';
-    var isValidTid = members[2].length > 0 && members[2].indexOf('act_') === 0;
+    var isValidTid = members[2].length > 0 && members[2].indexOf('pay_') === 0;
     if (tidExists && isValidTid) {
         // eslint-disable-next-line
         getTransactionData(members);
@@ -159,6 +159,10 @@ function performAction(task) {
 
     // Set the transaction id
     var paymentId = jQuery('[id="' + task + '_payment_id"]').text();
+
+    if(paymentId.indexOf('pay_') == -1) {
+        paymentId = jQuery('[id="' + task + '_transaction_id"]').text();
+    }
 
     // Set the currency
     var currency = jQuery('[id="' + task + '_currency"]').text();

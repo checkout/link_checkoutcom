@@ -76,33 +76,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     paymentsClient.isReadyToPay(isReadyToPayRequest)
                     .then(function(response) {
                         if (response.result) {
-                          var button = jQuery('.gpay-button');
+                            // add a Google Pay payment button
 
-                            if (button.length < 1) {
-                              // add a Google Pay payment button
-                              button = paymentsClient.createButton({onClick: () => {
+                            const button = paymentsClient.createButton({onClick: () => {
 
-                                  paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData){
-                                      // if using gateway tokenization, pass this token without modification
-                                      var paymentToken = paymentData.paymentMethodData.tokenizationData.token;
-                                      // Prepare the payload
-                                      var payload = {
-                                          signature: JSON.parse(paymentToken).signature,
-                                          protocolVersion: JSON.parse(paymentToken).protocolVersion,
-                                          signedMessage: JSON.parse(paymentToken).signedMessage,
-                                      };
+                                paymentsClient.loadPaymentData(paymentDataRequest).then(function(paymentData){
+                                    // if using gateway tokenization, pass this token without modification
+                                    var paymentToken = paymentData.paymentMethodData.tokenizationData.token;
+                                    // Prepare the payload
+                                    var payload = {
+                                        signature: JSON.parse(paymentToken).signature,
+                                        protocolVersion: JSON.parse(paymentToken).protocolVersion,
+                                        signedMessage: JSON.parse(paymentToken).signedMessage,
+                                    };
 
-                                      // Store the payload
-                                      jQuery('input[name$="dwfrm_googlePayForm_data"]').val(JSON.stringify(payload));
-                                      jQuery('.gpay-button').hide();
-                                    }).catch(function(err){
-                                      // show error in developer console for debugging
-                                      console.error(err);
-                                    });
+                                    // Store the payload
+                                    jQuery('input[name$="dwfrm_googlePayForm_data"]').val(JSON.stringify(payload));
+                                    jQuery('.gpay-button').hide();
+                                  }).catch(function(err){
+                                    // show error in developer console for debugging
+                                    console.error(err);
+                                  });
 
-                              }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
-                              jQuery('#googlePayForm').append(button);
-                            }
+                            }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
+                            jQuery('#googlePayForm').append(button);
                         }
                     })
                     .catch(function(err) {

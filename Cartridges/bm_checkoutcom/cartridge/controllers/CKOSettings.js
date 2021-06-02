@@ -2,8 +2,7 @@
 
 /* API Includes */
 // eslint-disable-next-line
-var siteControllerName = dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-var guard = require(siteControllerName + '/cartridge/scripts/guard');
+var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');
 var Transaction = require('dw/system/Transaction');
 
@@ -37,10 +36,10 @@ function saveCkoCustomPropertie() {
     } catch (e) {
         result = e.message;
         Transaction.rollback();
-        CKOHelper.ckoResponse(result);
+        response.getWriter().println(result);
     }
     Transaction.commit();
-    CKOHelper.ckoResponse(result);
+    response.getWriter().println(result);
 }
 
 /**
@@ -49,7 +48,7 @@ function saveCkoCustomPropertie() {
 function getCkoCustomPropertie() {
     var ckoCustomObjects = CKOHelper.getCkoCustomProperties(requestObject);
 	// eslint-disable-next-line
-    CKOHelper.ckoResponse(ckoCustomObjects);
+    response.getWriter().println(ckoCustomObjects);
 }
 
 /*

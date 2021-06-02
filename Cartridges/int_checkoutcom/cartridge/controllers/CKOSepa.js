@@ -2,9 +2,8 @@
 
 // Script Modules
 var Site = require('dw/system/Site');
-var siteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-var app = require(siteControllerName + '/cartridge/scripts/app');
-var guard = require(siteControllerName + '/cartridge/scripts/guard');
+var app = require('*/cartridge/scripts/app');
+var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
 var OrderMgr = require('dw/order/OrderMgr');
@@ -101,7 +100,7 @@ function handleMandate() {
                         amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
                         currency: ckoHelper.getCurrency(),
                         reference: orderId,
-                        metadata: ckoHelper.getMetadata({}, 'CHECKOUTCOM_APM'),
+                        metadata: ckoHelper.getMetadata({}, 'CHECKOUTCOM_APM')
                     };
 
                     // Reset the response in session
