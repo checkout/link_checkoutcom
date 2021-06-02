@@ -103,12 +103,6 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var func = paymentInstrument.paymentMethod.toLowerCase() + 'Authorization';
     var apmConfigData = apmConfig[func](args);
 
-    Transaction.wrap(function () {
-        paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.custom.ckoPaymentData = "";
-    });
-
     try {
         var ckoPaymentRequest = apmHelper.handleRequest(apmConfigData, paymentProcessor.ID, orderNumber);
 
@@ -116,6 +110,11 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         if (ckoPaymentRequest === '' || ckoPaymentRequest === undefined || ckoPaymentRequest.error) {
             throw new Error(ckoHelper.getPaymentFailureMessage());
         }
+
+        Transaction.wrap(function () {
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+            paymentInstrument.custom.ckoPaymentData = "";
+        });
 
         return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
 

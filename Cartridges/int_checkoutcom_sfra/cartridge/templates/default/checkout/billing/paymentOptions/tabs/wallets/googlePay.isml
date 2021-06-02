@@ -10,4 +10,6 @@
     </a>
 </li>
 
+<input type="hidden" class="gpay-color" value="${require('dw/system/Site').getCurrent().getCustomPreferenceValue("ckoGooglePayButton").value}"/>
+
 <script src="${URLUtils.staticURL('/js/googlepay.js')}"></script>

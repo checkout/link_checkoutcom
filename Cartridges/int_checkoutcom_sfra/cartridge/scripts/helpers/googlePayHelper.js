@@ -92,6 +92,7 @@ var googlePayHelper = {
             message: gatewayResponse.response_summary ? ckoHelper.errorMessage(gatewayResponse.response_summary.toLowerCase()) : '',
             code: gatewayResponse.response_code,
             redirectUrl: false,
+            id: gatewayResponse.id
         };
 
         // Update customer data

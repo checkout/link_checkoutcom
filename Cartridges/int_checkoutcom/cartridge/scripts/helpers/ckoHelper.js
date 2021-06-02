@@ -26,6 +26,7 @@ var ckoHelper = {
     ckoResponse: function(data) {
         response.setBuffered(false); // eslint-disable-line
         response.setContentType('text/plain'); // eslint-disable-line
+        response.setStatusCode(200);
         var out = response.writer; // eslint-disable-line
 
         return out.println(JSON.stringify(data)); // eslint-disable-line
@@ -84,11 +85,17 @@ var ckoHelper = {
 
     /**
      * Get value from custom preferences
-     * @param {string} field The field id
+     * @param {string} fieldName The field id
      * @returns {string} The field value
      */
-    getValue: function(field) {
-        return Site.getCurrent().getCustomPreferenceValue(field);
+    getValue: function(fieldName) {
+        var customPref = Site.getCurrent().getCustomPreferenceValue(fieldName);
+
+        if(typeof(customPref) == 'object') {
+            return customPref.value;
+        } else {
+            return customPref;
+        }
     },
 
     /**

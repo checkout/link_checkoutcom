@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/checkout/link_checkoutcom#readme",
   "dependencies": {
+    "grunt-cli": "^1.4.2",
     "lint": "^0.7.0"
   },
   "devDependencies": {

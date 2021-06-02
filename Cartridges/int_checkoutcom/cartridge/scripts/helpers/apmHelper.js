@@ -40,10 +40,10 @@ var apmHelper = {
                         redirectUrl: session.privacy.redirectUrl // eslint-disable-line
                     });
 
-                    return { authorized: true, redirected: true };
+                    return {authorized: true, redirected: true, response:apmRequest};
                 }
 
-                return { authorized: true };
+                return {authorized: true, response:apmRequest};
             }
 
             return false;

@@ -90,12 +90,6 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var error = false;
     var formData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
 
-    Transaction.wrap(function () {
-        paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.custom.ckoPaymentData = "";
-    });
-
     try {
         var ckoPaymentRequest = googlePayHelper.handleRequest(formData.ckoGooglePayData.value, paymentProcessor.ID, orderNumber);
 
@@ -108,6 +102,12 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             }
             
         }
+
+        Transaction.wrap(function () {
+            paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.id);
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+            paymentInstrument.custom.ckoPaymentData = "";
+        });
 
         return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
 

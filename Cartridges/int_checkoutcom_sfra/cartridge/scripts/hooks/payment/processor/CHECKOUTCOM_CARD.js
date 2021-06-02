@@ -213,7 +213,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
 
     Transaction.wrap(function () {
-        paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
+        paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
         paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
         paymentInstrument.custom.ckoPaymentData = "";
     });

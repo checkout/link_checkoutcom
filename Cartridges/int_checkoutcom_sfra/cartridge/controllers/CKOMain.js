@@ -171,6 +171,7 @@ server.post('HandleWebhook', function(req, res, next) {
                 null
             ),
         });
+        res.setStatusCode(200);
     } else {
         // Set a failure response
         res.json({

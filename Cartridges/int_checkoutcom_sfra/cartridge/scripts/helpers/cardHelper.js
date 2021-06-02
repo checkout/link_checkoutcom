@@ -53,6 +53,7 @@ var cardHelper = {
             message: gatewayResponse.response_summary ? ckoHelper.errorMessage(gatewayResponse.response_summary.toLowerCase()) : '',
             code: gatewayResponse.response_code,
             redirectUrl: false,
+            transactionID: gatewayResponse.id
         };
 
         // Handle the response

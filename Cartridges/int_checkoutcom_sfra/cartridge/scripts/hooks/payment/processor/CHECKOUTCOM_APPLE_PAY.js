@@ -27,7 +27,6 @@ exports.authorizeOrderPayment = function (order, event) {
             var PaymentMgr = require('dw/order/PaymentMgr');
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
             var paymentTransaction = paymentInstrument.getPaymentTransaction();
-            paymentTransaction.setTransactionID(order.orderNo);
             paymentTransaction.setPaymentProcessor(paymentProcessor);
 
             // Payment request
@@ -36,6 +35,8 @@ exports.authorizeOrderPayment = function (order, event) {
                 paymentProcessor.ID,
                 order.orderNo
             );
+
+            paymentTransaction.setTransactionID(result.id);
 
             if (result.error) {
                 throw new Error({message: 'Payment Authorization error'});
