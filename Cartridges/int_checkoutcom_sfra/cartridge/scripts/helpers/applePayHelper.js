@@ -86,6 +86,7 @@ var applePayHelper = {
         var result = {
             error: !ckoHelper.paymentSuccess(gatewayResponse),
             redirectUrl: false,
+            id: gatewayResponse.id
         };
 
         // Update customer data

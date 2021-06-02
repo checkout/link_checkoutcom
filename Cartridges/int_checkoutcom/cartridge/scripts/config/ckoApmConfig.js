@@ -2,10 +2,9 @@
 
 // Site controller
 var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
 
 // API Includes
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var app = require('*/cartridge/scripts/app');
 var OrderMgr = require('dw/order/OrderMgr');
 
 // Business Name

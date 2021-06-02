@@ -376,7 +376,7 @@ var CKOHelper = {
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
-        keys.privateKey = this.getValue('cko' + str + 'PrivateKey');
+        keys.privateKey = this.getValue('cko' + str + 'PrivateSharedKey');
 
         return keys;
     },

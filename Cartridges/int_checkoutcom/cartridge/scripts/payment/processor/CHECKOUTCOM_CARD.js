@@ -5,13 +5,12 @@ var Transaction = require('dw/system/Transaction');
 
 // Site controller
 var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
 
 // Shopper cart
-var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
+var Cart = require('*/cartridge/scripts/models/CartModel');
 
 // App
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var app = require('*/cartridge/scripts/app');
 
 // Utility
 var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');

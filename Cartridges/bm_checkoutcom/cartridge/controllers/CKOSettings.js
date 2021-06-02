@@ -2,8 +2,7 @@
 
 /* API Includes */
 // eslint-disable-next-line
-var siteControllerName = dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-var guard = require(siteControllerName + '/cartridge/scripts/guard');
+var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');
 var Transaction = require('dw/system/Transaction');
 

@@ -2,9 +2,8 @@
 
 // API Includes
 var Site = require('dw/system/Site');
-var siteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-var app = require(siteControllerName + '/cartridge/scripts/app');
-var guard = require(siteControllerName + '/cartridge/scripts/guard');
+var app = require('*/cartridge/scripts/app');
+var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');
 var OrderMgr = require('dw/order/OrderMgr');
 var BasketMgr = require('dw/order/BasketMgr');

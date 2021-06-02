@@ -2,12 +2,11 @@
 
 // Site controller
 var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
-var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var Cart = require('*/cartridge/scripts/models/CartModel');
+var app = require('*/cartridge/scripts/app');
 
 // Utility
 var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
@@ -94,7 +93,6 @@ function Authorize(args) {
 
         Transaction.wrap(function () {
             order.addNote('Payment Authorization Request:', 'Payment Authorization successful');
-            paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 
@@ -107,7 +105,6 @@ function Authorize(args) {
     } catch(e) {
         Transaction.wrap(function () {
             order.addNote('Payment Authorization Request:', e.message);
-            paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
         });
 

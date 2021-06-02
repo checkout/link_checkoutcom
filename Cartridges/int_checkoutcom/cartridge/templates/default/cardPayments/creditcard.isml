@@ -46,7 +46,7 @@
 			<span>${Resource.msg('billing.creditcardlistexpdate', 'checkout', null)}</span>
 		</label>
 		<isscript>
-			var countries = require(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontCore') + '/cartridge/scripts/util/Countries');
+			var countries = require('*/cartridge/scripts/util/Countries');
 		</isscript>
 		<isdynamicform formobject="${pdict.CurrentForms.billing.paymentMethods.creditCard.expiration}" formdata="${countries.getCurrent(pdict).dynamicForms.expirationInfo}"/>
 	</div>

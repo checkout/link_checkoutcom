@@ -80,7 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (response.result) {
                             // add a Google Pay payment button
 
-                            var button = jQuery('.gpay-button');
+                            var button = jQuery('.gpay-button'),
+                                color  = jQuery('.gpay-color').val();
 
                             if (button.length < 1) {
 
@@ -105,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         console.error(err);
                                     });
 
-                                }, buttonColor: 'default', buttonType: 'plain', buttonSizeMode: 'standard'});
+                                }, buttonColor: color, buttonType: 'plain', buttonSizeMode: 'standard'});
                                 jQuery('#googlePayForm').append(button);
 
                             }
