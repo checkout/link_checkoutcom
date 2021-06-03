@@ -51,6 +51,15 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
             // Load the order
             order = OrderMgr.getOrder(gVerify.reference);
 
+            var paymentInstrument = order.getPaymentInstruments();
+            if(paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gVerify.id || paymentInstrument[0].paymentTransaction.transactionID == '')) {
+                paymentInstrument = paymentInstrument[0];
+            }
+
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setTransactionID(gVerify.id);
+            });
+
             // If there is a valid response
             var condition = order && typeof (gVerify) === 'object'
             && Object.prototype.hasOwnProperty.call(gVerify, 'id')
