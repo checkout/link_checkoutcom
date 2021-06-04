@@ -76,7 +76,7 @@ function openModal(elt) {
  */
 function getTransactionData(members) {
     // Prepare the controller URL for the AJAX request
-    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val();
+    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val() + '?page=' + window.ckoTransactionsTable.getPage() + '&size=' + window.ckoTransactionsTable.getPageSize();
 
     // Set the transaction action
     var task = members[0];
@@ -90,7 +90,7 @@ function getTransactionData(members) {
     // Send the AJAX request
     jQuery.ajax({
         type: 'POST',
-        url: controllerUrl + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size,
+        url: controllerUrl,
         data: { tid: transactionId },
         success: function(data) {
             // Get the data
@@ -152,7 +152,7 @@ function showErrorMessage(selector) {
  */
 function performAction(task) {
     // Prepare the action URL
-    var actionUrl = jQuery('[id="actionControllerUrl"]').val() + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size;
+    var actionUrl = jQuery('[id="actionControllerUrl"]').val();
 
     // Set order number
     var order = jQuery('[id="' + task + '_order_no"]').text();

@@ -63,7 +63,7 @@ function getCookie(cname) {
  * @param {string} callBackFn The callback function
  */
 function getTransactions(callBackFn) {
-    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val() + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size;;
+    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val() + '?page=' + window.ckoTransactionsTable.getPage() + '&size=' + window.ckoTransactionsTable.getPageSize();
     jQuery.ajax({
         type: 'POST',
         url: controllerUrl,
@@ -214,7 +214,7 @@ function getButtonsHtml(cell) {
 
     // Build the action buttons
     if (JSON.parse(rowData.opened) && rowData.type !== 'CREDIT') {
-        var paymentId = rowData.payment_id.indexOf("pay_") != -1 ? rowData.payment_id : rowData.transaction_id;
+        var paymentId = rowData.payment_id && rowData.payment_id.indexOf("pay_") != -1 ? rowData.payment_id : rowData.transaction_id;
         // Capture
         if (rowData.type === 'AUTH') {
             html += '<button type="button" id="void-button-' + paymentId + '" class="btn btn-default ckoAction">' + window.ckoLang.void + '</button>';
