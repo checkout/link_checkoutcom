@@ -5,4 +5,8 @@ dw.json
 node_modules/
 .vscode/
 Cartridges/app_storefront_base/
+Cartridges/app_storefront_core/
+Cartridges/app_storefront_controllers/
 Cartridges/demo_core/
+Cartridges/demo_controllers/
+Cartridges/plugin_giftregistry/

@@ -4,6 +4,7 @@
 var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
 var URLUtils = require('dw/web/URLUtils');
+var Site = require('dw/system/Site');
 
 /* Utility */
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -137,8 +138,10 @@ var apmHelper = {
             chargeData = {
                 customer: ckoHelper.getCustomer(order),
                 amount: amount,
+                capture: ckoHelper.getValue('ckoAutoCapture'),
                 currency: order.getCurrencyCode(),
                 source: apmConfigData.source,
+                risk: { enabled: Site.getCurrent().getCustomPreferenceValue('ckoEnableRiskFlag') },
                 reference: order.orderNo,
                 metadata: ckoHelper.getMetadata({}, processorId),
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
@@ -147,6 +150,8 @@ var apmHelper = {
             // Test Klarna
             if (chargeData.source.type === 'klarna') {
                 chargeData.capture = false;
+            } else if (ckoHelper.getValue('ckoAutoCapture')) {              
+                chargeData.capture_on = ckoHelper.getCaptureTime()
             }
         }
 

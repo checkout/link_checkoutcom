@@ -19,12 +19,11 @@ function googlePaySession() {
         // Prepare the basket
         var basket = BasketMgr.getCurrentBasket();
         var ckoMode = ckoHelper.getValue('ckoMode');
-        var mode = dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode');
         var currency = basket.getCurrencyCode();
 
         var gPayData = {
-            mode: mode === '' || mode === 'sandbox' ? 'TEST' : 'PRODUCTION',
-            environment: dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnvironment'),
+            mode: ckoMode === '' || ckoMode === 'sandbox' ? 'TEST' : 'PRODUCTION',
+            environment: ckoHelper.getValue('ckoGooglePayEnvironment'),
             googlePayMerchantId:  ckoHelper.getValue('ckoGooglePayMerchantId'),
             totalAmount: basket.getTotalGrossPrice().value.toString(),
             currency: currency.toUpperCase(),

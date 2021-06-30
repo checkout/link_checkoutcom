@@ -735,7 +735,6 @@ var ckoHelper = {
 
         // Convert the capture time from minutes to milliseconds
         var captureOnMs = now + (parseInt(captureOnMin) * 60000);
-
         // Convert the capture time to ISO 8601 format
         return new Date(captureOnMs).toISOString();
     },

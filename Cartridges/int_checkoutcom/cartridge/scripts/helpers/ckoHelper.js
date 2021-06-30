@@ -26,7 +26,7 @@ var ckoHelper = {
     ckoResponse: function(data) {
         response.setBuffered(false); // eslint-disable-line
         response.setContentType('text/plain'); // eslint-disable-line
-        response.setStatusCode(200);
+        response.setStatus(200);
         var out = response.writer; // eslint-disable-line
 
         return out.println(JSON.stringify(data)); // eslint-disable-line

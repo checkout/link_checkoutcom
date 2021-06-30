@@ -8,6 +8,7 @@ var ISML = require('dw/template/ISML');
 var OrderMgr = require('dw/order/OrderMgr');
 var BasketMgr = require('dw/order/BasketMgr');
 var Transaction = require('dw/system/Transaction');
+var Order = app.getModel('Order');
 
 // Checkout.com Event functions
 var eventsHelper = require('~/cartridge/scripts/helpers/eventsHelper');
@@ -34,6 +35,13 @@ function handleFail() {
 
     // Send back to the error page
     ISML.renderTemplate('custom/common/response/failed.isml');
+}
+
+function clearForms() {
+    // Clears all forms used in the checkout process.
+    session.forms.singleshipping.clearFormElement();
+    session.forms.multishipping.clearFormElement();
+    session.forms.billing.clearFormElement();
 }
 
 /**
@@ -80,8 +88,11 @@ function handleReturn() {
 
                     // Test the response
                     if (ckoHelper.paymentSuccess(gVerify)) {
-                        // Show order confirmation page
-                        app.getController('COSummary').ShowConfirmation(order);
+                        var orderPlacementStatus = Order.submit(order);
+                        if (!orderPlacementStatus.error) {
+                            clearForms();
+                            return app.getController('COSummary').ShowConfirmation(order);
+                        }
                     } else {
                         // Restore the cart
                         OrderMgr.failOrder(order, true);

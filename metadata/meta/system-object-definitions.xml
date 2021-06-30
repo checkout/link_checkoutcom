@@ -49,6 +49,13 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoPaymentId">
+                <display-name xml:lang="x-default">Checkout.com Transaction Opened</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoGooglePayData">
                 <display-name xml:lang="x-default">Checkout.com Google Pay Data</display-name>
                 <type>string</type>
