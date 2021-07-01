@@ -34,8 +34,12 @@ function Handle(args) {
     var expirationMonth = creditCardForm.get('expiration.month').value();
     var expirationYear = creditCardForm.get('expiration.year').value(); 
     var madaCardType = creditCardForm.get('madaCardType').value();
-    var paymentCard = PaymentMgr.getPaymentCard(cardType);
 
+    if (cardType == 'Mastercard') {
+        cardType = 'Master Card';
+    }
+
+    var paymentCard = PaymentMgr.getPaymentCard(cardType);
     var creditCardStatus = paymentCard.verify(expirationMonth, expirationYear, cardNumber, cardSecurityCode);
 
     if (creditCardStatus.error) {
