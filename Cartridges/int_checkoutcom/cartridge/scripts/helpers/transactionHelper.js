@@ -53,7 +53,7 @@ var transactionHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
+        var paymentProcessorId = hook.data.metadata.payment_processor;
 
         Transaction.wrap(function() {
             // Create the payment instrument and processor

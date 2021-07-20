@@ -4,3 +4,6 @@ link-checkoutcom.code-workspace
 dw.json
 node_modules/
 .vscode/
+Cartridges/app_storefront_base/
+Cartridges/demo_core/
+Cartridges/demo_controllers/

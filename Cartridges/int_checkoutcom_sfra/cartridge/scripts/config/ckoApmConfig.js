@@ -45,12 +45,12 @@ var ckoApmConfig = {
                 country: ckoHelper.getBillingCountry(args),
                 payer: {
                     name: ckoHelper.getCustomerName(args),
-                    email: ckoHelper.getCustomer(args).email,
+                    email: ckoHelper.getCustomer(args.order).email,
                     document: args.paymentData.boleto_cpf.value.toString(),
                 },
             },
             purpose: businessName,
-            currency: ckoHelper.getCurrency(args),
+            currency: args.order.getCurrencyCode(),
         };
 
         return params;
@@ -196,8 +196,8 @@ var ckoApmConfig = {
             source: {
                 type: 'fawry',
                 description: businessName,
-                customer_mobile: ckoHelper.getPhone(args).number,
-                customer_email: ckoHelper.getCustomer(args).email,
+                customer_mobile: ckoHelper.getPhone(args.order.getBillingAddress()).number,
+                customer_email: ckoHelper.getCustomer(args.order).email,
                 products: ckoHelper.getProductInformation(args),
             },
             purpose: businessName,
@@ -205,6 +205,30 @@ var ckoApmConfig = {
         };
 
         return params;
+    },
+
+    /**
+     * Oxxo Pay Authorization.
+     * @param {Object} args The payment arguments
+     * @returns {Object} The payment parameters
+     */
+     oxxoPayAuthorization: function(args) {
+        // Build the payment object
+        var payObject = {
+            source: {
+                type: 'oxxo',
+                integration_type: 'redirect',
+                country: ckoHelper.getBillingObject(args).country,
+                payer: {
+                    name: ckoHelper.getCustomerName(args),
+                    email: ckoHelper.getCustomer(args).email,
+                    document: paymentForm.get('oxxo_identification').value(),
+                },
+            },
+            currency: ckoHelper.getCurrency(args),
+        };
+
+        return payObject;
     },
 
     /**
@@ -276,7 +300,7 @@ var ckoApmConfig = {
                 type: 'p24',
                 payment_country: ckoHelper.getBillingCountry(args),
                 account_holder_name: ckoHelper.getCustomerName(args),
-                account_holder_email: ckoHelper.getCustomer(args).email,
+                account_holder_email: ckoHelper.getCustomer(args.order).email,
                 billing_descriptor: businessName,
             },
         };
@@ -307,24 +331,12 @@ var ckoApmConfig = {
                     type: 'klarna',
                     authorization_token: args.paymentData.klarna_token.value.toString(),
                     locale: ckoHelper.getLanguage(),
-                    purchase_country: ckoHelper.getBillingCountry(args),
+                    purchase_country: ckoHelper.getBilling(args).country,
                     tax_amount: ckoHelper.getFormattedPrice(
                         args.order.totalTax.value,
                         args.order.getCurrencyCode()
                     ),
-                    // billing_address: {email: args.order.customerEmail},
-                    billing_address: {
-                        given_name: args.order.billingAddress.firstName,
-                        family_name: args.order.billingAddress.lastName,
-                        email: args.order.customerEmail,
-                        title: null,
-                        street_address: args.order.billingAddress.address1,
-                        street_address2: args.order.billingAddress.address2,
-                        postal_code: args.order.billingAddress.postalCode,
-                        city: args.order.billingAddress.city,
-                        phone: args.order.billingAddress.phone,
-                        country: args.order.billingAddress.countryCode.value,
-                    },
+                    billing_address: {email: args.order.customerEmail},
                     products: ckoHelper.getOrderBasketObject(args),
                 },
             };

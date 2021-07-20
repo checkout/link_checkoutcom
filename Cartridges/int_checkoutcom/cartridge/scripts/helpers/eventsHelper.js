@@ -21,7 +21,7 @@ function setPaymentStatus(order) {
     var paymentInstruments = order.getPaymentInstruments().toArray(),
         amountPaid = 0,
         orderTotal = order.getTotalGrossPrice().getValue();
-    
+
     for(var i=0; i<paymentInstruments.length; i++) {
         var paymentTransaction = paymentInstruments[i].paymentTransaction;
         if(paymentTransaction.type.value === 'CAPTURE') {
@@ -33,7 +33,7 @@ function setPaymentStatus(order) {
             amountPaid -= paymentTransaction.amount.value;
         }
     }
-    
+
     if(amountPaid === orderTotal) {
         order.setPaymentStatus(order.PAYMENT_STATUS_PAID);
     } else if(amountPaid >= 0.01) {
@@ -60,20 +60,13 @@ var eventsHelper = {
         if (order) {
             // Prepare the webhook info
             var details = '';
-            
-            if (Object.prototype.hasOwnProperty(hook.data, 'risk' ) && Object.prototype.hasOwnProperty(hook.data.risk, 'flagged')) {
-                details += ckoHelper._('cko.webhook.flagged', 'cko') + '\n';
-                details += ckoHelper._('cko.response.summary', 'cko') + ': ' + hook.data.response_summary + '\n';
-                order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
-            } else {
-                details += ckoHelper._('cko.webhook.event', 'cko') + ': ' + hook.type + '\n';
-            }
-
+            details += ckoHelper._('cko.webhook.event', 'cko') + ': ' + hook.type + '\n';
             details += ckoHelper._('cko.transaction.id', 'cko') + ': ' + hook.data.action_id + '\n';
             details += ckoHelper._('cko.transaction.paymentId', 'cko') + ': ' + hook.data.id + '\n';
             details += ckoHelper._('cko.transaction.eventId', 'cko') + ': ' + hook.id + '\n';
             details += ckoHelper._('cko.response.code', 'cko') + ': ' + hook.data.response_code + '\n';
 
+            // Process the transaction
             // Add the details to the order
             order.addNote(ckoHelper._('cko.webhook.info', 'cko'), details);
 
@@ -101,7 +94,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
+        var paymentProcessorId = hook.data.metadata.payment_processor;
 
         // Get the  transaction amount
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
@@ -131,11 +124,6 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentApproved: function(hook) {
-        // Load the order
-        var order = OrderMgr.getOrder(hook.data.reference);
-
-        order.setConfirmationStatus(order.CONFIRMATION_STATUS_CONFIRMED);
-
         // Create the webhook info
         this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', null);
 
@@ -145,7 +133,7 @@ var eventsHelper = {
         // Handle card saving
         var cardUuid = hook.data.metadata.card_uuid;
         var customerId = hook.data.metadata.customer_id;
-        var processorId = order.getPaymentInstrument().getPaymentMethod();
+        var processorId = hook.data.metadata.payment_processor;
         if (cardUuid !== 'false' && customerId) {
             // Load the saved card
             var savedCard = cardHelper.getSavedCard(
@@ -190,6 +178,9 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentRefunded: function(hook) {
+        // Get the  transaction amount
+        var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
+
         // Create the webhook info
         this.addWebhookInfo(hook, 'PAYMENT_STATUS_PAID', 'ORDER_STATUS_CANCELLED');
 
@@ -197,10 +188,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
-
-        // Get the  transaction amount
-        var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
+        var paymentProcessorId = hook.data.metadata.payment_processor;
 
         // Create the refunded transaction
         var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
@@ -217,8 +205,8 @@ var eventsHelper = {
         // Update the parent transaction state
         var parentTransaction = transactionHelper.getParentTransaction(hook, 'Capture');
         if (parentTransaction) {
-            paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
             parentTransaction.custom.ckoTransactionOpened = !transactionHelper.shouldCloseRefund(order);
+            paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
         }
     },
 
@@ -257,6 +245,15 @@ var eventsHelper = {
             paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
             parentTransaction.custom.ckoTransactionOpened = false;
         }
+
+    },
+
+    /**
+     * Payment capture pending event.
+     * @param {Object} hook The gateway webhook data
+     */
+    paymentCapturePending: function(hook) {
+        this.addWebhookInfo(hook, null, null);
     },
 
     /**

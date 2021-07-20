@@ -12,7 +12,6 @@ var OrderMgr = require('dw/order/OrderMgr');
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
 var apmConfig = require('~/cartridge/scripts/config/ckoApmConfig');
-var Site = require('dw/system/Site');
 
 /**
  * Verifies that the payment data is valid.
@@ -25,33 +24,41 @@ var Site = require('dw/system/Site');
 function Handle(basket, paymentInformation, paymentMethodID, req) {
     var currentBasket = basket;
     var apmErrors = {};
-    var fieldErrors = {};
     var serverErrors = [];
+    var invalidPaymentMethod;
 
     // Validate payment instrument
-    if (paymentMethodID) { 
-        var apmPaymentMethod = PaymentMgr.getPaymentMethod(paymentMethodID);
+    if (paymentMethodID === 'CHECKOUTCOM_APM') {
+        var apmPaymentMethod = PaymentMgr.getPaymentMethod('CHECKOUTCOM_APM');
 
         if (!apmPaymentMethod) {
             // Invalid Payment Method
-            var invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
-            
+            invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
+
             return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
         }
-    } else {
-        // Invalid Payment Type
-        var invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
-
-        return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
     }
 
-    Transaction.wrap(function () {
+    if (!paymentInformation.type.value) {
+        // Invalid Payment Type
+        invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
+
+        return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
+
+        // Invalid Payment Type
+        // apmErrors[paymentInformation.type.htmlName] =
+        // Resource.msg('error.invalid.type.value', paymentInformation.type.htmlValue, null);
+
+        // return { fieldErrors: [apmErrors], serverErrors: serverErrors, error: true };
+    }
+
+    Transaction.wrap(function() {
         var paymentInstruments = currentBasket.getPaymentInstruments(
-            paymentMethodID
+            'CHECKOUTCOM_APM'
         );
 
         // Remove any apm payment instruments
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -60,12 +67,12 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         );
 
         // Remove any credit card payment instuments
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
         var paymentInstrument = currentBasket.createPaymentInstrument(
-            paymentMethodID, currentBasket.totalGrossPrice
+            'CHECKOUTCOM_APM', currentBasket.totalGrossPrice
         );
 
         paymentInstrument.custom.ckoPaymentData = JSON.stringify(paymentInformation);
@@ -96,36 +103,45 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var args = {
         order: order,
         processorId: paymentProcessor.ID,
-        paymentData: formData
+        paymentData: formData,
     };
 
     // Get the selected APM request data
-    var func = paymentInstrument.paymentMethod.toLowerCase() + 'Authorization';
+    var func = formData.type.value + 'Authorization';
     var apmConfigData = apmConfig[func](args);
-
-    Transaction.wrap(function () {
-        paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.custom.ckoPaymentData = "";
-    });
 
     try {
         var ckoPaymentRequest = apmHelper.handleRequest(apmConfigData, paymentProcessor.ID, orderNumber);
 
         // Handle errors
-        if (ckoPaymentRequest === '' || ckoPaymentRequest === undefined || ckoPaymentRequest.error) {
-            throw new Error(ckoHelper.getPaymentFailureMessage());
+        if (ckoPaymentRequest.error) {
+            error = true;
+            serverErrors.push(
+                ckoHelper.getPaymentFailureMessage()
+            );
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
+            });
+        } else {
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
+            });
         }
-
-        return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
-
     } catch (e) {
         error = true;
         serverErrors.push(
-            e.message
+            Resource.msg('error.technical', 'checkout', null)
         );
-        return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: false };
     }
+
+    // eslint-disable-next-line
+    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
 }
 
 exports.Handle = Handle;

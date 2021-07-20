@@ -39,3 +39,19 @@
 .klarna-button input[type="radio"] {
     margin-left: 0.7em;
 }
+
+.klarnaAproved{
+    color: #84bd00;
+    float: right;
+    display: none;
+}
+
+.ckoaproved{
+    color: #EB6F93;
+}
+
+.klarnaFail{
+    color: #990000 !important;
+    float: right;
+    display: none;
+}

@@ -11,15 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
  * Load Klarna
  */
 function initKlarnaEvent() {
-    $('.klarna-tab').on('click touch', function() {
+    $('.cko-apm-accordion.klarna').on('click touch', function() {
         resetFormErrors();
 
         // valid email address
-        if (validateEmail()) {
+        if (validateEmail() && validatePhone()) {
             callKlarnaController();
         }
     });
-} 
+}
 
 /**
  * Reset Form
@@ -28,25 +28,6 @@ function resetFormErrors() {
     $('.contact-info-block .is-invalid').each(function() {
         $(this).removeClass('is-invalid');
     });
-}
-
-/**
- * Validate Email
- */
-function getBillingAddress() {
-    var billingAddress = {
-        given_name : $('input[name$="dwfrm_billing_addressFields_firstName"]').val(),
-        family_name : $('input[name$="dwfrm_billing_addressFields_lastName"]').val(),
-        street_address : $('input[name$="dwfrm_billing_addressFields_address1"]').val(),
-        street_address2: null,
-        email: $('input[name$="dwfrm_billing_contactInfoFields_email"]').val(),
-        country : $('select[name$="dwfrm_billing_addressFields_country"]').val(),
-        city : $('input[name$="dwfrm_billing_addressFields_city"]').val(),
-        postal_code : $('input[name$="dwfrm_billing_addressFields_postalCode"]').val(),
-        title: null
-    }
-
-    return billingAddress;
 }
 
 /**
@@ -92,7 +73,6 @@ function validatePhone() {
  */
 function callKlarnaController() {
     var controllerUrl = jQuery('[id="ckoKlarnaController"]').val();
-    var billing = JSON.stringify(getBillingAddress());
     if (controllerUrl) {
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
@@ -120,16 +100,14 @@ function callKlarnaController() {
                     + '`, `' + JSON.stringify(requestObject) + '`,  `' + JSON.stringify(addressInfo) + '` ,`' + sessionId + "` )'><img src='"
                     + categories[i].asset_urls.descriptive + "' id='" + categories[i].identifier
                     + "_image'><p id='" + categories[i].identifier
-                    + "_aproved'><span>&#10003;</span><span>Klarna</span></p><p style='color: #990000; float: right; display: none;' id='"
-                    + categories[i].identifier + "_rejected'><span style='font-size:20px;'>&#10007;</span><span style='color: black;'>Klarna</span></p><div>";
+                    + "_aproved' class='klarnaAproved'><span>&#10003;</span><span>Klarna</span></p><p class='klarnaFail' id='"
+                    + categories[i].identifier + "_rejected'><span class='ckoaproved'>&#10007;</span><span>Klarna</span></p><div>";
                     klarnaBox.append(klarnaButton);
                 }
             }
         };
-        xhttp.open('POST', controllerUrl, true);
-        // Send the proper header information along with the request
-        xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-        xhttp.send(billing);
+        xhttp.open('GET', controllerUrl, true);
+        xhttp.send();
     }
 }
 
@@ -137,7 +115,6 @@ function callKlarnaController() {
  * Load Klarna Widget
  */
 function loadKlarna(paymentMethod, requestObject, addressInfo, sessionId) {
-    
     // Prepare parameters
     var requestObject = JSON.parse(requestObject);
     var addressInfo = JSON.parse(addressInfo);

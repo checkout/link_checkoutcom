@@ -82,10 +82,17 @@ var ckoHelper = {
      * @returns {string} localized error message
      */
     errorMessage: function(message) {
-        var msg = 'error.';
-        msg += message.replace(/[^A-Z0-9]+/ig, "_");
+        var messageArray = message.split(' ');
+        var result = 'error.';
+        if (messageArray) {
+            messageArray.forEach(function(value){
+                result += value;
+            });
+        } else {
+            result += message;
+        }
 
-        return Resource.msg(msg, 'cko', null);
+        return Resource.msg(result, 'cko', null);
     },
 
     /**
@@ -410,7 +417,7 @@ var ckoHelper = {
         // Build the shipping data
         var shipping = {
             address: shippingDetails,
-            phone: this.getPhone(order.billingAddress),
+            phone: this.getPhone(order.getBillingAddress()),
         };
 
         return shipping;
@@ -445,7 +452,7 @@ var ckoHelper = {
         }
 
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-          if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && gatewayResponse.source.type === 'sofort') {
+          if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'sofort' || gatewayResponse.source.type === 'alipay')) {
             return true;
           }
         }
@@ -476,7 +483,7 @@ var ckoHelper = {
      */
     getQuantity: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
         var quantity = order.getProductQuantityTotal();
 
         return quantity;
@@ -502,7 +509,7 @@ var ckoHelper = {
      */
     getProductInformation: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
         var it = order.productLineItems.iterator();
         var products = [];
 
@@ -515,7 +522,7 @@ var ckoHelper = {
                 product_id: pli.productID,
                 quantity: pli.quantityValue,
                 price: this.getFormattedPrice(
-                    pli.adjustedPrice.value.toFixed(2),
+                    pli.adjustedNetPrice.value.toFixed(2),
                     args.order.getCurrencyCode()
                 ),
                 description: pli.productName,
@@ -543,11 +550,11 @@ var ckoHelper = {
      */
     getTaxObject: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Prepare the tax data
         var tax = {
-            product_id: args.orderNo,
+            product_id: args.order.orderNo,
             quantity: 1,
             price: this.getFormattedPrice(
                 order.getTotalTax().valueOf().toFixed(2),
@@ -570,7 +577,7 @@ var ckoHelper = {
      */
     getShippingValue: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Get shipping address object
         var shipping = order.getDefaultShipment();
@@ -580,7 +587,7 @@ var ckoHelper = {
             var shippment = {
                 product_id: shipping.getShippingMethod().getID(),
                 quantity: 1,
-                price: this.getFormattedPrice(shipping.adjustedShippingTotalPrice.value.toFixed(2), this.getCurrency()),
+                price: this.getFormattedPrice(shipping.adjustedShippingTotalNetPrice.value.toFixed(2), this.getCurrency(order)),
                 description: shipping.getShippingMethod().getDisplayName() + ' Shipping : ' + shipping.getShippingMethod().getDescription(),
             };
 
@@ -590,13 +597,21 @@ var ckoHelper = {
     },
 
     /**
+     * Return the currency code.
+     * @returns {string} The currency code
+     */
+    getCurrency: function(order) {
+        return order.getCurrencyCode();
+    },
+
+    /**
      * Return the order currency code.
      * @param {Object} args The method arguments
      * @returns {string} The currency code
      */
     getCurrencyCode: function(args) {
         // Get the order
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Get shipping address object
         var shipping = order.getDefaultShipment().getShippingMethod();
@@ -612,7 +627,7 @@ var ckoHelper = {
      */
     getProductNames: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderN, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Prepare the iterator
         var it = order.productLineItems.iterator();
@@ -634,7 +649,7 @@ var ckoHelper = {
      */
     getProductPrices: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Get the product itemas
         var items = order.productLineItems.iterator();
@@ -656,7 +671,7 @@ var ckoHelper = {
      */
     getProductIds: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
         var it = order.productLineItems.iterator();
         var productIds = [];
         while (it.hasNext()) {
@@ -674,7 +689,7 @@ var ckoHelper = {
      */
     getProductQuantity: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Prepare the iterator
         var it = order.productLineItems.iterator();
@@ -706,7 +721,7 @@ var ckoHelper = {
      */
     getCustomerName: function(args) {
         // Load the order information
-        var order = OrderMgr.getOrder(args.orderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.order.orderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -778,27 +793,22 @@ var ckoHelper = {
      * @returns {boolean} card type
      */
     isMadaCard: function(card) {
-
-        if (this.getValue('ckoMada')) {
-            // First 6 card number
-            var cardNumber = card.slice(0,6);
-            // First card number
-            var firstNumber = card.charAt(0);
-            
-            switch(firstNumber) {
-                case '4':
-                    return madaBins.four.some(function(element){ return element === cardNumber });
-                case '5':
-                    return madaBins.five.some(function(element){ return element === cardNumber });
-                case '6':
-                    return madaBins.six.some(function(element){ return element === cardNumber });
-                case '9':
-                    return madaBins.nine.some(function(element){ return element === cardNumber });
-                default:
-                    return false
-            }
-        } else {
-            return false;
+        // First 6 card number
+        var cardNumber = card.slice(0,6);
+        // First card number
+        var firstNumber = card.charAt(0);
+        
+        switch(firstNumber) {
+            case '4':
+                return madaBins.four.some(function(element){ return element === cardNumber });
+            case '5':
+                return madaBins.five.some(function(element){ return element === cardNumber });
+            case '6':
+                return madaBins.six.some(function(element){ return element === cardNumber });
+            case '9':
+                return madaBins.nine.some(function(element){ return element === cardNumber });
+            default:
+                return false
         }
     },
 

@@ -48,7 +48,7 @@ var savedCardHelper = {
      */
     getSavedCards: function(customerNo, methodId) {
         // Prepare the processor id
-        var processorId = methodId || 'CHECKOUTCOM_CARD';
+        var processorId = methodId || 'CREDIT_CARD';
 
         // Get the customer
         var customer = CustomerMgr.getCustomerByCustomerNumber(customerNo);
@@ -103,7 +103,7 @@ var savedCardHelper = {
         // Get the customer profile
         var customerNo = req.currentCustomer.profile.customerNo;
         var customerProfile = CustomerMgr.getCustomerByCustomerNumber(customerNo).getProfile();
-        var processorId = paymentData.paymentMethod.htmlValue;
+        var processorId = paymentData.paymentMethod.value;
 
         // Build the customer full name
         var fullName = ckoHelper.getCustomerFullName(customerProfile);
@@ -143,7 +143,7 @@ var savedCardHelper = {
                     hook.data.metadata.customer_id,
                     hook.data.metadata.payment_processor
                 );
-    
+
                 // Create a stored payment instrument
                 if (card) {
                     Transaction.wrap(function() {
@@ -169,16 +169,16 @@ var savedCardHelper = {
                 // Set the customer and card uuiid
                 var customerId = hook.data.metadata.customer_id;
                 var cardUuid = hook.data.metadata.card_uuid;
-    
+
                 // Get the customer
                 var customer = CustomerMgr.getCustomerByCustomerNumber(customerId);
-    
+
                 // Get the customer wallet
                 var wallet = customer.getProfile().getWallet();
-    
+
                 // Get the existing payment instruments
                 var paymentInstruments = wallet.getPaymentInstruments();
-    
+
                 // Remove  the relevand payment instruments
                 Transaction.wrap(function() {
                     for (var i = 0; i < paymentInstruments.length; i++) {

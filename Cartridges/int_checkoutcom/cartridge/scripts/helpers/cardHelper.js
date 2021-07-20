@@ -5,7 +5,6 @@ var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
 var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
-var Site = require('dw/system/Site');
 
 // Utility
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -16,13 +15,13 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var cardHelper = {
     /**
      * Creates Site Genesis Transaction Object.
-     * @param {Object} paymentInstrument The payment instrument
+     * @param {Object} payObject The payment data
      * @param {Object} args The request parameters
      * @returns {Object} The payment result
      */
-    cardAuthorization: function(paymentInstrument, args) {
+    cardAuthorization: function(payObject, args) {
         // Perform the charge
-        var cardRequest = this.handleCardRequest(paymentInstrument, args);
+        var cardRequest = this.handleCardRequest(payObject, args);
 
         // Handle apm result
         if (cardRequest) {
@@ -45,17 +44,17 @@ var cardHelper = {
 
     /**
      * Handle full charge Request to CKO API.
-     * @param {Object} paymentInstrument The card paymentInstrument
+     * @param {Object} cardData The card data
      * @param {Object} args The request data
      * @returns {Object} The gateway response
      */
-    handleCardRequest: function(paymentInstrument, args) {
+    handleCardRequest: function(cardData, args) {
         // Prepare the parameters
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var serviceName = 'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service';
 
         // Create billing address object
-        var gatewayRequest = this.getCardRequest(paymentInstrument, args);
+        var gatewayRequest = this.getCardRequest(cardData, args);
 
         // Log the payment response data
         ckoHelper.log(
@@ -126,18 +125,17 @@ var cardHelper = {
 
     /**
      * Build the gateway request.
-     * @param {Object} paymentInstrument The card data
+     * @param {Object} cardData The card data
      * @param {Object} args The request data
      * @returns {Object} The card request data
      */
-    getCardRequest: function(paymentInstrument, args) {
+    getCardRequest: function(cardData, args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
-        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Prepare the charge data
         var chargeData = {
-            source: this.getSourceObject(paymentInstrument, args),
+            source: this.getSourceObject(cardData, args),
             amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
             currency: ckoHelper.getCurrency(),
             reference: args.OrderNo,
@@ -146,13 +144,13 @@ var cardHelper = {
             customer: ckoHelper.getCustomer(args),
             billing_descriptor: ckoHelper.getBillingDescriptorObject(),
             shipping: this.getShippingObject(args),
-            '3ds': paymentData.madaCard === 'yes' ? { enabled: true } : this.get3Ds(),
-            risk: { enabled: Site.getCurrent().getCustomPreferenceValue('ckoEnableRiskFlag') },
+            '3ds': (cardData.type === 'mada') ? { enabled: true } : this.get3Ds(),
+            risk: { enabled: false },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             payment_ip: ckoHelper.getHost(args),
-            metadata: ckoHelper.getMetadataObject(paymentInstrument, args),
-            udf5: ckoHelper.getMetadataString(paymentInstrument, args),
+            metadata: ckoHelper.getMetadataObject(cardData, args),
+            udf5: ckoHelper.getMetadataString(cardData, args),
         };
 
         return chargeData;
@@ -160,20 +158,19 @@ var cardHelper = {
 
     /**
      * Build Gateway Source Object.
-     * @param {Object} paymentInstrument The card paymentInstrument
+     * @param {Object} cardData The card data
      * @param {Object} args The request data
      * @returns {Object} The source object
      */
-    getSourceObject: function(paymentInstrument, args) {
-        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+    getSourceObject: function(cardData, args) {
         // Source object
         var source = {
             type: 'card',
-            number: paymentInstrument.creditCardNumber,
-            expiry_month: paymentInstrument.creditCardExpirationMonth,
-            expiry_year: paymentInstrument.creditCardExpirationYear,
-            name: paymentInstrument.creditCardHolder,
-            cvv: paymentData.cvn,
+            number: cardData.number,
+            expiry_month: cardData.expiryMonth,
+            expiry_year: cardData.expiryYear,
+            name: cardData.name,
+            cvv: cardData.cvv,
             billing_address: this.getBillingObject(args),
             phone: ckoHelper.getPhoneObject(args),
         };
@@ -199,7 +196,7 @@ var cardHelper = {
      */
     getBillingObject: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -224,7 +221,7 @@ var cardHelper = {
      */
     getShippingObject: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get shipping address object
         var shippingAddress = order.getDefaultShipment().getShippingAddress();

@@ -46,7 +46,7 @@ var CKOHelper = {
 
             // Loop through the payment instruments
             for (var i = 0; i < paymentInstruments.length; i++) {
-                if (this.isCkoItem(this.getProcessorId(paymentInstruments[i])) && !this.containsObject(item, data)) {
+                if (this.isCkoItem(paymentInstruments[i].paymentMethod) && !this.containsObject(item, data)) {
                     data.push(item);
                 }
             }
@@ -157,11 +157,12 @@ var CKOHelper = {
 
         // Return true only if conditions are met
         var condition1 = (tid && paymentTransaction.transactionID === tid) || !tid;
-        var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition3 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
-        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition2 = this.isCkoItem(paymentInstrument.paymentMethod);
+        var condition3 = this.isCkoItem(this.getProcessorId(paymentInstrument));
+        var condition4 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
+        var condition5 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if (condition1 && condition2 && condition3 && condition4) {
+        if (condition1 && condition2 && condition3 && condition4 && condition5) {
             return true;
         }
 
@@ -174,7 +175,7 @@ var CKOHelper = {
      * @returns {boolean} The status of the current payment instrument
      */
     isCkoItem: function(item) {
-        return item.length > 0 && (item.indexOf('CHECKOUTCOM_') >= 0);
+        return item.length > 0 && item.indexOf('CHECKOUTCOM_') >= 0;
     },
 
     /**
@@ -184,7 +185,7 @@ var CKOHelper = {
      */
     getProcessorId: function(instrument) {
         var paymentMethod = PaymentMgr.getPaymentMethod(instrument.getPaymentMethod());
-        if (paymentMethod && paymentMethod.getPaymentProcessor()) {
+        if (paymentMethod) {
             if (paymentMethod.getPaymentProcessor()) {
                 return paymentMethod.getPaymentProcessor().getID();
             }
@@ -373,66 +374,6 @@ var CKOHelper = {
         keys.privateKey = this.getValue('cko' + str + 'PrivateKey');
 
         return keys;
-    },
-
-    /*
-     * Saves general settings form to CKO custom objects
-     */
-    storeCkoCustomProperties: function(properties, requestObject) {
-        try {
-            properties.forEach(function(element) {
-                var match = element === 'ckoDebugEnabled' || element === 'cko3ds' || element === 'ckoN3ds'
-                    || element === 'ckoAutoCapture' || element === 'ckoMada'
-                    || element === 'ckoGooglePayEnabled' || element === 'ckoSavedCardEnabled'
-                    || element === 'ckoUseSavedCardEnabled' || element === 'ckoEnableRiskFlag';
-                if (match) {
-                    // eslint-disable-next-line
-                    var property = requestObject[element] ? true : false;
-                    // eslint-disable-next-line
-                    dw.system.Site.getCurrent().setCustomPreferenceValue(element, property);
-                } else {
-                    var value = requestObject[element];
-                    if (value !== undefined || value !== '') {
-                        // eslint-disable-next-line
-        				dw.system.Site.getCurrent().setCustomPreferenceValue(element, value);
-                    }
-                }
-            });
-            var message = {error: false, message: 'properties saved successfully'};
-            return message;
-        } catch (e) {
-            var message = { error: true, message: e.message };
-            return message;
-        }
-    },
-
-    /*
-     * Returns cko settings custom objects form the system
-     */
-    getCkoCustomProperties: function(ckoCustomProperties) {
-        try {
-            // eslint-disable-next-line
-            var customPreference = dw.system.Site.getCurrent();
-            var ckoObjects = {};
-            for (var i = 0; i < ckoCustomProperties.length; i++) {
-                var currentProperty = ckoCustomProperties[i];
-                var match = currentProperty === 'ckoMode' || currentProperty === 'ckoApplePayEnvironment'
-                    || currentProperty === 'ckoApplePayButton' || currentProperty === 'ckoGooglePayEnvironment'
-                    || currentProperty === 'ckoGooglePayButton';
-                if (match) {
-                    ckoObjects[currentProperty] = customPreference.getCustomPreferenceValue(currentProperty).value;
-                } else {
-                    var value = customPreference.getCustomPreferenceValue(currentProperty);
-                    if (value !== '' || value !== undefined) {
-                        ckoObjects[currentProperty] = value;
-                    }
-                }
-            }
-            return JSON.stringify(ckoObjects);
-        } catch (e) {
-            var error = { error: 'Error', message: e.message };
-            return JSON.stringify(error);
-        }
     },
 };
 
