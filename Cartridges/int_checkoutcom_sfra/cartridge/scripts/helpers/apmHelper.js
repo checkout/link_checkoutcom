@@ -70,6 +70,7 @@ var apmHelper = {
         var result = {
             error: true,
             redirectUrl: false,
+            transactionID: gatewayResponse.id
         };
 
         // Handle the response

@@ -120,14 +120,14 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
                 ckoHelper.getPaymentFailureMessage()
             );
             Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
+                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
                 paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
                 // eslint-disable-next-line
                 paymentInstrument.custom.ckoPaymentData = '';
             });
         } else {
             Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
+                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
                 paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
                 // eslint-disable-next-line
                 paymentInstrument.custom.ckoPaymentData = '';
