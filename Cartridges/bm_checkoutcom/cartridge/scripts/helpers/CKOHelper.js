@@ -83,8 +83,8 @@ var CKOHelper = {
                     var row = {
                         id: i,
                         order_no: result[j].orderNo,
-                        transaction_id: paymentTransaction.transactionID,
-                        payment_id: paymentTransaction.custom.ckoPaymentId,
+                        transaction_id: paymentTransaction.custom.ckoActionId || paymentTransaction.custom.ckoPaymentId,
+                        payment_id: paymentTransaction.transactionID,
                         opened: paymentTransaction.custom.ckoTransactionOpened,
                         amount: paymentTransaction.amount.value,
                         currency: paymentTransaction.amount.currencyCode,
@@ -153,14 +153,14 @@ var CKOHelper = {
     isTransactionNeeded: function(paymentTransaction, paymentInstrument) {
         // Get an optional transaction id
         // eslint-disable-next-line
-        var tid = request.httpParameterMap.get('tid').stringValue;
+        var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (tid && paymentTransaction.transactionID === tid) || !tid;
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
         var condition2 = this.isCkoItem(paymentInstrument.paymentMethod);
         var condition3 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition4 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
-        var condition5 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition5 = (paymentTransaction.custom.ckoActionId && paymentTransaction.custom.ckoActionId  != '') || (paymentTransaction.custom.ckoPaymentId && paymentTransaction.custom.ckoPaymentId != '');
 
         if (condition1 && condition2 && condition3 && condition4 && condition5) {
             return true;
