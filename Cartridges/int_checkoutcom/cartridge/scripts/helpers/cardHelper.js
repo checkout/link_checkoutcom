@@ -76,6 +76,16 @@ var cardHelper = {
                 gatewayResponse
             );
 
+            Transaction.wrap(function() {
+                // Create the payment instrument and processor
+                var paymentInstrument = order.getPaymentInstruments();
+                
+                if(paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID == '')) {
+                    paymentInstrument = paymentInstrument[0];
+                }
+                paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);
+            });
+
             // Handle the response
             if (this.handleFullChargeResponse(gatewayResponse)) {
                 return gatewayResponse;
