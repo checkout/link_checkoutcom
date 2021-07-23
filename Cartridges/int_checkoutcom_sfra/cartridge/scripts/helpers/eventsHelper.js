@@ -62,7 +62,7 @@ var eventsHelper = {
             // Prepare the webhook info
             var details = '';
             details += ckoHelper._('cko.webhook.event', 'cko') + ': ' + hook.type + '\n';
-            details += ckoHelper._('cko.transaction.id', 'cko') + ': ' + hook.data.action_id + '\n';
+            details += ckoHelper._('cko.action.id', 'cko') + ': ' + hook.data.action_id + '\n';
             details += ckoHelper._('cko.transaction.paymentId', 'cko') + ': ' + hook.data.id + '\n';
             details += ckoHelper._('cko.transaction.eventId', 'cko') + ': ' + hook.id + '\n';
             details += ckoHelper._('cko.response.code', 'cko') + ': ' + hook.data.response_code + '\n';
@@ -107,9 +107,9 @@ var eventsHelper = {
             // Create the transaction
             var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
-            paymentInstrument.paymentTransaction.transactionID = hook.data.action_id;
+            paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.paymentTransaction.custom.ckoPaymentId = hook.data.id;
+            paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
             paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
             paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Capture';
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_CAPTURE);
@@ -188,9 +188,9 @@ var eventsHelper = {
         Transaction.wrap(function() {
             var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
-            paymentInstrument.paymentTransaction.transactionID = hook.data.action_id;
+            paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.paymentTransaction.custom.ckoPaymentId = hook.data.id;
+            paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
             paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = false;
             paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Refund';
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_CREDIT);
@@ -228,9 +228,9 @@ var eventsHelper = {
             // Create the transaction
             var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
-            paymentInstrument.paymentTransaction.transactionID = hook.data.action_id;
+            paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.paymentTransaction.custom.ckoPaymentId = hook.data.id;
+            paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
             paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = false;
             paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Void';
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH_REVERSAL);

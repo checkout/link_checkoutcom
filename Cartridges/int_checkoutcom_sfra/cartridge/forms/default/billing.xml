@@ -13,5 +13,6 @@
     <include formid="klarnaForm" name="klarnaForm"/>
     <include formid="qpayForm" name="qpayForm"/>
     <include formid="sepaForm" name="sepaForm"/>
+    <include formid="oxxoForm" name="oxxoForm"/>
     <field formid="subscribe" type="boolean" checked="false" default-value="false" mandatory="false" />
 </form>
