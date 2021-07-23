@@ -77,15 +77,31 @@ var setSchema = function(inputId) {
             // Sets the schema id
             var imageId = getImageId(type);
             if (imageId) {
+                var creditCardTypes = {
+                    visa: 'Visa',
+                    mastercard: 'Master Card',
+                    amex: 'Amex',
+                    discover: 'Discover',
+                    unknown: 'Unknown'
+                };
+
+                var cardType = creditCardTypes[type];
+                    
+                $('.card-number-wrapper').attr('data-type', type);
+                if (type === 'visa' || type === 'mastercard' || type === 'discover') {
+                    $('#securityCode').attr('maxlength', 3);
+                } else {
+                    $('#securityCode').attr('maxlength', 4);
+                }
                 // Set the schema image exist
                 ckoIsSet = true;
 
                 // Get element cardType from form
-                var cardType = document.getElementById('dwfrm_cardPaymentForm_type');
+                var cardTypeSelector = document.getElementById('dwfrm_cardPaymentForm_type');
 
                 // If element cardType exist set value to type
-                if (cardType) {
-                    cardType.value = type;
+                if (cardTypeSelector) {
+                    cardTypeSelector.value = cardType;
                 }
 
                 // Set card shema image

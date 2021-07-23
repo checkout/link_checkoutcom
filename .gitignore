@@ -7,3 +7,4 @@ node_modules/
 Cartridges/app_storefront_base/
 Cartridges/demo_core/
 Cartridges/demo_controllers/
+bin/
