@@ -90,11 +90,11 @@ function getTransactionData(members) {
     // Send the AJAX request
     jQuery.ajax({
         type: 'POST',
-        url: controllerUrl,
+        url: controllerUrl  + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size,
         data: { tid: transactionId },
         success: function(data) {
             // Get the data
-            var transaction = JSON.parse(data)[0];
+            var transaction = JSON.parse(data).data[0];
 
             // Set the transation data field ids
             var field1Id = '[id="' + task + '_value"]';
@@ -152,7 +152,7 @@ function showErrorMessage(selector) {
  */
 function performAction(task) {
     // Prepare the action URL
-    var actionUrl = jQuery('[id="actionControllerUrl"]').val();
+    var actionUrl = jQuery('[id="actionControllerUrl"]').val()  + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size;
 
     // Set the transaction id
     var paymentId = jQuery('[id="' + task + '_payment_id"]').text();
@@ -201,8 +201,9 @@ function performAction(task) {
  * @param {string} tableData The table data
  */
 function reloadTable(tableData) {
+    var data = JSON.parse(tableData);
     // Update the row data
-    window.ckoTransactionsTable.replaceData(tableData);
+    window.ckoTransactionsTable.replaceData(data.data);
 
     // Show the success message
     // eslint-disable-next-line

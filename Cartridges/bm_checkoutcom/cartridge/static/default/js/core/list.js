@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get the transactions
     // eslint-disable-next-line
-    getTransactions(initTable);
+    initTable();
 }, false);
 
 /**
@@ -63,7 +63,7 @@ function getCookie(cname) {
  * @param {string} callBackFn The callback function
  */
 function getTransactions(callBackFn) {
-    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val();
+    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val() + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size;
     jQuery.ajax({
         type: 'POST',
         url: controllerUrl,
@@ -81,7 +81,7 @@ function getTransactions(callBackFn) {
  * Initialise the table.
  * @param {string} tableData The table data
  */
-function initTable(tableData) {
+function initTable() {
     // Build the table instance
     // eslint-disable-next-line
     window.ckoTransactionsTable = new Tabulator('#transactions-table', {
@@ -91,8 +91,8 @@ function initTable(tableData) {
         headerFilterPlaceholder: '>',
         placeholder: window.ckoLang.noResults,
         layout: 'fitColumns',
-        data: JSON.parse(tableData),
-        pagination: 'local',
+        pagination: 'remote',
+        ajaxURL: jQuery('[id="transactionsControllerUrl"]').val(),
         paginationSize: 50,
         columns: getTableColumns(), // eslint-disable-line
         langs: getTableStrings(), // eslint-disable-line
@@ -214,7 +214,7 @@ function getButtonsHtml(cell) {
 
     // Build the action buttons
     if (JSON.parse(rowData.opened) && rowData.type !== 'CREDIT') {
-        var paymentId = rowData.payment_id.indexOf("pay_") != -1 ? rowData.payment_id : rowData.transaction_id;
+        var paymentId = rowData.payment_id && rowData.payment_id.indexOf("pay_") != -1 ? rowData.payment_id : rowData.transaction_id;
         // Capture
         if (rowData.type === 'AUTH') {
             html += '<button type="button" id="void-button-' + paymentId + '" class="btn btn-default ckoAction">' + window.ckoLang.void + '</button>';
