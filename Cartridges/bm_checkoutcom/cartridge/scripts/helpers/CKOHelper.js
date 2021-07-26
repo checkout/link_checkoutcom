@@ -40,6 +40,10 @@ var CKOHelper = {
 
         var query = this.parseQuery(request.httpQueryString);
 
+        if (!query.page) {
+            return result.asList();
+        }
+
         var page = query.page,
             pagination = query.size,
             start = (page - 1) * pagination;
@@ -163,12 +167,11 @@ var CKOHelper = {
         var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (pid && pid.indexOf('pay_'));
-        var condition2 = (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid);
-        var condition3 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
+        var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
+        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if ((condition1 && condition2) || condition3 && condition4) {
+        if (condition1 && condition2 && condition3) {
             return true;
         }
 

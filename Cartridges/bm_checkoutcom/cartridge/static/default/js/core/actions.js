@@ -90,7 +90,7 @@ function getTransactionData(members) {
     // Send the AJAX request
     jQuery.ajax({
         type: 'POST',
-        url: controllerUrl  + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size,
+        url: controllerUrl,
         data: { tid: transactionId },
         success: function(data) {
             // Get the data
@@ -152,13 +152,13 @@ function showErrorMessage(selector) {
  */
 function performAction(task) {
     // Prepare the action URL
-    var actionUrl = jQuery('[id="actionControllerUrl"]').val()  + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size;
+    var actionUrl = jQuery('[id="actionControllerUrl"]').val();
 
     // Set the transaction id
     var paymentId = jQuery('[id="' + task + '_payment_id"]').text();
 
     // Set the transaction value field id
-    var amount = jQuery('[id="' + task + '_value"]').val();
+    var amount = jQuery('[id="' + task + '_value"]').val() * 100;
 
     if(paymentId.indexOf('pay_') == -1) {
         paymentId = jQuery('[id="' + task + '_transaction_id"]').text();
