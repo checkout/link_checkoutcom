@@ -94,7 +94,7 @@ function getTransactionData(members) {
         data: { tid: transactionId },
         success: function(data) {
             // Get the data
-            var transaction = JSON.parse(data)[0];
+            var transaction = JSON.parse(data).data[0];
 
             // Set the transation data field ids
             var field1Id = '[id="' + task + '_value"]';
@@ -201,8 +201,9 @@ function performAction(task) {
  * @param {string} tableData The table data
  */
 function reloadTable(tableData) {
+    var data = JSON.parse(tableData);
     // Update the row data
-    window.ckoTransactionsTable.replaceData(tableData);
+    window.ckoTransactionsTable.replaceData(data.data);
 
     // Show the success message
     // eslint-disable-next-line

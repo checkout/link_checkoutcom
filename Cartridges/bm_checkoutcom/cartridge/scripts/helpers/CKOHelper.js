@@ -11,6 +11,7 @@ var Site = require('dw/system/Site');
 
 // Card Currency Config
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
+var totalPages;
 
 /**
  * Helper functions for the Checkout.com cartridge integration.
@@ -37,22 +38,19 @@ var CKOHelper = {
         // Query the orders
         var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
 
-        // Loop through the results
-        while (result.hasNext()) {
-            var item = result.next();
+        var query = this.parseQuery(request.httpQueryString);
 
-            // Get the payment instruments
-            var paymentInstruments = item.getPaymentInstruments().toArray();
-
-            // Loop through the payment instruments
-            for (var i = 0; i < paymentInstruments.length; i++) {
-                if (this.isCkoItem(paymentInstruments[i].paymentMethod) && !this.containsObject(item, data)) {
-                    data.push(item);
-                }
-            }
+        if (!query.page) {
+            return result.asList();
         }
 
-        return data;
+        var page = query.page,
+            pagination = query.size,
+            start = (page - 1) * pagination;
+        
+        totalPages = Math.ceil(result.getCount() / pagination);
+
+        return result.asList(start, pagination)
     },
 
     /**
@@ -71,45 +69,58 @@ var CKOHelper = {
         for (var j = 0; j < result.length; j++) {
             // Get the payment instruments
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
+            var k = paymentInstruments.length - 1;
+            
+            var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            // Add the payment transaction to the output
+            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
+                // Build the row data
+                var row = {
+                    id: i,
+                    order_no: result[j].orderNo,
+                    transaction_id: paymentTransaction.transactionID,
+                    payment_id: paymentTransaction.custom.ckoPaymentId,
+                    opened: paymentTransaction.custom.ckoTransactionOpened,
+                    amount: paymentTransaction.amount.value,
+                    currency: paymentTransaction.amount.currencyCode,
+                    creation_date: paymentTransaction.getCreationDate().toDateString(),
+                    type: paymentTransaction.type.displayValue,
+                    processor: this.getProcessorId(paymentInstruments[k]),
+                    refundable_amount: 0,
+                    data_type: paymentTransaction.type.toString(),
+                };
 
-            // Loop through the payment instruments
-            for (var k = 0; k < paymentInstruments.length; k++) {
-                // Get the payment transaction
-                var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
-
-                // Add the payment transaction to the output
-                if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
-                    // Build the row data
-                    var row = {
-                        id: i,
-                        order_no: result[j].orderNo,
-                        transaction_id: paymentTransaction.custom.ckoActionId || paymentTransaction.custom.ckoPaymentId,
-                        payment_id: paymentTransaction.transactionID,
-                        opened: paymentTransaction.custom.ckoTransactionOpened,
-                        amount: paymentTransaction.amount.value,
-                        currency: paymentTransaction.amount.currencyCode,
-                        creation_date: paymentTransaction.getCreationDate().toDateString(),
-                        type: paymentTransaction.type.displayValue,
-                        processor: this.getProcessorId(paymentInstruments[k]),
-                        refundable_amount: 0,
-                        data_type: paymentTransaction.type.toString(),
-                    };
-
-                    // Calculate the refundable amount
-                    var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
-                    var condition2 = row.opened !== false;
-                    if (condition1 && condition2) {
-                        row.refundable_amount = this.getRefundableAmount(paymentInstruments);
-                    }
-
-                    // Add the transaction
-                    data.push(row);
-                    i++;
+                // Calculate the refundable amount
+                var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
+                var condition2 = row.opened !== false;
+                if (condition1 && condition2) {
+                    row.refundable_amount = this.getRefundableAmount(paymentInstruments);
                 }
+
+                // Add the transaction
+                data.push(row);
+                i++;
             }
         }
 
-        return data;
+        return {
+            "last_page" : totalPages,
+            "data" : data
+        };
+    },
+
+    /**
+     * Parse a query string 
+     * @param {String} queryString The query string of the URL
+     */
+    parseQuery: function(queryString) {
+        var query = {};
+        var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].split('=');
+            query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+        }
+        return query;
     },
 
     /**
@@ -157,12 +168,10 @@ var CKOHelper = {
 
         // Return true only if conditions are met
         var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
-        var condition2 = this.isCkoItem(paymentInstrument.paymentMethod);
-        var condition3 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
-        var condition5 = (paymentTransaction.custom.ckoActionId && paymentTransaction.custom.ckoActionId  != '') || (paymentTransaction.custom.ckoPaymentId && paymentTransaction.custom.ckoPaymentId != '');
+        var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
+        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if (condition1 && condition2 && condition3 && condition4 && condition5) {
+        if (condition1 && condition2 && condition3) {
             return true;
         }
 
