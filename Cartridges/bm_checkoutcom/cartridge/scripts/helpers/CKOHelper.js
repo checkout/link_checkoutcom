@@ -35,13 +35,15 @@ var CKOHelper = {
         // Prepare the output array
         var data = [];
 
+        // Query the orders
+        var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
+
         var query = this.parseQuery(request.httpQueryString);
+
         var page = query.page,
             pagination = query.size,
             start = (page - 1) * pagination;
         
-        // Query the orders
-        var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
         totalPages = Math.ceil(result.getCount() / pagination);
 
         return result.asList(start, pagination)
@@ -161,11 +163,12 @@ var CKOHelper = {
         var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (pid && pid.indexOf('pay_') && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid)) || !pid;
-        var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition1 = (pid && pid.indexOf('pay_'));
+        var condition2 = (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid);
+        var condition3 = this.isCkoItem(this.getProcessorId(paymentInstrument));
+        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if (condition1 && condition2 && condition3) {
+        if ((condition1 && condition2) || condition3 && condition4) {
             return true;
         }
 
