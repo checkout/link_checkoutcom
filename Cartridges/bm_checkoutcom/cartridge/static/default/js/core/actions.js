@@ -158,7 +158,7 @@ function performAction(task) {
     var paymentId = jQuery('[id="' + task + '_payment_id"]').text();
 
     // Set the transaction value field id
-    var amount = jQuery('[id="' + task + '_value"]').val() * 100;
+    var amount = jQuery('[id="' + task + '_value"]').val();
 
     if(paymentId.indexOf('pay_') == -1) {
         paymentId = jQuery('[id="' + task + '_transaction_id"]').text();
