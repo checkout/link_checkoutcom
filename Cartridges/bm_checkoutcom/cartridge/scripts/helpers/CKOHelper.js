@@ -193,7 +193,16 @@ var CKOHelper = {
      * @returns {string} The payment instrument Id
      */
     getProcessorId: function(instrument) {
-        var paymentMethod = PaymentMgr.getPaymentMethod(instrument.getPaymentMethod());
+        var paymentMethodId;
+
+        if(instrument.getPaymentMethod() == 'CHECKOUTCOM_CARD') {
+            paymentMethodId = 'CREDIT_CARD';
+        } else {
+            paymentMethodId = instrument.getPaymentMethod();
+        }
+
+        var paymentMethod = PaymentMgr.getPaymentMethod(paymentMethodId);
+
         if (paymentMethod) {
             if (paymentMethod.getPaymentProcessor()) {
                 return paymentMethod.getPaymentProcessor().getID();
