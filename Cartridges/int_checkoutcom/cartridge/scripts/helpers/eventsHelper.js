@@ -121,7 +121,7 @@ var eventsHelper = {
         paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_CAPTURE);
 
         setPaymentStatus(order);
-        order.setConfirmationStatus(1);
+        order.setConfirmationStatus(2);
 
         // Update the parent transaction state
         var parentTransaction = transactionHelper.getParentTransaction(hook, 'Authorization');
