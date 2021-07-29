@@ -97,7 +97,7 @@ var cardHelper = {
             billing_descriptor: ckoHelper.getBillingDescriptor(),
             shipping: ckoHelper.getShipping(order),
             '3ds': (paymentData.madaCard === true) ? { enabled: true } : this.get3Ds(),
-            risk: { enabled: false },
+            risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             metadata: ckoHelper.getMetadata({}, paymentProcessor),
