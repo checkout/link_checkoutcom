@@ -119,7 +119,7 @@ function getTransactionData(members) {
             jQuery(field1Id).val(transaction.refundable_amount);
             jQuery(field2Id).append(transaction.currency);
             jQuery(field3Id).append(transaction.transaction_id);
-            jQuery(field4Id).append(transaction.payment_id);
+            jQuery(field4Id).append(transaction.action_id);
             jQuery(field5Id).append(transaction.amount + ' ' + transaction.currency);
             jQuery(field6Id).append(transaction.order_no);
             jQuery(field7Id).append(transaction.refundable_amount + ' ' + transaction.currency);

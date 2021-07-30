@@ -171,6 +171,7 @@ function getTableColumns() {
         { title: 'ID', field: 'id', visible: false },
         { title: 'Order No.', field: 'order_no', width: 120, formatter: 'html', headerFilter: 'input' },
         { title: 'Transaction ID', field: 'transaction_id', headerFilter: 'input' },
+        { title: 'Action ID', field: 'action_id', headerFilter: 'input' },
         {
             title: 'Amount',
             field: 'amount',
