@@ -57,6 +57,8 @@
 	<!-- Optional flags -->
 	<field formid="saveCard" label="creditcard.savecard" type="boolean" mandatory="false" default-value="false" />
 
+	<field formid="cardToken" type="string" mandatory="false" default-value="false" />
+
 	<!-- Confirm action -->
     <action formid="confirm" valid-form="true"/>
 </form>

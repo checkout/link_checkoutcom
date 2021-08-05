@@ -1,6 +1,8 @@
 'use strict';
 
 // API Includes
+var PaymentMgr = require('dw/order/PaymentMgr');
+var PaymentInstrument = require('dw/order/PaymentInstrument');
 var Transaction = require('dw/system/Transaction');
 
 // Site controller
@@ -15,6 +17,51 @@ var app = require('*/cartridge/scripts/app');
 // Utility
 var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+
+/**
+ * Creates a token. This should be replaced by utilizing a tokenization provider
+ * @param {Object} paymentData The data of the payment
+ * @returns {string} a token
+ */
+ function createToken(paymentData) {
+    // Prepare the parameters
+    var requestData = {
+        type: 'card',
+        number: paymentData.cardNumber.toString(),
+        expiry_month: paymentData.expirationMonth,
+        expiry_year: paymentData.expirationYear,
+        name: paymentData.name,
+    };
+
+    // Perform the request to the payment gateway - get the card token
+    var tokenResponse = ckoHelper.gatewayClientRequest(
+        'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
+        JSON.stringify(requestData)
+    );
+
+    if (tokenResponse && tokenResponse !== 400) {
+        requestData = {
+            source: {
+                type: 'token',
+                token: tokenResponse.token,
+            },
+            currency: Site.getCurrent().getDefaultCurrency(),
+            risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
+            billing_descriptor: ckoHelper.getBillingDescriptorObject(),
+        };
+    }
+
+    var idResponse = ckoHelper.gatewayClientRequest(
+        'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+        requestData
+    );
+
+    if (idResponse && idResponse !== 400) {
+        return idResponse.source.id;
+    }
+
+    return '';
+}
 
 /**
  * Verifies that the payment data is valid.
@@ -56,6 +103,16 @@ function Handle(args) {
         creditCards = customer.profile.getWallet().getPaymentInstruments(paymentMethod);
 
         Transaction.wrap(function() {
+            var processor = PaymentMgr.getPaymentMethod(PaymentInstrument.METHOD_CREDIT_CARD).getPaymentProcessor();
+            var HookMgr = require('dw/system/HookMgr');
+            var token = createToken(
+                {
+                    cardNumber: cardData.number,
+                    expirationMonth: cardData.month,
+                    expirationYear: cardData.year,
+                    name: cardData.owner,
+                }
+            );
             // eslint-disable-next-line
             newCreditCard = customer.profile.getWallet().createPaymentInstrument(paymentMethod);
 
@@ -65,6 +122,7 @@ function Handle(args) {
             newCreditCard.setCreditCardExpirationMonth(cardData.month);
             newCreditCard.setCreditCardExpirationYear(cardData.year);
             newCreditCard.setCreditCardType(cardData.cardType);
+            newCreditCard.setCreditCardToken(token);
 
             for (i = 0; i < creditCards.length; i++) {
                 var creditcard = creditCards[i];
@@ -116,6 +174,7 @@ function Authorize(args) {
         expiryYear: paymentInstrument.creditCardExpirationYear,
         cvv: paymentForm.get('cvn').value(),
         type: paymentInstrument.creditCardType,
+        creditCardToken: paymentInstrument.getCreditCardToken(),
     };
 
     if (cardHelper.cardAuthorization(cardData, args)) {
@@ -127,3 +186,4 @@ function Authorize(args) {
 // Module exports
 exports.Handle = Handle;
 exports.Authorize = Authorize;
+exports.createToken = createToken;

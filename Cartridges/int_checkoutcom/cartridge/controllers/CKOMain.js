@@ -174,6 +174,7 @@ function getCardsList() {
                 data.push({
                     cardId: applicablePaymentCards[i].getUUID(),
                     cardNumber: applicablePaymentCards[i].getCreditCardNumber(),
+                    cardToken: applicablePaymentCards[i].getCreditCardToken(),
                     cardHolder: applicablePaymentCards[i].creditCardHolder,
                     cardType: applicablePaymentCards[i].getCreditCardType(),
                     expiryMonth: applicablePaymentCards[i].creditCardExpirationMonth,

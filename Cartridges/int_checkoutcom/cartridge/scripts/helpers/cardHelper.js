@@ -5,6 +5,10 @@ var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
 var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
+var CustomerMgr = require('dw/customer/CustomerMgr');
+
+// App
+var app = require('*/cartridge/scripts/app');
 
 // Utility
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -142,10 +146,11 @@ var cardHelper = {
     getCardRequest: function(cardData, args) {
         // Load the card and order information
         var order = OrderMgr.getOrder(args.OrderNo);
+        var paymentData = app.getForm('cardPaymentForm');
 
         // Prepare the charge data
         var chargeData = {
-            source: this.getSourceObject(cardData, args),
+            source: this.getCardSource(args.PaymentInstrument),
             amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
             currency: ckoHelper.getCurrency(),
             reference: args.OrderNo,
@@ -163,29 +168,46 @@ var cardHelper = {
             udf5: ckoHelper.getMetadataString(cardData, args),
         };
 
+        // Handle the save card request
+        if (paymentData.get('saveCard').value()) {
+            var customer = CustomerMgr.getCustomerByCustomerNumber(order.getCustomerNo());
+            var wallet = customer.getProfile().getWallet();
+            var paymentInstruments = wallet.getPaymentInstruments('CREDIT_CARD');
+            // Update the metadata
+            chargeData.metadata.card_uuid = paymentInstruments[paymentInstruments.length - 1].getUUID(); // PaymentInstrument.UUID
+            chargeData.metadata.customer_id = order.getCustomerNo(); // Order.getCustomerNo
+        }
+
         return chargeData;
     },
 
     /**
-     * Build Gateway Source Object.
-     * @param {Object} cardData The card data
-     * @param {Object} args The request data
-     * @returns {Object} The source object
+     * Get a card source.
+     * @param {Object} paymentInstrument The payment data
+     * @returns {Object} The card source
      */
-    getSourceObject: function(cardData, args) {
-        // Source object
-        var source = {
-            type: 'card',
-            number: cardData.number,
-            expiry_month: cardData.expiryMonth,
-            expiry_year: cardData.expiryYear,
-            name: cardData.name,
-            cvv: cardData.cvv,
-            billing_address: this.getBillingObject(args),
-            phone: ckoHelper.getPhoneObject(args),
-        };
+    getCardSource: function(paymentInstrument) {
+        // Replace selectedCardUuid by get saved card token from selectedCardUuid
+        var cardSource;
+        var paymentData = app.getForm('cardPaymentForm');
 
-        return source;
+        if (paymentData.get('cardToken').value() != 'false') {
+            cardSource = {
+                type: 'id',
+                id: paymentData.get('cardToken').value(),
+                cvv: paymentData.get('cvn').value(),
+            };
+        } else {
+            cardSource = {
+                type: 'card',
+                number: paymentInstrument.creditCardNumber,
+                expiry_month: paymentInstrument.creditCardExpirationMonth,
+                expiry_year: paymentInstrument.creditCardExpirationYear,
+                cvv: paymentData.get('cvn').value(),
+            };
+        }
+
+        return cardSource;
     },
 
     /**
