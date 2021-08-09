@@ -57,12 +57,19 @@ var transactionHelper = {
 
         Transaction.wrap(function() {
             // Create the payment instrument and processor
-            var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
+            var paymentInstrument = order.getPaymentInstruments();
+            
+            if(paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === hook.data.id || paymentInstrument[0].paymentTransaction.transactionID == '')) {
+                paymentInstrument = paymentInstrument[0];
+            } else {
+                paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
+            }
+
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
 
             // Create the authorization transaction
             paymentInstrument.paymentTransaction.setAmount(transactionAmount);
-            paymentInstrument.paymentTransaction.transactionID = hook.data.id;
+            paymentInstrument.paymentTransaction.setTransactionID(hook.data.id);
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
             paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
             paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
