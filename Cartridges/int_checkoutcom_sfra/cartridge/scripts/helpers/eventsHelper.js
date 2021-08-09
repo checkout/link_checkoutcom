@@ -200,7 +200,8 @@ var eventsHelper = {
         // Create the refunded transaction
         Transaction.wrap(function() {
             var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
-            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
+            var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
             paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
             paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
@@ -240,7 +241,8 @@ var eventsHelper = {
         Transaction.wrap(function() {
             // Create the transaction
             var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
-            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
+            var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
             paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
             paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
