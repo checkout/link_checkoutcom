@@ -170,7 +170,7 @@ function getTableColumns() {
     return [
         { title: 'ID', field: 'id', visible: false },
         { title: 'Order No.', field: 'order_no', width: 120, formatter: 'html', headerFilter: 'input' },
-        { title: 'Action ID', field: 'transaction_id', headerFilter: 'input' },
+        { title: 'Transaction ID', field: 'transaction_id', headerFilter: 'input' },
         { title: 'Payment ID', field: 'payment_id', headerFilter: 'input' },
         {
             title: 'Amount',
@@ -211,10 +211,16 @@ function getButtonsHtml(cell) {
 
     // Prepare the variable
     var html = '';
+    var paymentId;
+
+    if (rowData.transaction_id && rowData.transaction_id.indexOf("pay_") != -1) {
+        paymentId = rowData.transaction_id;
+    } else if (rowData.payment_id && rowData.payment_id.indexOf("pay_") != -1) {
+        paymentId = rowData.payment_id
+    }
 
     // Build the action buttons
     if (JSON.parse(rowData.opened) && rowData.type !== 'CREDIT') {
-        var paymentId = rowData.payment_id && rowData.payment_id.indexOf("pay_") != -1 ? rowData.payment_id : rowData.transaction_id;
         // Capture
         if (rowData.type === 'AUTH') {
             html += '<button type="button" id="void-button-' + paymentId + '" class="btn btn-default ckoAction">' + window.ckoLang.void + '</button>';
@@ -226,7 +232,11 @@ function getButtonsHtml(cell) {
             html += '<button type="button" id="refund-button-' + paymentId + '" class="btn btn-secondary ckoAction">' + window.ckoLang.refund + '</button>';
         }
     } else {
-        html += '<div class="ckoLocked">&#x1f512;</div>';
+        if(rowData.refundable_amount != 0) {
+            html += '<button type="button" id="refund-button-' + paymentId + '" class="btn btn-secondary ckoAction">' + window.ckoLang.refund + '</button>';
+        } else {
+            html += '<div class="ckoLocked">&#x1f512;</div>';
+        }
     }
 
     return html;

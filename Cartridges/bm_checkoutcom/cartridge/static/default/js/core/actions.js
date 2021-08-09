@@ -105,20 +105,25 @@ function getTransactionData(members) {
             var field6Id = '[id="' + task + '_order_no"]';
             var field7Id = '[id="' + task + '_refundable_amount"]';
 
-            // Handle the capture case transation amount value
-            if (transaction.data_type === 'CAPTURE') {
-                jQuery(field1Id).val(transaction.refundable_amount);
-                jQuery(field7Id).append(transaction.refundable_amount + ' ' + transaction.currency);
-            } else {
-                jQuery(field1Id).val(transaction.amount);
-            }
+            // Don't allow the  user to refund more than possible
+            jQuery(field1Id).on('change', function() {
+                var refundValue = jQuery(this).val(),
+                    totalRefundableAmount = jQuery('#refund_refundable_amount').val();
+
+                if (parseFloat(refundValue) > parseFloat(totalRefundableAmount)) {
+                    jQuery(this).val(totalRefundableAmount);
+                }
+            });
 
             // Add the remaining values
+            jQuery(field1Id).val(transaction.refundable_amount);
             jQuery(field2Id).append(transaction.currency);
             jQuery(field3Id).append(transaction.transaction_id);
             jQuery(field4Id).append(transaction.payment_id);
             jQuery(field5Id).append(transaction.amount + ' ' + transaction.currency);
             jQuery(field6Id).append(transaction.order_no);
+            jQuery(field7Id).append(transaction.refundable_amount + ' ' + transaction.currency);
+            jQuery(field7Id).val(transaction.refundable_amount);
 
             // Show the modal window
             jQuery(modalId).show();

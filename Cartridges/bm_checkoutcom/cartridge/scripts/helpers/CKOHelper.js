@@ -79,23 +79,16 @@ var CKOHelper = {
                     id: i,
                     order_no: result[j].orderNo,
                     transaction_id: paymentTransaction.transactionID,
-                    payment_id: paymentTransaction.custom.ckoPaymentId,
+                    action_id: paymentTransaction.custom.ckoPaymentId || paymentTransaction.custom.ckoActionId,
                     opened: paymentTransaction.custom.ckoTransactionOpened,
-                    amount: paymentTransaction.amount.value,
+                    amount: result[j].getTotalGrossPrice().value,
                     currency: paymentTransaction.amount.currencyCode,
                     creation_date: paymentTransaction.getCreationDate().toDateString(),
                     type: paymentTransaction.type.displayValue,
                     processor: this.getProcessorId(paymentInstruments[k]),
-                    refundable_amount: 0,
+                    refundable_amount: this.getRefundableAmount(paymentInstruments),
                     data_type: paymentTransaction.type.toString(),
                 };
-
-                // Calculate the refundable amount
-                var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
-                var condition2 = row.opened !== false;
-                if (condition1 && condition2) {
-                    row.refundable_amount = this.getRefundableAmount(paymentInstruments);
-                }
 
                 // Add the transaction
                 data.push(row);
