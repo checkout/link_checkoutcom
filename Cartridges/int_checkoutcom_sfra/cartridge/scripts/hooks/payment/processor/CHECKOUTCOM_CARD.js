@@ -42,7 +42,7 @@ function createToken(paymentData) {
                 token: tokenResponse.token,
             },
             currency: Site.getCurrent().getDefaultCurrency(),
-            risk: { enabled: false },
+            risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
             billing_descriptor: ckoHelper.getBillingDescriptor(),
         };
     }

@@ -348,6 +348,14 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>true</default-value>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoEnableRiskFlag">
+                <display-name xml:lang="x-default">Enable Fraud Check</display-name>
+                <description xml:lang="x-default">Configures the risk assessment performed during the processing of the payment</description>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoMode">
                 <display-name xml:lang="x-default">Mode</display-name>
                 <description xml:lang="x-default">Should the payment method should run in sandbox or live mode.</description>
@@ -748,6 +756,7 @@
                 <attribute attribute-id="ckoDebugEnabled"/>
                 <attribute attribute-id="ckoAutoCapture"/>
                 <attribute attribute-id="ckoAutoCaptureTime"/>
+                <attribute attribute-id="ckoEnableRiskFlag"/>
                 <attribute attribute-id="cko3ds"/>
                 <attribute attribute-id="ckoN3ds"/>
                 <attribute attribute-id="ckoMada"/>
