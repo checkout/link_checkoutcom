@@ -84,7 +84,7 @@ var eventsHelper = {
                 // Update order if flagged
                 if (flagDetails) {
                     order.addNote(ckoHelper._('cko.webhook.info', 'cko'), flagDetails);
-                    order.setConfirmationStatus(0);
+                    order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
                 }
 
                 // Update the order status
@@ -126,7 +126,7 @@ var eventsHelper = {
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_CAPTURE);
 
             setPaymentStatus(order);
-            order.setConfirmationStatus(2);
+            order.setConfirmationStatus(order.CONFIRMATION_STATUS_CONFIRMED);
 
             // Update the parent transaction state
             var parentTransaction = transactionHelper.getParentTransaction(hook, 'Authorization');
