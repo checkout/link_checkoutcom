@@ -32,7 +32,7 @@ function Handle(args) {
     // Proceed with transaction
     Transaction.wrap(function() {
         cart.removeExistingPaymentInstruments(paymentMethod);
-        var paymentInstrument = cart.createPaymentInstrument(paymentMethod, cart.getNonGiftCertificateAmount());
+        var paymentInstrument = cart.createPaymentInstrument('CHECKOUTCOM_GOOGLE_PAY', cart.getNonGiftCertificateAmount());
         paymentInstrument.paymentTransaction.custom.ckoGooglePayData = googlePayData;
     });
 
