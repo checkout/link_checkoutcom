@@ -8,26 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
     launchGooglePay();
 }, false);
 
-function initCheckoutcomGooglePayValidation() {
-    $('button.submit-payment').off('click touch').one('click touch', function(e) {
-        if ($('input[name="dwfrm_billing_paymentMethod"]').val() === 'CHECKOUTCOM_GOOGLE_PAY') {
-            // Prevent the default button click behaviour
-            e.preventDefault();
-            e.stopImmediatePropagation();
-
-            // Validate the payment data
-            var field1 = $('input[name="dwfrm_billing_googlePayForm_ckoGooglePayData"]');
-            if (field1.val() === '') {
-                $('#google-pay-content .invalid-field-message').text(
-                    window.ckoLang.googlePayDataInvalid
-                );
-            } else {
-                $(this).trigger('click');
-            }
-        }
-    });
-}
-
 function launchGooglePay() {
     jQuery('.google-pay-button').click(function() {
     // Prepare the payment parameters
@@ -161,6 +141,16 @@ function launchGooglePay() {
 
             // Store the payload
             jQuery('#ckoGooglePayData').val(JSON.stringify(payload));
+
+            // Validate the payment data
+            var field1 = $('input[name="dwfrm_billing_googlePayForm_ckoGooglePayData"]');
+            if (field1.val() === '') {
+                $('#google-pay-content .invalid-field-message').text(
+                    window.ckoLang.googlePayDataInvalid
+                );
+            } else {
+                $('button.submit-payment').trigger('click');
+            }
         }
     });
 }

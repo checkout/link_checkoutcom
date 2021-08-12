@@ -6,7 +6,7 @@
  * @param {Object} viewFormData - object contains billing form data
  * @returns {Object} an object that has error information or payment information
  */
-function processForm(paymentForm, viewFormData) {
+function processForm(req, paymentForm, viewFormData) {
     var viewData = viewFormData;
     var ckoGooglePayData = paymentForm.googlePayForm ? paymentForm.googlePayForm.ckoGooglePayData.htmlValue : null;
     var error = true;
@@ -20,8 +20,8 @@ function processForm(paymentForm, viewFormData) {
 
         viewData.paymentInformation = {
             ckoGooglePayData: {
-                value: ckoGooglePayData.htmlValue,
-                htmlName: ckoGooglePayData.htmlName,
+                value: ckoGooglePayData,
+                htmlName: ckoGooglePayData,
             },
         };
     }

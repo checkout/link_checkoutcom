@@ -782,6 +782,9 @@ var ckoHelper = {
         }
 
         // Add the payment processor to the metadata
+        if (typeof(processorId) == 'object' ) {
+            processorId = processorId.getID();
+        }
         meta.payment_processor = processorId;
 
         return meta;
