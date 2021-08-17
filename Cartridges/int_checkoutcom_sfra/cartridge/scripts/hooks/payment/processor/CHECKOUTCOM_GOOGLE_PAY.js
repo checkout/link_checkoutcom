@@ -3,6 +3,7 @@
 /** Utility **/
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
+var Transaction = require('dw/system/Transaction');
 
 /**
  * Verifies that the payment data is valid.
@@ -16,6 +17,14 @@ function Handle(basket, billingData, processorId, req) {
     var fieldErrors = {};
     var serverErrors = [];
 
+    Transaction.wrap(function() {
+        var paymentInstrument = basket.createPaymentInstrument(
+            'CHECKOUTCOM_GOOGLE_PAY', basket.getTotalGrossPrice()
+        );
+
+        paymentInstrument.custom.ckoPaymentData = billingData.ckoGooglePayData.value;
+    });
+
     return {
         fieldErrors: fieldErrors,
         serverErrors: serverErrors,
@@ -26,28 +35,34 @@ function Handle(basket, billingData, processorId, req) {
 /**
  * Authorizes a payment.
  * @param {Object} orderNumber The order number
- * @param {Object} billingForm The billing data
- * @param {string} processorId The processor id
- * @param {Object} req The HTTP request data
+ * @param {Object} paymentInstrument The billing data
+ * @param {string} paymentProcessor The processor id
  * @returns {Object} The payment result
  */
-function Authorize(orderNumber, billingForm, processorId, req) {
+function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var serverErrors = [];
     var fieldErrors = {};
 
     // Payment request
     var result = googlePayHelper.handleRequest(
-        billingForm.googlePayForm.ckoGooglePayData.htmlValue,
-        processorId,
+        paymentInstrument.custom.ckoPaymentData,
+        paymentProcessor,
         orderNumber
     );
 
     // Handle errors
     if (result.error) {
+        Transaction.wrap(function() {
+            paymentInstrument.custom.ckoPaymentData = '';
+        });
         serverErrors.push(
             ckoHelper.getPaymentFailureMessage()
         );
     }
+
+    Transaction.wrap(function() {
+        paymentInstrument.custom.ckoPaymentData = '';
+    });
 
     return {
         fieldErrors: fieldErrors,
