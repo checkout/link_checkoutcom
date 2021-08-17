@@ -3,7 +3,6 @@
 /* Business Name */
 var Site = require('dw/system/Site');
 var businessName = Site.getCurrent().getCustomPreferenceValue('ckoBusinessName');
-var BasketMgr = require('dw/order/BasketMgr');
 
 /* Utility */
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -212,7 +211,7 @@ var ckoApmConfig = {
      * @param {Object} args The payment arguments
      * @returns {Object} The payment parameters
      */
-     oxxoPayAuthorization: function(args) {
+    oxxoPayAuthorization: function(args) {
         // Build the payment object
         var payObject = {
             source: {
@@ -221,7 +220,7 @@ var ckoApmConfig = {
                 country: ckoHelper.getBillingObject(args).country,
                 payer: {
                     name: ckoHelper.getCustomerName(args),
-                    email: ckoHelper.getCustomer(args).email,
+                    email: ckoHelper.getCustomer(args).email, // eslint-disable-next-line
                     document: paymentForm.get('oxxo_identification').value(),
                 },
             },
@@ -336,7 +335,7 @@ var ckoApmConfig = {
                         args.order.totalTax.value,
                         args.order.getCurrencyCode()
                     ),
-                    billing_address: {email: args.order.customerEmail},
+                    billing_address: { email: args.order.customerEmail },
                     products: ckoHelper.getOrderBasketObject(args),
                 },
             };

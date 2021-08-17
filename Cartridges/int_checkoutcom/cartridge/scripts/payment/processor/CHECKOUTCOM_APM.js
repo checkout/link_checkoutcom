@@ -1,8 +1,5 @@
 'use strict';
 
-// Site controller
-var Site = require('dw/system/Site');
-
 // API Includes
 var Transaction = require('dw/system/Transaction');
 var Cart = require('*/cartridge/scripts/models/CartModel');

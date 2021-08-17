@@ -5,9 +5,6 @@ var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
 
-// Site controller
-var Site = require('dw/system/Site');
-
 // Shopper cart
 var Cart = require('*/cartridge/scripts/models/CartModel');
 

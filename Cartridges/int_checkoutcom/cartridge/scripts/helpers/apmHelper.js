@@ -40,10 +40,10 @@ var apmHelper = {
                         redirectUrl: session.privacy.redirectUrl // eslint-disable-line
                     });
 
-                    return { authorized: true, redirected: true, response: apmRequest};
+                    return { authorized: true, redirected: true, response: apmRequest };
                 }
 
-                return { authorized: true, response: apmRequest};
+                return { authorized: true, response: apmRequest };
             }
 
             return false;
@@ -126,8 +126,8 @@ var apmHelper = {
             Transaction.wrap(function() {
                 // Create the payment instrument and processor
                 var paymentInstrument = order.getPaymentInstruments();
-                
-                if(paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID == '')) {
+
+                if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
                     paymentInstrument = paymentInstrument[0];
                 }
                 paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);

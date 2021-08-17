@@ -52,7 +52,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
 
     // Handle errors
     if (result.error) {
-        Transaction.wrap(function() {
+        Transaction.wrap(function() { // eslint-disable-next-line
             paymentInstrument.custom.ckoPaymentData = '';
         });
         serverErrors.push(
@@ -60,7 +60,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
-    Transaction.wrap(function() {
+    Transaction.wrap(function() { // eslint-disable-next-line
         paymentInstrument.custom.ckoPaymentData = '';
     });
 

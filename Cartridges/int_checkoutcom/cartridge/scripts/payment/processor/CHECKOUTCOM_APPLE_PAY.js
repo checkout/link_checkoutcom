@@ -1,19 +1,17 @@
+'use strict';
+
 var Status = require('dw/system/Status');
-var PaymentInstrument = require('dw/order/PaymentInstrument');
-var Logger = require('dw/system/Logger');
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 var OrderMgr = require('dw/order/OrderMgr');
 var Order = require('dw/order/Order');
-var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
 
-exports.authorizeOrderPayment = function (order, event) {
+exports.authorizeOrderPayment = function(order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
     && order;
 
     if (condition) {
-
         // Payment request
         var result = applePayHelper.handleRequest(
             event.payment.token.paymentData,
@@ -26,17 +24,17 @@ exports.authorizeOrderPayment = function (order, event) {
             order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
         });
 
-        if (result) {
-            return new Status(Status.OK);
-        } else {
+        if (!result) {
             return new Status(Status.ERROR);
         }
 
+        return new Status(Status.OK);
     }
+
+    return new Status(Status.ERROR);
 };
 
-exports.placeOrder = function (order) {
-
+exports.placeOrder = function(order) {
     var paymentInstruments = order.getPaymentInstruments('CHECKOUTCOM_APPLE_PAY').toArray();
 
     var paymentInstrument = paymentInstruments[0];
@@ -48,17 +46,17 @@ exports.placeOrder = function (order) {
 
     // Remove sfcc notes
     if (orderNotes.length > 0) {
-        for (var i = 0; i < orderNotes.length; i ++) {
+        for (var i = 0; i < orderNotes.length; i++) {
             var currentNote = orderNotes.get(i);
             var subject = currentNote.subject;
-            if (subject == "Payment Authorization Warning!") {
+            if (subject === 'Payment Authorization Warning!') {
                 order.removeNote(currentNote);
             }
         }
     }
-    
+
     // Get Previews Notes and Remove them
-    var orderNotes = order.getNotes();
+    orderNotes = order.getNotes();
 
     var placeOrderStatus = OrderMgr.placeOrder(order);
     if (placeOrderStatus === Status.ERROR) {

@@ -43,10 +43,10 @@ var sensitiveDataHelper = {
         if (Object.prototype.hasOwnProperty.call(source, 'billing_address') && source.billing_address != null) {
             source.billing_address = this.cleanBillingAddress(source.billing_address);
         }
-        if (Object.prototype.hasOwnProperty.call(source, 'number')  && source.number != null) {
+        if (Object.prototype.hasOwnProperty.call(source, 'number') && source.number != null) {
             source.number = String.prototype.replace.call(source.number, /\d/gi, '*');
         }
-        if (Object.prototype.hasOwnProperty.call(source, 'cvv')  && source.cvv != null) {
+        if (Object.prototype.hasOwnProperty.call(source, 'cvv') && source.cvv != null) {
             source.cvv = String.prototype.replace.call(source.cvv, /\d/gi, '*');
         }
 
@@ -125,18 +125,18 @@ var sensitiveDataHelper = {
     cleanShippingObject: function(shippingObject) {
         var shipping = shippingObject;
         if (Object.prototype.hasOwnProperty.call(shipping, 'address')) {
-            if(shipping.address.address_line1 != null) {
+            if (shipping.address.address_line1 != null) {
                 shipping.address.address_line1 = String.prototype.replace.call(shipping.address.address_line1, /\w/gi, '*');
             }
-            if(shipping.address.address_line2 != null) {
+            if (shipping.address.address_line2 != null) {
                 shipping.address.address_line2 = String.prototype.replace.call(shipping.address.address_line2, /\w/gi, '*');
             }
-            if(shipping.address.city != null) {
+            if (shipping.address.city != null) {
                 shipping.address.city = String.prototype.replace.call(shipping.address.city, /\w/gi, '*');
             }
-            if(shipping.address.zip != null) {
+            if (shipping.address.zip != null) {
                 shipping.address.zip = String.prototype.replace.call(shipping.address.zip, /\w/gi, '*');
-            }    
+            }
         }
         if (Object.prototype.hasOwnProperty.call(shipping, 'phone') && shipping.phone.number != null) {
             shipping.phone.number = String.prototype.replace.call(shipping.phone.number, /\d/gi, '*');

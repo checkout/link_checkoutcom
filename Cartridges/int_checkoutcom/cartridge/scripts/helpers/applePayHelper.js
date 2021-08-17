@@ -14,7 +14,9 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var applePayHelper = {
     /**
      * Handle full charge Request to CKO API
-     * @param {Object} args The request arguments
+     * @param {Object} paymentData The payment data
+     * @param {string} processorId The processor ID
+     * @param {string} orderNumber The order number
      * @returns {Object} The gateway response
      */
     handleRequest: function(paymentData, processorId, orderNumber) {
@@ -44,8 +46,8 @@ var applePayHelper = {
         // If the request is valid, process the response
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
             var args = {
-                OrderNo: orderNumber
-            }
+                OrderNo: orderNumber,
+            };
             gatewayRequest = {
                 source: {
                     type: 'token',
@@ -59,7 +61,7 @@ var applePayHelper = {
                 customer: ckoHelper.getCustomer(args),
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
                 shipping: ckoHelper.getShippingObject(args),
-                metadata: ckoHelper.getApplePayMetadata({}, processorId)
+                metadata: ckoHelper.getApplePayMetadata({}, processorId),
             };
 
             // Log the payment request data
@@ -93,7 +95,7 @@ var applePayHelper = {
             ckoHelper.updateCustomerData(gatewayResponse);
         } else {
             // Update the transaction
-            Transaction.wrap(function() {
+            Transaction.wrap(function() { // eslint-disable-next-line
                 OrderMgr.failOrder(order, true);
             });
         }

@@ -1,7 +1,6 @@
 'use strict';
 
 // API Includes
-var Site = require('dw/system/Site');
 var app = require('*/cartridge/scripts/app');
 var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');

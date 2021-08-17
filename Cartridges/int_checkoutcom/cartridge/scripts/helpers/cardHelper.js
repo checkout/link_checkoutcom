@@ -83,8 +83,8 @@ var cardHelper = {
             Transaction.wrap(function() {
                 // Create the payment instrument and processor
                 var paymentInstrument = order.getPaymentInstruments();
-                
-                if(paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID == '')) {
+
+                if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
                     paymentInstrument = paymentInstrument[0];
                 }
                 paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);
@@ -160,7 +160,7 @@ var cardHelper = {
             billing_descriptor: ckoHelper.getBillingDescriptorObject(),
             shipping: this.getShippingObject(args),
             '3ds': (cardData.type === 'mada') ? { enabled: true } : this.get3Ds(),
-            risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
+            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             payment_ip: ckoHelper.getHost(args),
@@ -191,7 +191,7 @@ var cardHelper = {
         var cardSource;
         var paymentData = app.getForm('cardPaymentForm');
 
-        if (paymentData.get('cardToken').value() != 'false') {
+        if (paymentData.get('cardToken').value() !== 'false') {
             cardSource = {
                 type: 'id',
                 id: paymentData.get('cardToken').value(),
