@@ -777,10 +777,11 @@ var ckoHelper = {
 
         // Get the payment processor
         var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+        var paymentMethodName = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor().getID();
+        var paymentMethodId = paymentMethodName == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentMethodName;
 
         // Add the payment processor to the metadata
-        meta.payment_processor = paymentProcessor.getID();
+        meta.payment_processor = paymentMethodId;
 
         return meta;
     },

@@ -4,6 +4,8 @@
 var OrderMgr = require('dw/order/OrderMgr');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
 var PaymentMgr = require('dw/order/PaymentMgr');
+var CustomerMgr = require('dw/customer/CustomerMgr');
+var Transaction = require('dw/system/Transaction');
 
 // Checkout.com Helper functions
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -48,6 +50,70 @@ function setPaymentStatus(order) {
  * Gateway event functions for the Checkout.com cartridge integration.
  */
 var eventsHelper = {
+    /**
+     * Get a customer saved card.
+     * @param {string} cardUuid The card uuid
+     * @param {string} customerNo The customer number
+     * @param {string} methodId The method id
+     * @returns {Object} A card object
+     */
+     getSavedCard: function(cardUuid, customerNo, methodId) {
+        // Get the customer
+        var customer = CustomerMgr.getCustomerByCustomerNumber(customerNo);
+
+        // Get the customer wallet
+        var wallet = customer.getProfile().getWallet();
+
+        // Get the existing payment instruments
+        var paymentInstruments = wallet.getPaymentInstruments(methodId);
+
+        // Match the saved card
+        for (var i = 0; i < paymentInstruments.length; i++) {
+            var card = paymentInstruments[i];
+            if (card.getUUID() === cardUuid) {
+                return card;
+            }
+        }
+
+        return null;
+    },
+
+    /**
+     * Delete a card in customer account.
+     * @param {Object} hook The gateway webhook data
+     */
+     deleteSavedCard: function(hook) {
+        if (hook) {
+            var condition1 = Object.prototype.hasOwnProperty.call(hook, 'data') && Object.prototype.hasOwnProperty.call(hook.data, 'metadata');
+            var condition2 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'card_uuid');
+            var condition3 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'customer_id');
+            if (condition1 && condition2 && condition3) {
+                // Set the customer and card uuiid
+                var customerId = hook.data.metadata.customer_id;
+                var cardUuid = hook.data.metadata.card_uuid;
+
+                // Get the customer
+                var customer = CustomerMgr.getCustomerByCustomerNumber(customerId);
+
+                // Get the customer wallet
+                var wallet = customer.getProfile().getWallet();
+
+                // Get the existing payment instruments
+                var paymentInstruments = wallet.getPaymentInstruments();
+
+                // Remove  the relevand payment instruments
+                Transaction.wrap(function() {
+                    for (var i = 0; i < paymentInstruments.length; i++) {
+                        var card = paymentInstruments[i];
+                        if (card.getUUID() === cardUuid) {
+                            wallet.removePaymentInstrument(card);
+                        }
+                    }
+                });
+            }
+        }
+    },
+
     /**
      * Adds the gateway webhook information to the newly created order.
      * @param {Object} hook The gateway webhook data
@@ -141,24 +207,6 @@ var eventsHelper = {
 
         // Create the authorized transaction
         transactionHelper.createAuthorization(hook);
-
-        // Handle card saving
-        var cardUuid = hook.data.metadata.card_uuid;
-        var customerId = hook.data.metadata.customer_id;
-        var processorId = hook.data.metadata.payment_processor;
-        if (cardUuid !== 'false' && customerId) {
-            // Load the saved card
-            var savedCard = cardHelper.getSavedCard(
-                cardUuid,
-                customerId,
-                processorId
-            );
-
-            if (savedCard) {
-                // Add the card source
-                savedCard.setCreditCardToken(hook.data.source.id);
-            }
-        }
     },
 
     /**
@@ -175,6 +223,7 @@ var eventsHelper = {
      */
     paymentDeclined: function(hook) {
         this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', 'ORDER_STATUS_FAILED');
+        this.deleteSavedCard(hook);
     },
 
     /**

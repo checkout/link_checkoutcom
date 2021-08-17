@@ -66,6 +66,7 @@ function getCardData(elt, dataUrl) {
                             cardType: cards[i].cardType,
                             cardHolder: cards[i].cardHolder,
                             cardType: cards[i].cardType,
+                            cardToken: cards[i].cardToken,
                             expiryMonth: cards[i].expiryMonth,
                             expiryYear: cards[i].expiryYear,
                         });
@@ -86,12 +87,14 @@ function getCardData(elt, dataUrl) {
 function setFields(data)
 {
     var $creditCard = $('[data-method="CREDIT_CARD"]');
-    $creditCard.find('input[name$="_cardPaymentForm_owner"]').val(data.cardHolder).trigger('change');
-    $creditCard.find('input[name$="_cardPaymentForm_number"]').val(data.cardNumber).trigger('change');
+    $creditCard.find('input[name$="_cardPaymentForm_owner"]').val(data.cardHolder);
+    $creditCard.find('input[name$="_cardPaymentForm_number"]').val(data.cardNumber);
+    $creditCard.find('input[name$="_cardPaymentForm_cardToken"]').val(data.cardToken);
     
     // enable card data formating
     setSchema('#dwfrm_cardPaymentForm_number');
-    $creditCard.find('[name$="_month"]').val(data.expiryMonth).trigger('change');
-    $creditCard.find('[name$="_year"]').val(data.expiryYear).trigger('change');
-    $creditCard.find('input[name$="_cvn"]').val('').trigger('change');
+    $creditCard.find('input[name$="_cardPaymentForm_number"]').val(data.cardNumber);
+    $creditCard.find('[name$="_month"]').val(data.expiryMonth);
+    $creditCard.find('[name$="_year"]').val(data.expiryYear);
+    $creditCard.find('input[name$="_cvn"]').val('');
 }
