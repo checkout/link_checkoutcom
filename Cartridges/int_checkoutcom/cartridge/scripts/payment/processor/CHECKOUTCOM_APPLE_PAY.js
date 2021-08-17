@@ -5,6 +5,7 @@ var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
 var OrderMgr = require('dw/order/OrderMgr');
 var Order = require('dw/order/Order');
 var PaymentMgr = require('dw/order/PaymentMgr');
+var Transaction = require('dw/system/Transaction');
 
 exports.authorizeOrderPayment = function (order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
@@ -20,6 +21,11 @@ exports.authorizeOrderPayment = function (order, event) {
             order.orderNo
         );
 
+        Transaction.wrap(function() {
+            order.removeAllPaymentInstruments();
+            order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
+        });
+
         if (result) {
             return new Status(Status.OK);
         } else {
@@ -31,8 +37,7 @@ exports.authorizeOrderPayment = function (order, event) {
 
 exports.placeOrder = function (order) {
 
-    var paymentInstruments = order.getPaymentInstruments(
-        PaymentInstrument.METHOD_DW_APPLE_PAY).toArray();
+    var paymentInstruments = order.getPaymentInstruments('CHECKOUTCOM_APPLE_PAY').toArray();
 
     var paymentInstrument = paymentInstruments[0];
     var paymentTransaction = paymentInstrument.getPaymentTransaction();
