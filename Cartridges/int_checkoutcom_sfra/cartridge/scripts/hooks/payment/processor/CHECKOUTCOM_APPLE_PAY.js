@@ -4,6 +4,7 @@ var Status = require('dw/system/Status');
 
 /** Utility **/
 var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
+var Transaction = require('dw/system/Transaction');
 
 exports.authorizeOrderPayment = function(order, event) {
     var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
@@ -17,6 +18,11 @@ exports.authorizeOrderPayment = function(order, event) {
             'CHECKOUTCOM_APPLE_PAY',
             order.orderNo
         );
+
+        Transaction.wrap(function() {
+            order.removeAllPaymentInstruments();
+            order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
+        });
 
         if (!result.error) {
             return new Status(Status.OK);
