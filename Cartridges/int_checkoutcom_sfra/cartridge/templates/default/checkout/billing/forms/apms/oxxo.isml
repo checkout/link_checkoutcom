@@ -9,7 +9,7 @@
 
 <div class="cko-apm-panel">
     <div class="oxxo_pay" id="oxxo_pay_box">
-        ${Resource.msg('cko.sepa.iban','cko',null)} 
+        ${Resource.msg('cko.oxxo.curp','cko',null)} 
         <input id="oxxo_identification" name="${oxxoForm.oxxo_identification.htmlName}" type="text"/>
         <div class="invalid-field-message"></div>
     </div>
