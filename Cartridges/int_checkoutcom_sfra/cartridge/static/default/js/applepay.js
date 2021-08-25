@@ -33,6 +33,9 @@ function getLineItems() {
 }
 
 function getSupportedNetworks() {
+    if (jQuery('[id="ckoApplePaySiteCountry"]').val() == 'SA') {
+        return ['amex', 'masterCard', 'visa', 'mada'];
+    }
     return ['amex', 'masterCard', 'visa'];
 }
 
