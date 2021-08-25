@@ -211,20 +211,20 @@ var ckoApmConfig = {
      * @param {Object} args The payment arguments
      * @returns {Object} The payment parameters
      */
-    oxxoPayAuthorization: function(args) {
+    oxxoAuthorization: function(args) {
         // Build the payment object
         var payObject = {
             source: {
                 type: 'oxxo',
                 integration_type: 'redirect',
-                country: ckoHelper.getBillingObject(args).country,
+                country: ckoHelper.getBilling(args).country,
                 payer: {
-                    name: ckoHelper.getCustomerName(args),
-                    email: ckoHelper.getCustomer(args).email, // eslint-disable-next-line
-                    document: paymentForm.get('oxxo_identification').value(),
+                    name: ckoHelper.getCustomer(args.order).name,
+                    email: ckoHelper.getCustomer(args.order).email, // eslint-disable-next-line
+                    document: args.paymentData.oxxo_identification.value,
                 },
             },
-            currency: ckoHelper.getCurrency(args),
+            currency: ckoHelper.getCurrency(args.order),
         };
 
         return payObject;
