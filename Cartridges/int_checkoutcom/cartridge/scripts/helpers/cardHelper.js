@@ -84,9 +84,12 @@ var cardHelper = {
                 // Create the payment instrument and processor
                 var paymentInstrument = order.getPaymentInstruments();
 
-                if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
-                    paymentInstrument = paymentInstrument[0];
+                if (paymentInstrument[paymentInstrument.length - 1] && (paymentInstrument[paymentInstrument.length - 1].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[paymentInstrument.length - 1].paymentTransaction.transactionID === '')) {
+                    paymentInstrument = paymentInstrument[paymentInstrument.length - 1];
+                } else {
+                    paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
                 }
+
                 paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);
             });
 
@@ -147,11 +150,12 @@ var cardHelper = {
         // Load the card and order information
         var order = OrderMgr.getOrder(args.OrderNo);
         var paymentData = app.getForm('cardPaymentForm');
+        var orderTotal = args.PaymentInstrument.paymentTransaction.amount ? args.PaymentInstrument.paymentTransaction.amount.getValue().toFixed(2) : order.totalGrossPrice.value.toFixed(2); 
 
         // Prepare the charge data
         var chargeData = {
             source: this.getCardSource(args.PaymentInstrument),
-            amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
+            amount: ckoHelper.getFormattedPrice(orderTotal, ckoHelper.getCurrency()),
             currency: ckoHelper.getCurrency(),
             reference: args.OrderNo,
             capture: ckoHelper.getValue('ckoAutoCapture'),
@@ -195,6 +199,12 @@ var cardHelper = {
             cardSource = {
                 type: 'id',
                 id: paymentData.get('cardToken').value(),
+                cvv: paymentData.get('cvn').value(),
+            };
+        } else if (paymentInstrument.getCreditCardToken()) {
+            cardSource = {
+                type: 'id',
+                id: paymentInstrument.getCreditCardToken(),
                 cvv: paymentData.get('cvn').value(),
             };
         } else {
