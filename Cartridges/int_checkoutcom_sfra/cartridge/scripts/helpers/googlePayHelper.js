@@ -54,7 +54,7 @@ var googlePayHelper = {
                 capture: ckoHelper.getValue('ckoAutoCapture'),
                 capture_on: ckoHelper.getCaptureTime(),
                 customer: ckoHelper.getCustomer(order),
-                risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
+                risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
                 shipping: ckoHelper.getShipping(order),
                 metadata: ckoHelper.getMetadata({}, processorId),

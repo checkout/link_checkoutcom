@@ -1,8 +1,6 @@
 'use strict';
 
 // API Includes
-var PaymentMgr = require('dw/order/PaymentMgr');
-var PaymentInstrument = require('dw/order/PaymentInstrument');
 var Transaction = require('dw/system/Transaction');
 
 // Site controller
@@ -23,7 +21,7 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
  * @param {Object} paymentData The data of the payment
  * @returns {string} a token
  */
- function createToken(paymentData) {
+function createToken(paymentData) {
     // Prepare the parameters
     var requestData = {
         type: 'card',
@@ -46,7 +44,7 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
                 token: tokenResponse.token,
             },
             currency: Site.getCurrent().getDefaultCurrency(),
-            risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
+            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
             billing_descriptor: ckoHelper.getBillingDescriptorObject(),
         };
     }
@@ -103,8 +101,6 @@ function Handle(args) {
         creditCards = customer.profile.getWallet().getPaymentInstruments(paymentMethod);
 
         Transaction.wrap(function() {
-            var processor = PaymentMgr.getPaymentMethod(PaymentInstrument.METHOD_CREDIT_CARD).getPaymentProcessor();
-            var HookMgr = require('dw/system/HookMgr');
             var token = createToken(
                 {
                     cardNumber: cardData.number,

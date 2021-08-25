@@ -42,7 +42,7 @@ function createToken(paymentData) {
                 token: tokenResponse.token,
             },
             currency: Site.getCurrent().getDefaultCurrency(),
-            risk: {enabled: ckoHelper.getValue('ckoEnableRiskFlag')},
+            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
             billing_descriptor: ckoHelper.getBillingDescriptor(),
         };
     }
@@ -188,8 +188,8 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             securityCode: cardSecurityCode,
             storedPaymentUUID: paymentInformation.storedPaymentUUID,
             saveCard: paymentInformation.saveCard.value,
-            customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null ,
-            madaCard: madaCard
+            customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null,
+            madaCard: madaCard,
         });
     });
 

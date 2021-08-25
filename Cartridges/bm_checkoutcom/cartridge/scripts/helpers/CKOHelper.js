@@ -32,25 +32,23 @@ var CKOHelper = {
      * @returns {array} Retuns the orders array
      */
     getCkoOrders: function() {
-        // Prepare the output array
-        var data = [];
-
         // Query the orders
         var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
 
+        // eslint-disable-next-line
         var query = this.parseQuery(request.httpQueryString);
 
         if (!query.page) {
             return result.asList();
         }
 
-        var page = query.page,
-            pagination = query.size,
-            start = (page - 1) * pagination;
-        
+        var page = query.page;
+        var pagination = query.size;
+        var start = (page - 1) * pagination;
+
         totalPages = Math.ceil(result.getCount() / pagination);
 
-        return result.asList(start, pagination)
+        return result.asList(start, pagination);
     },
 
     /**
@@ -70,7 +68,7 @@ var CKOHelper = {
             // Get the payment instruments
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
             var k = paymentInstruments.length - 1;
-            
+
             var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
             // Add the payment transaction to the output
             if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
@@ -97,14 +95,15 @@ var CKOHelper = {
         }
 
         return {
-            "last_page" : totalPages,
-            "data" : data
+            last_page: totalPages,
+            data: data,
         };
     },
 
     /**
-     * Parse a query string 
-     * @param {String} queryString The query string of the URL
+     * Parse a query String
+     * @param {string} queryString The query string of the URL
+     * @returns {Object} The query string as an object
      */
     parseQuery: function(queryString) {
         var query = {};
@@ -160,7 +159,8 @@ var CKOHelper = {
         var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
+        // eslint-disable-next-line
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId === pid || paymentTransaction.transactionID === pid) || !pid;
         var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
         var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
@@ -188,7 +188,7 @@ var CKOHelper = {
     getProcessorId: function(instrument) {
         var paymentMethodId;
 
-        if(instrument.getPaymentMethod() == 'CHECKOUTCOM_CARD') {
+        if (instrument.getPaymentMethod() === 'CHECKOUTCOM_CARD') {
             paymentMethodId = 'CREDIT_CARD';
         } else {
             paymentMethodId = instrument.getPaymentMethod();
@@ -326,6 +326,7 @@ var CKOHelper = {
     /**
      * Returns a price formatted for processing by the gateway.
      * @param {number} amount The amount to format
+     * @param {string} currency The currency code
      * @returns {number} The formatted amount
      */
     getFormattedPrice: function(amount, currency) {
@@ -333,8 +334,9 @@ var CKOHelper = {
         if (currency) {
             var ckoFormateBy = this.getCkoFormatedValue(currency);
             totalFormated = amount * ckoFormateBy;
-    
+
             return totalFormated.toFixed();
+            // eslint-disable-next-line
         } else {
             totalFormated = amount * 100;
             return totalFormated.toFixed();

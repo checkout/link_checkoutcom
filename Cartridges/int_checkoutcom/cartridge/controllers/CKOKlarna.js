@@ -1,7 +1,6 @@
 'use strict';
 
 //  API Includes
-var Site = require('dw/system/Site');
 var guard = require('*/cartridge/scripts/guard');
 var BasketMgr = require('dw/order/BasketMgr');
 

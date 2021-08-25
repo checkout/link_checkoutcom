@@ -9,7 +9,6 @@ var Transaction = require('dw/system/Transaction');
 
 // Checkout.com Helper functions
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
 var transactionHelper = require('~/cartridge/scripts/helpers/transactionHelper');
 
 /**
@@ -18,32 +17,30 @@ var transactionHelper = require('~/cartridge/scripts/helpers/transactionHelper')
  * based on the type of the transaction.
  * @param {dw.order.Order} order - The order the customer placed
  */
-
 function setPaymentStatus(order) {
-    var paymentInstruments = order.getPaymentInstruments().toArray(),
-        amountPaid = 0,
-        orderTotal = order.getTotalGrossPrice().getValue();
+    var paymentInstruments = order.getPaymentInstruments().toArray();
+    var amountPaid = 0;
+    var orderTotal = order.getTotalGrossPrice().getValue();
 
-    for(var i=0; i<paymentInstruments.length; i++) {
+    for (var i = 0; i < paymentInstruments.length; i++) {
         var paymentTransaction = paymentInstruments[i].paymentTransaction;
-        if(paymentTransaction.type.value === 'CAPTURE') {
+        if (paymentTransaction.type.value === 'CAPTURE') {
             amountPaid += paymentTransaction.amount.value;
-            if(amountPaid > orderTotal) {
+            if (amountPaid > orderTotal) {
                 amountPaid = orderTotal;
             }
-        } else if(paymentTransaction.type.value === 'CREDIT') {
+        } else if (paymentTransaction.type.value === 'CREDIT') {
             amountPaid -= paymentTransaction.amount.value;
         }
     }
 
-    if(amountPaid === orderTotal) {
+    if (amountPaid === orderTotal) {
         order.setPaymentStatus(order.PAYMENT_STATUS_PAID);
-    } else if(amountPaid >= 0.01) {
+    } else if (amountPaid >= 0.01) {
         order.setPaymentStatus(order.PAYMENT_STATUS_PARTPAID);
     } else {
         order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
     }
-
 }
 
 /**
@@ -57,7 +54,7 @@ var eventsHelper = {
      * @param {string} methodId The method id
      * @returns {Object} A card object
      */
-     getSavedCard: function(cardUuid, customerNo, methodId) {
+    getSavedCard: function(cardUuid, customerNo, methodId) {
         // Get the customer
         var customer = CustomerMgr.getCustomerByCustomerNumber(customerNo);
 
@@ -82,7 +79,7 @@ var eventsHelper = {
      * Delete a card in customer account.
      * @param {Object} hook The gateway webhook data
      */
-     deleteSavedCard: function(hook) {
+    deleteSavedCard: function(hook) {
         if (hook) {
             var condition1 = Object.prototype.hasOwnProperty.call(hook, 'data') && Object.prototype.hasOwnProperty.call(hook.data, 'metadata');
             var condition2 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'card_uuid');
@@ -132,7 +129,7 @@ var eventsHelper = {
             details += ckoHelper._('cko.transaction.eventId', 'cko') + ': ' + hook.id + '\n';
             details += ckoHelper._('cko.response.code', 'cko') + ': ' + hook.data.response_code + '\n';
 
-            if(hook.data.risk && hook.data.risk.flagged) {
+            if (hook.data.risk && hook.data.risk.flagged) {
                 var flagDetails = 'Subject: Payment authorized but flagged\nText: ' + hook.data.response_summary;
             }
 
@@ -146,7 +143,8 @@ var eventsHelper = {
             }
 
             // Update order if flagged
-            if (flagDetails) {
+            // eslint-disable-next-line
+            if (flagDetails) {// eslint-disable-next-line
                 order.addNote(ckoHelper._('cko.webhook.info', 'cko'), flagDetails);
                 order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
             }
@@ -176,8 +174,8 @@ var eventsHelper = {
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
 
         // Create the captured transaction
-        var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);        
-        var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+        var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
+        var paymentMethod = paymentInstrument.paymentMethod === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
         var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
         paymentInstrument.paymentTransaction.transactionID = hook.data.id;
         paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
@@ -253,7 +251,7 @@ var eventsHelper = {
 
         // Create the refunded transaction
         var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
-        var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+        var paymentMethod = paymentInstrument.paymentMethod === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
         var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
         paymentInstrument.paymentTransaction.transactionID = hook.data.id;
         paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
@@ -291,7 +289,7 @@ var eventsHelper = {
 
         // Create the voided transaction
         var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
-        var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+        var paymentMethod = paymentInstrument.paymentMethod === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
         var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
         paymentInstrument.paymentTransaction.transactionID = hook.data.id;
         paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
@@ -308,7 +306,6 @@ var eventsHelper = {
             paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
             parentTransaction.custom.ckoTransactionOpened = false;
         }
-
     },
 
     /**

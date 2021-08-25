@@ -95,7 +95,7 @@ var ckoApmFilterConfig = {
         countries: ['MX'],
         currencies: ['MXN'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue('ckoOxxoEnabled'),
-    }
+    },
 };
 
 /*

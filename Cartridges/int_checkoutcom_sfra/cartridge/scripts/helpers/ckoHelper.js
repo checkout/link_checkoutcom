@@ -78,14 +78,14 @@ var ckoHelper = {
 
     /**
      * Converts gateway error message to a localized message
-     * @param {string} error_message from  auth request
+     * @param {string} message from  auth request
      * @returns {string} localized error message
      */
     errorMessage: function(message) {
         var messageArray = message.split(' ');
         var result = 'error.';
         if (messageArray) {
-            messageArray.forEach(function(value){
+            messageArray.forEach(function(value) {
                 result += value;
             });
         } else {
@@ -149,31 +149,32 @@ var ckoHelper = {
 
     /**
      * Remove sentitive data from the logs.
-     * @param {Object} rawData The log data
+     * @param {Object} data The log data
      * @returns {Object} The filtered data
      */
     removeSentisiveData: function(data) {
         if (data) {
             if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
-                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference'))
+                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference')) { // eslint-disable-next-line
                     data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*');
+                }
             }
-            if (Object.prototype.hasOwnProperty.call(data, 'source_data')) {
+            if (Object.prototype.hasOwnProperty.call(data, 'source_data')) { // eslint-disable-next-line
                 data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
             }
-            if (Object.prototype.hasOwnProperty.call(data, 'source')) {
+            if (Object.prototype.hasOwnProperty.call(data, 'source')) { // eslint-disable-next-line
                 data.source = sensitiveDataHelper.cleanSourceObject(data.source);
             }
 
-            if (Object.prototype.hasOwnProperty.call(data, 'customer')) {
+            if (Object.prototype.hasOwnProperty.call(data, 'customer')) { // eslint-disable-next-line
                 data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer);
             }
 
-            if (Object.prototype.hasOwnProperty.call(data, 'shipping')) {
+            if (Object.prototype.hasOwnProperty.call(data, 'shipping')) { // eslint-disable-next-line
                 data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping);
             }
 
-            if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) {
+            if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) { // eslint-disable-next-line
                 data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
             }
         }
@@ -452,9 +453,9 @@ var ckoHelper = {
         }
 
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-          if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'sofort' || gatewayResponse.source.type === 'alipay')) {
-            return true;
-          }
+            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'sofort' || gatewayResponse.source.type === 'alipay')) {
+                return true;
+            }
         }
 
         return false;
@@ -598,6 +599,7 @@ var ckoHelper = {
 
     /**
      * Return the currency code.
+     * @param {Object} order The current order
      * @returns {string} The currency code
      */
     getCurrency: function(order) {
@@ -782,7 +784,7 @@ var ckoHelper = {
         }
 
         // Add the payment processor to the metadata
-        if (typeof(processorId) == 'object' ) {
+        if (typeof (processorId) === 'object') { // eslint-disable-next-line
             processorId = processorId.getID();
         }
         meta.payment_processor = processorId;
@@ -792,26 +794,26 @@ var ckoHelper = {
 
     /**
      * Returns true if card is a mada card
-     * @param {string} card number 
+     * @param {string} card number
      * @returns {boolean} card type
      */
     isMadaCard: function(card) {
         // First 6 card number
-        var cardNumber = card.slice(0,6);
+        var cardNumber = card.slice(0, 6);
         // First card number
         var firstNumber = card.charAt(0);
-        
-        switch(firstNumber) {
+
+        switch (firstNumber) {
             case '4':
-                return madaBins.four.some(function(element){ return element === cardNumber });
+                return madaBins.four.some(function(element) { return element === cardNumber; });
             case '5':
-                return madaBins.five.some(function(element){ return element === cardNumber });
+                return madaBins.five.some(function(element) { return element === cardNumber; });
             case '6':
-                return madaBins.six.some(function(element){ return element === cardNumber });
+                return madaBins.six.some(function(element) { return element === cardNumber; });
             case '9':
-                return madaBins.nine.some(function(element){ return element === cardNumber });
+                return madaBins.nine.some(function(element) { return element === cardNumber; });
             default:
-                return false
+                return false;
         }
     },
 
@@ -1016,7 +1018,7 @@ var ckoHelper = {
             postal_code: billingAddress.postalCode,
             city: billingAddress.city,
             phone: billingAddress.phone,
-            country: billingAddress.countryCode.value
+            country: billingAddress.countryCode.value,
         };
 
         return address;

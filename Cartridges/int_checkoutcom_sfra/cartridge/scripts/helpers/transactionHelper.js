@@ -44,14 +44,14 @@ var transactionHelper = {
         Transaction.wrap(function() {
             // Create the payment instrument and processor
             var paymentInstrument = order.getPaymentInstruments();
-            
-            if(paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === hook.data.id || paymentInstrument[0].paymentTransaction.transactionID == '')) {
+
+            if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === hook.data.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
                 paymentInstrument = paymentInstrument[0];
             } else {
                 paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
             }
-            
-            var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+
+            var paymentMethod = paymentInstrument.paymentMethod === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
 
             // Create the authorization transaction

@@ -38,7 +38,6 @@ function processForm(req, paymentForm, viewFormData) {
                     };
                 }
             });
-
         } else {
             viewData.paymentInformation.type = {
                 value: ckoSelectedApm,
@@ -61,7 +60,7 @@ function processForm(req, paymentForm, viewFormData) {
     return {
         error: error,
         viewData: viewData,
-        fieldErrors: fieldErrors
+        fieldErrors: fieldErrors,
     };
 }
 
