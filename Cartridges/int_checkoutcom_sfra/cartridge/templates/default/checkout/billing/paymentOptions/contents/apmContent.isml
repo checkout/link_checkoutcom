@@ -59,7 +59,7 @@
 
 				<!-- This to include the Oxxo apm form -->
 				<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoOxxoEnabled'))}">
-					<div id="oxxo" class="hideApm apmBox">
+					<div id="oxxo" class="apm-list-item">
 						<isinclude template="checkout/billing/forms/apms/oxxo.isml" />
 					</div>
 				</isif>
