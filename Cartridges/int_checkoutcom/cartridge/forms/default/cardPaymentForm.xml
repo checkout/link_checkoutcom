@@ -33,7 +33,7 @@
 	</group>
 
 	<!-- Field for credit card owner -->
-    <field formid="owner" label="creditcard.ownerlabel" type="string" mandatory="true" max-length="48" binding="creditCardHolder"
+    <field formid="owner" label="creditcard.ownerlabel" type="string" mandatory="true" maxlength="48" binding="creditCardHolder"
      	missing-error="creditcard.ownermissingerror"/>
      	
 	<!-- Field for credit card type -->

@@ -5,6 +5,8 @@ var ckoIsSetId = document.getElementById('default_thumb');
 
 // set event on page load
 document.addEventListener('DOMContentLoaded', function() {
+    $('input[name="dwfrm_cardPaymentForm_owner"]').attr("maxlength", "48");
+    
     // Set schema box
     setBox();
 
