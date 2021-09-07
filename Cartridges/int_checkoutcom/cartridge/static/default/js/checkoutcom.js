@@ -96,5 +96,8 @@ function setFields(data)
     $creditCard.find('input[name$="_cardPaymentForm_number"]').val(data.cardNumber);
     $creditCard.find('[name$="_month"]').val(data.expiryMonth);
     $creditCard.find('[name$="_year"]').val(data.expiryYear);
+    $creditCard.find('[name$="_year"]').val(data.expiryYear);
+    $creditCard.find('[name$="_saveCard"]').click();
+    $creditCard.find('[name$="_saveCard"]').attr('disabled', 'true');
     $creditCard.find('input[name$="_cvn"]').val('');
 }

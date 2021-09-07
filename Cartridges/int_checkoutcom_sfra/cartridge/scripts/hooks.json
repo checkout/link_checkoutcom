@@ -35,6 +35,10 @@
         {
             "name": "dw.extensions.applepay.paymentAuthorized.authorizeOrderPayment",
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+        },
+        {
+            "name": "app.payment.processor.default",
+            "script": "./hooks/payment/processor/default"
         }
     ]
 }

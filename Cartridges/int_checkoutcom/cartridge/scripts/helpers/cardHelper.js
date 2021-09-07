@@ -150,7 +150,7 @@ var cardHelper = {
         // Load the card and order information
         var order = OrderMgr.getOrder(args.OrderNo);
         var paymentData = app.getForm('cardPaymentForm');
-        var orderTotal = args.PaymentInstrument.paymentTransaction.amount ? args.PaymentInstrument.paymentTransaction.amount.getValue().toFixed(2) : order.totalGrossPrice.value.toFixed(2); 
+        var orderTotal = args.PaymentInstrument.paymentTransaction.amount ? args.PaymentInstrument.paymentTransaction.amount.getValue().toFixed(2) : order.totalGrossPrice.value.toFixed(2);
 
         // Prepare the charge data
         var chargeData = {
@@ -195,13 +195,13 @@ var cardHelper = {
         var cardSource;
         var paymentData = app.getForm('cardPaymentForm');
 
-        if (paymentData.get('cardToken').value() !== 'false') {
+        if (paymentData.get('cardToken').value() && paymentData.get('cardToken').value() !== 'false' ) {
             cardSource = {
                 type: 'id',
                 id: paymentData.get('cardToken').value(),
                 cvv: paymentData.get('cvn').value(),
             };
-        } else if (paymentInstrument.getCreditCardToken()) {
+        } else if (paymentInstrument.getCreditCardToken() && paymentInstrument.getCreditCardToken() != 'undefined') {
             cardSource = {
                 type: 'id',
                 id: paymentInstrument.getCreditCardToken(),
@@ -210,7 +210,7 @@ var cardHelper = {
         } else {
             cardSource = {
                 type: 'card',
-                number: paymentInstrument.creditCardNumber,
+                number: paymentInstrument.getCreditCardNumber(),
                 expiry_month: paymentInstrument.creditCardExpirationMonth,
                 expiry_year: paymentInstrument.creditCardExpirationYear,
                 cvv: paymentData.get('cvn').value(),

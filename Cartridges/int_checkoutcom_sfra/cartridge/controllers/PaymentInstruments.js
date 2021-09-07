@@ -199,6 +199,7 @@ server.post('SavePayment', csrfProtection.validateAjaxRequest, function(req, res
                 req.currentCustomer.profile.customerNo
             );
             var wallet = customer.getProfile().getWallet();
+            result['email'] = customer.getProfile().getEmail();
 
             Transaction.wrap(function() {
                 var paymentInstrument = wallet.createPaymentInstrument(dwOrderPaymentInstrument.METHOD_CREDIT_CARD);

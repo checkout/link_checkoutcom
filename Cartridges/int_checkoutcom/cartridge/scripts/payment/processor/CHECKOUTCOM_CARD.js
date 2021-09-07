@@ -22,32 +22,23 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
  * @returns {string} a token
  */
 function createToken(paymentData) {
-    // Prepare the parameters
+
     var requestData = {
-        type: 'card',
-        number: paymentData.cardNumber.toString(),
-        expiry_month: paymentData.expirationMonth,
-        expiry_year: paymentData.expirationYear,
-        name: paymentData.name,
+        source: {
+            type: 'card',
+            number: paymentData.cardNumber.toString(),
+            expiry_month: paymentData.expirationMonth,
+            expiry_year: paymentData.expirationYear,
+            name: paymentData.name,
+        },
+        currency: Site.getCurrent().getDefaultCurrency(),
+        risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+        billing_descriptor: ckoHelper.getBillingDescriptorObject(),
+        customer: {
+            name: paymentData.name,
+            email: paymentData.email,
+        },
     };
-
-    // Perform the request to the payment gateway - get the card token
-    var tokenResponse = ckoHelper.gatewayClientRequest(
-        'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
-        JSON.stringify(requestData)
-    );
-
-    if (tokenResponse && tokenResponse !== 400) {
-        requestData = {
-            source: {
-                type: 'token',
-                token: tokenResponse.token,
-            },
-            currency: Site.getCurrent().getDefaultCurrency(),
-            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
-            billing_descriptor: ckoHelper.getBillingDescriptorObject(),
-        };
-    }
 
     var idResponse = ckoHelper.gatewayClientRequest(
         'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
@@ -99,16 +90,20 @@ function Handle(args) {
 
         // eslint-disable-next-line
         creditCards = customer.profile.getWallet().getPaymentInstruments(paymentMethod);
+        var token;
+        if (paymentForm.object.cardToken.value && paymentForm.object.cardToken.value != 'false') {
+            token = paymentForm.object.cardToken.value;
+        } else {
+            token = createToken({
+                cardNumber: cardData.number,
+                expirationMonth: cardData.month,
+                expirationYear: cardData.year,
+                name: cardData.owner,
+                email: customer.profile.getEmail(),
+            });
+        }
 
         Transaction.wrap(function() {
-            var token = createToken(
-                {
-                    cardNumber: cardData.number,
-                    expirationMonth: cardData.month,
-                    expirationYear: cardData.year,
-                    name: cardData.owner,
-                }
-            );
             // eslint-disable-next-line
             newCreditCard = customer.profile.getWallet().createPaymentInstrument(paymentMethod);
 
@@ -140,6 +135,12 @@ function Handle(args) {
         paymentInstrument.creditCardExpirationMonth = cardData.month;
         paymentInstrument.creditCardExpirationYear = cardData.year;
         paymentInstrument.creditCardType = cardData.cardType;
+
+        if (paymentForm.object.cardToken.value && paymentForm.object.cardToken.value != 'false') {
+            paymentInstrument.setCreditCardToken(paymentForm.object.cardToken.value);
+        } else if (token) {
+            paymentInstrument.setCreditCardToken(token);
+        }
     });
 
     return { success: true };

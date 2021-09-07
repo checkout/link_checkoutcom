@@ -22,6 +22,8 @@ var applePayHelper = {
     handleRequest: function(paymentData, processorId, orderNumber) {
         // Load the order information
         var order = OrderMgr.getOrder(orderNumber);
+        var paymentInstruments = order.getPaymentInstruments();
+        var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
         var gatewayResponse = null;
         var gatewayRequest = null;
 
@@ -53,7 +55,7 @@ var applePayHelper = {
                     type: 'token',
                     token: tokenResponse.token,
                 },
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
+                amount: ckoHelper.getFormattedPrice(paymentInstrumentAmount, order.getCurrencyCode()),
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
                 capture: ckoHelper.getValue('ckoAutoCapture'),

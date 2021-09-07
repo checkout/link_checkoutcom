@@ -22,6 +22,7 @@ var googlePayHelper = {
         var order = OrderMgr.getOrder(args.OrderNo);
         var paymentInstrument = args.PaymentInstrument;
         var ckoGooglePayData = paymentInstrument.paymentTransaction.custom.ckoGooglePayData;
+        var orderTotal = paymentInstrument.paymentTransaction.amount ? paymentInstrument.paymentTransaction.amount.getValue().toFixed(2) : order.totalGrossPrice.value.toFixed(2);
 
         // Prepare the parameters
         var requestData = {
@@ -39,7 +40,7 @@ var googlePayHelper = {
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
             var chargeData = {
                 source: this.getSourceObject(tokenResponse),
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
+                amount: ckoHelper.getFormattedPrice(orderTotal, ckoHelper.getCurrency()),
                 currency: ckoHelper.getCurrency(),
                 reference: args.OrderNo,
                 capture: ckoHelper.getValue('ckoAutoCapture'),

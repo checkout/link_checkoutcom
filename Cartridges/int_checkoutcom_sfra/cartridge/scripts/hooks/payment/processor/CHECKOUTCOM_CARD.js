@@ -22,30 +22,21 @@ var Site = require('dw/system/Site');
 function createToken(paymentData) {
     // Prepare the parameters
     var requestData = {
-        type: 'card',
-        number: paymentData.cardNumber.toString(),
-        expiry_month: paymentData.expirationMonth,
-        expiry_year: paymentData.expirationYear,
-        name: paymentData.name,
+        source: {
+            type: 'card',
+            number: paymentData.cardNumber.toString(),
+            expiry_month: paymentData.expirationMonth,
+            expiry_year: paymentData.expirationYear,
+            name: paymentData.name,
+        },
+        currency: Site.getCurrent().getDefaultCurrency(),
+        risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+        billing_descriptor: ckoHelper.getBillingDescriptor(),
+        customer: {
+            name: paymentData.name,
+            email: paymentData.email,
+        },
     };
-
-    // Perform the request to the payment gateway - get the card token
-    var tokenResponse = ckoHelper.gatewayClientRequest(
-        'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
-        JSON.stringify(requestData)
-    );
-
-    if (tokenResponse && tokenResponse !== 400) {
-        requestData = {
-            source: {
-                type: 'token',
-                token: tokenResponse.token,
-            },
-            currency: Site.getCurrent().getDefaultCurrency(),
-            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
-            billing_descriptor: ckoHelper.getBillingDescriptor(),
-        };
-    }
 
     var idResponse = ckoHelper.gatewayClientRequest(
         'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
@@ -181,6 +172,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
                         cardType: paymentInformation.cardType.value,
                         expirationMonth: paymentInformation.expirationMonth.value,
                         expirationYear: paymentInformation.expirationYear.value,
+                        email: basket.getCustomerEmail(),
                     })
             );
         }

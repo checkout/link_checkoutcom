@@ -155,16 +155,18 @@ var apmHelper = {
 
         // Load the order information
         var order = OrderMgr.getOrder(args.OrderNo);
+        var paymentInstruments = order.getPaymentInstruments();
+        var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
 
         // Load the currency and amount
-        var amount = ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), payObject.currency);
+        var amount = ckoHelper.getFormattedPrice(paymentInstrumentAmount, payObject.currency);
 
         // Object APM is SEPA
         if (Object.prototype.hasOwnProperty.call(payObject, 'type') && payObject.type === 'sepa') {
             // Prepare the charge data
             chargeData = {
                 customer: ckoHelper.getCustomer(args),
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), payObject.currency),
+                amount: amount,
                 type: payObject.type,
                 currency: payObject.currency,
                 billing_address: ckoHelper.getBillingObject(args),
