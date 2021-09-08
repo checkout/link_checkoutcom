@@ -72,28 +72,21 @@ function alternativePaymentsFilter() {
 
             // Assign the apms filter Object from the response object to apmfilterObject variable
             var apmsFilterObject = responseObject.ckoApmFilterConfig;
-            var anyApmEnabled = false;
 
             // Loops through the apmfilterObject
             for (var apms in apmsFilterObject) {
-                var condition1 = apmsFilterObject[apms].countries.includes(filterObject.country.toUpperCase());
-                var condition2 = apmsFilterObject[apms].countries.includes('*');
-                var condition3 = apmsFilterObject[apms].currencies.includes(filterObject.currency);
-                var condition4 = apmsFilterObject[apms].enabled;
+            	var condition1 = apmsFilterObject[apms].countries.includes(filterObject.country.toUpperCase());
+            	var condition2 = apmsFilterObject[apms].countries.includes('*');
+            	var condition3 = apmsFilterObject[apms].currencies.includes(filterObject.currency);
 
             	/*
             	 * If the current apm country-code and currency-code in
             	 * the list of apms, match the current country-code and currency-code
             	 */
-                if ((condition1 || condition2) && condition3 && condition4) {
-                    anyApmEnabled = true;
+                if ((condition1 || condition2) && condition3) {
                 	// Show Apm in template
                 	$('#' + apms).show();
                 }
-            }
-            // Hide the option to select APMs if none are available
-            if(!anyApmEnabled) {
-                document.getElementById('is-CHECKOUTCOM_APM').parentElement.parentElement.style.display = 'none';
             }
         }
     };
@@ -141,14 +134,14 @@ function callKlarnaController(controllerUrl) {
 
                 // Builds and show klarna payment options buttons
                 for (var i = 0; i < categories.length; i++) {
-                    var klarnaButton = "<div class='klarnaButton'> " + categories[i].name
-                    + " <input type='radio' name='payment_method_categories' value='" + categories[i].identifier + "' id='"
+                    var klarnaButton = "<div class='klarnaButton'> <p>" + categories[i].name
+                    + "</p><input type='radio' name='payment_method_categories' value='" + categories[i].identifier + "' id='"
                     + categories[i].identifier + "' onclick='loadKlarna(`" + categories[i].identifier
                     + '`, `' + JSON.stringify(requestObject) + '`,  `' + JSON.stringify(addressInfo) + '` ,`' + sessionId + "` )'><img src='"
                     + categories[i].asset_urls.descriptive + "' alt='Klarna' id='" + categories[i].identifier
-                    + "_image' class='klarnaLogo'> <p id='" + categories[i].identifier
-                    + "_aproved' class='klarnaAproved'><span class='klarnaBlack'>Klarna</span><span> &#10003;</span></p> <p class='klarnaFail' id='"
-                    + categories[i].identifier + "_rejected'><span class='klarnaBlack'>Klarna</span><span> &#10007;</span></p><div>";
+                    + "_image' class='klarnaLogo'> <div id='" + categories[i].identifier
+                    + "_aproved' class='klarnaAproved'><span> &#10003;</span><span class='klarnaBlack'>Klarna</span></div> <div class='klarnaFail' id='"
+                    + categories[i].identifier + "_rejected'><span> &#10007;</span><span class='klarnaBlack'>Klarna</span></div><div>";
                     klarnaBox.append(klarnaButton);
                 }
             }

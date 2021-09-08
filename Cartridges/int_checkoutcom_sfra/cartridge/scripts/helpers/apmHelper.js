@@ -70,6 +70,7 @@ var apmHelper = {
         var result = {
             error: true,
             redirectUrl: false,
+            transactionID: gatewayResponse.id,
         };
 
         // Handle the response
@@ -111,10 +112,12 @@ var apmHelper = {
     getApmRequest: function(order, processorId, apmConfigData) {
         // Charge data
         var chargeData;
+        var paymentInstruments = order.getPaymentInstruments();
+        var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
 
         // Get the order amount
         var amount = ckoHelper.getFormattedPrice(
-            order.totalGrossPrice.value.toFixed(2),
+            paymentInstrumentAmount,
             order.getCurrencyCode()
         );
 
@@ -143,11 +146,11 @@ var apmHelper = {
                 metadata: ckoHelper.getMetadata({}, processorId),
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
             };
+        }
 
-            // Test Klarna
-            if (chargeData.source.type === 'klarna') {
-                chargeData.capture = false;
-            }
+        // Test Klarna
+        if (chargeData.source.type === 'klarna') {
+            chargeData.capture = false;
         }
 
         return chargeData;

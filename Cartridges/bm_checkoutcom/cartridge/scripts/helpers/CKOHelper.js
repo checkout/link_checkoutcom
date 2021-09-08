@@ -11,6 +11,7 @@ var Site = require('dw/system/Site');
 
 // Card Currency Config
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
+var totalPages;
 
 /**
  * Helper functions for the Checkout.com cartridge integration.
@@ -31,28 +32,23 @@ var CKOHelper = {
      * @returns {array} Retuns the orders array
      */
     getCkoOrders: function() {
-        // Prepare the output array
-        var data = [];
-
         // Query the orders
         var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
 
-        // Loop through the results
-        while (result.hasNext()) {
-            var item = result.next();
+        // eslint-disable-next-line
+        var query = this.parseQuery(request.httpQueryString);
 
-            // Get the payment instruments
-            var paymentInstruments = item.getPaymentInstruments().toArray();
-
-            // Loop through the payment instruments
-            for (var i = 0; i < paymentInstruments.length; i++) {
-                if (this.isCkoItem(this.getProcessorId(paymentInstruments[i])) && !this.containsObject(item, data)) {
-                    data.push(item);
-                }
-            }
+        if (!query.page) {
+            return result.asList();
         }
 
-        return data;
+        var page = query.page;
+        var pagination = query.size;
+        var start = (page - 1) * pagination;
+
+        totalPages = Math.ceil(result.getCount() / pagination);
+
+        return result.asList(start, pagination);
     },
 
     /**
@@ -71,45 +67,52 @@ var CKOHelper = {
         for (var j = 0; j < result.length; j++) {
             // Get the payment instruments
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
+            var k = paymentInstruments.length - 1;
 
-            // Loop through the payment instruments
-            for (var k = 0; k < paymentInstruments.length; k++) {
-                // Get the payment transaction
-                var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            // Add the payment transaction to the output
+            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
+                // Build the row data
+                var row = {
+                    id: i,
+                    order_no: result[j].orderNo,
+                    transaction_id: paymentTransaction.transactionID,
+                    action_id: paymentTransaction.custom.ckoPaymentId || paymentTransaction.custom.ckoActionId,
+                    opened: paymentTransaction.custom.ckoTransactionOpened,
+                    amount: result[j].getTotalGrossPrice().value,
+                    currency: paymentTransaction.amount.currencyCode,
+                    creation_date: paymentTransaction.getCreationDate().toDateString(),
+                    type: paymentTransaction.type.displayValue,
+                    processor: this.getProcessorId(paymentInstruments[k]),
+                    refundable_amount: this.getRefundableAmount(paymentInstruments),
+                    data_type: paymentTransaction.type.toString(),
+                };
 
-                // Add the payment transaction to the output
-                if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
-                    // Build the row data
-                    var row = {
-                        id: i,
-                        order_no: result[j].orderNo,
-                        transaction_id: paymentTransaction.transactionID,
-                        payment_id: paymentTransaction.custom.ckoPaymentId,
-                        opened: paymentTransaction.custom.ckoTransactionOpened,
-                        amount: paymentTransaction.amount.value,
-                        currency: paymentTransaction.amount.currencyCode,
-                        creation_date: paymentTransaction.getCreationDate().toDateString(),
-                        type: paymentTransaction.type.displayValue,
-                        processor: this.getProcessorId(paymentInstruments[k]),
-                        refundable_amount: 0,
-                        data_type: paymentTransaction.type.toString(),
-                    };
-
-                    // Calculate the refundable amount
-                    var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
-                    var condition2 = row.opened !== false;
-                    if (condition1 && condition2) {
-                        row.refundable_amount = this.getRefundableAmount(paymentInstruments);
-                    }
-
-                    // Add the transaction
-                    data.push(row);
-                    i++;
-                }
+                // Add the transaction
+                data.push(row);
+                i++;
             }
         }
 
-        return data;
+        return {
+            last_page: totalPages,
+            data: data,
+        };
+    },
+
+    /**
+     * Parse a query String
+     * @param {string} queryString The query string of the URL
+     * @returns {Object} The query string as an object
+     */
+    parseQuery: function(queryString) {
+        var query = {};
+        var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].split('=');
+            query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+        }
+        return query;
     },
 
     /**
@@ -153,15 +156,15 @@ var CKOHelper = {
     isTransactionNeeded: function(paymentTransaction, paymentInstrument) {
         // Get an optional transaction id
         // eslint-disable-next-line
-        var tid = request.httpParameterMap.get('tid').stringValue;
+        var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (tid && paymentTransaction.transactionID === tid) || !tid;
+        // eslint-disable-next-line
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId === pid || paymentTransaction.transactionID === pid) || !pid;
         var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition3 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
-        var condition4 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if (condition1 && condition2 && condition3 && condition4) {
+        if (condition1 && condition2 && condition3) {
             return true;
         }
 
@@ -174,7 +177,7 @@ var CKOHelper = {
      * @returns {boolean} The status of the current payment instrument
      */
     isCkoItem: function(item) {
-        return item.length > 0 && (item.indexOf('CHECKOUTCOM_') >= 0);
+        return item.length > 0 && item.indexOf('CHECKOUTCOM_') >= 0;
     },
 
     /**
@@ -183,8 +186,17 @@ var CKOHelper = {
      * @returns {string} The payment instrument Id
      */
     getProcessorId: function(instrument) {
-        var paymentMethod = PaymentMgr.getPaymentMethod(instrument.getPaymentMethod());
-        if (paymentMethod && paymentMethod.getPaymentProcessor()) {
+        var paymentMethodId;
+
+        if (instrument.getPaymentMethod() === 'CHECKOUTCOM_CARD') {
+            paymentMethodId = 'CREDIT_CARD';
+        } else {
+            paymentMethodId = instrument.getPaymentMethod();
+        }
+
+        var paymentMethod = PaymentMgr.getPaymentMethod(paymentMethodId);
+
+        if (paymentMethod) {
             if (paymentMethod.getPaymentProcessor()) {
                 return paymentMethod.getPaymentProcessor().getID();
             }
@@ -314,6 +326,7 @@ var CKOHelper = {
     /**
      * Returns a price formatted for processing by the gateway.
      * @param {number} amount The amount to format
+     * @param {string} currency The currency code
      * @returns {number} The formatted amount
      */
     getFormattedPrice: function(amount, currency) {
@@ -321,8 +334,9 @@ var CKOHelper = {
         if (currency) {
             var ckoFormateBy = this.getCkoFormatedValue(currency);
             totalFormated = amount * ckoFormateBy;
-    
+
             return totalFormated.toFixed();
+            // eslint-disable-next-line
         } else {
             totalFormated = amount * 100;
             return totalFormated.toFixed();
@@ -373,66 +387,6 @@ var CKOHelper = {
         keys.privateKey = this.getValue('cko' + str + 'PrivateKey');
 
         return keys;
-    },
-
-    /*
-     * Saves general settings form to CKO custom objects
-     */
-    storeCkoCustomProperties: function(properties, requestObject) {
-        try {
-            properties.forEach(function(element) {
-                var match = element === 'ckoDebugEnabled' || element === 'cko3ds' || element === 'ckoN3ds'
-                    || element === 'ckoAutoCapture' || element === 'ckoMada'
-                    || element === 'ckoGooglePayEnabled' || element === 'ckoSavedCardEnabled'
-                    || element === 'ckoUseSavedCardEnabled' || element === 'ckoEnableRiskFlag';
-                if (match) {
-                    // eslint-disable-next-line
-                    var property = requestObject[element] ? true : false;
-                    // eslint-disable-next-line
-                    dw.system.Site.getCurrent().setCustomPreferenceValue(element, property);
-                } else {
-                    var value = requestObject[element];
-                    if (value !== undefined || value !== '') {
-                        // eslint-disable-next-line
-        				dw.system.Site.getCurrent().setCustomPreferenceValue(element, value);
-                    }
-                }
-            });
-            var message = {error: false, message: 'properties saved successfully'};
-            return message;
-        } catch (e) {
-            var message = { error: true, message: e.message };
-            return message;
-        }
-    },
-
-    /*
-     * Returns cko settings custom objects form the system
-     */
-    getCkoCustomProperties: function(ckoCustomProperties) {
-        try {
-            // eslint-disable-next-line
-            var customPreference = dw.system.Site.getCurrent();
-            var ckoObjects = {};
-            for (var i = 0; i < ckoCustomProperties.length; i++) {
-                var currentProperty = ckoCustomProperties[i];
-                var match = currentProperty === 'ckoMode' || currentProperty === 'ckoApplePayEnvironment'
-                    || currentProperty === 'ckoApplePayButton' || currentProperty === 'ckoGooglePayEnvironment'
-                    || currentProperty === 'ckoGooglePayButton';
-                if (match) {
-                    ckoObjects[currentProperty] = customPreference.getCustomPreferenceValue(currentProperty).value;
-                } else {
-                    var value = customPreference.getCustomPreferenceValue(currentProperty);
-                    if (value !== '' || value !== undefined) {
-                        ckoObjects[currentProperty] = value;
-                    }
-                }
-            }
-            return JSON.stringify(ckoObjects);
-        } catch (e) {
-            var error = { error: 'Error', message: e.message };
-            return JSON.stringify(error);
-        }
     },
 };
 

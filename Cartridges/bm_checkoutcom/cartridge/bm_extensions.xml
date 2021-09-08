@@ -20,15 +20,4 @@
 		</sub-pipelines>
 		<icon>icons/cko_logo.png</icon>
 	</menuaction>
-
-	<menuaction id="checkoutcom_settings_manager_action" menupath="checkoutcom_manager_item" position="9999" site="true">
-		<name xml:lang="x-default">Checkout.com Settings</name>
-		<short_description xml:lang="x-default">Configure Checkout.com Catridge</short_description>
-		<description xml:lang="x-default">Configure the Checkout.com Front and Back End Cartridges</description>
-		<exec pipeline="CKOSettings" node="ListSettings" />
-		<sub-pipelines>
-			<pipeline name="CKOSettings" />
-		</sub-pipelines>
-		<icon>icons/cko_logo.png</icon>
-	</menuaction>
 </extensions>

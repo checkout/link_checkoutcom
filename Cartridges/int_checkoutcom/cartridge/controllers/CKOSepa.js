@@ -1,10 +1,8 @@
 'use strict';
 
 // Script Modules
-var Site = require('dw/system/Site');
-var siteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-var app = require(siteControllerName + '/cartridge/scripts/app');
-var guard = require(siteControllerName + '/cartridge/scripts/guard');
+var app = require('*/cartridge/scripts/app');
+var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
 var OrderMgr = require('dw/order/OrderMgr');
@@ -23,13 +21,15 @@ function mandate() {
     var url = session.privacy.redirectUrl;
     var orderId = ckoHelper.getOrderId();
     var order = OrderMgr.getOrder(orderId);
+    var paymentInstruments = order.getPaymentInstruments();
+    var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
 
     // Process the URL
     if (url) {
         app.getView({
             // Prepare the view parameters
             creditAmount: order.totalGrossPrice.value.toFixed(2),
-            formatedAmount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
+            formatedAmount: ckoHelper.getFormattedPrice(paymentInstrumentAmount, ckoHelper.getCurrency()),
             debtor: order.billingAddress.fullName,
             debtorAddress1: order.billingAddress.address1,
             debtorAddress2: order.billingAddress.address2,
@@ -91,6 +91,8 @@ function handleMandate() {
 
                 // Load the order
                 var order = OrderMgr.getOrder(orderId);
+                var paymentInstruments = order.getPaymentInstruments();
+                var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
                 if (responseObjectId) {
                     // Prepare the payment object
                     var payObject = {
@@ -98,10 +100,10 @@ function handleMandate() {
                             type: 'id',
                             id: responseObjectId,
                         },
-                        amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
+                        amount: ckoHelper.getFormattedPrice(paymentInstrumentAmount, ckoHelper.getCurrency()),
                         currency: ckoHelper.getCurrency(),
                         reference: orderId,
-                        metadata: ckoHelper.getMetadata({}, 'CHECKOUTCOM_APM')
+                        metadata: ckoHelper.getMetadata({}, 'CHECKOUTCOM_APM'),
                     };
 
                     // Reset the response in session

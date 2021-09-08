@@ -16,47 +16,35 @@ var Site = require('dw/system/Site');
 
 /**
  * Creates a token. This should be replaced by utilizing a tokenization provider
+ * @param {Object} paymentData The data of the payment
  * @returns {string} a token
  */
-function createToken() {
-    var paymentForm = session.getForms().billing;
-    var cardForm = paymentForm.creditCardFields;
-    var requestData;
-
+function createToken(paymentData) {
     // Prepare the parameters
-    requestData = {
-        type: 'card',
-        number: cardForm.cardNumber.value,
-        expiry_month: cardForm.expirationMonth.value,
-        expiry_year: cardForm.expirationYear.value,
-        name: cardForm.cardOwner.value,
+    var requestData = {
+        source: {
+            type: 'card',
+            number: paymentData.cardNumber.toString(),
+            expiry_month: paymentData.expirationMonth,
+            expiry_year: paymentData.expirationYear,
+            name: paymentData.name,
+        },
+        currency: Site.getCurrent().getDefaultCurrency(),
+        risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+        billing_descriptor: ckoHelper.getBillingDescriptor(),
+        customer: {
+            name: paymentData.name,
+            email: paymentData.email,
+        },
     };
 
-    // Perform the request to the payment gateway - get the card token
-    var tokenResponse = ckoHelper.gatewayClientRequest(
-        'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
-        JSON.stringify(requestData)
+    var idResponse = ckoHelper.gatewayClientRequest(
+        'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+        requestData
     );
 
-    if (tokenResponse && tokenResponse !== 400) {
-        requestData = {
-            source: {
-                type: 'token',
-                token: tokenResponse.token,
-            },
-            currency: Site.getCurrent().getDefaultCurrency(),
-            risk: { enabled: Site.getCurrent().getCustomPreferenceValue('ckoEnableRiskFlag') },
-            billing_descriptor: ckoHelper.getBillingDescriptor(),
-        };
-
-        var idResponse = ckoHelper.gatewayClientRequest(
-            'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
-            requestData
-        );
-    
-        if (idResponse && idResponse !== 400 && idResponse !== 422) {
-            return idResponse.source.id;
-        }
+    if (idResponse && idResponse !== 400) {
+        return idResponse.source.id;
     }
 
     return '';
@@ -125,7 +113,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
 
         if (creditCardStatus.error) {
-            collections.forEach(creditCardStatus.items, function (item) {
+            collections.forEach(creditCardStatus.items, function(item) {
                 switch (item.code) {
                     case PaymentStatusCodes.CREDITCARD_INVALID_CARD_NUMBER:
                         cardErrors[paymentInformation.cardNumber.htmlName] =
@@ -154,12 +142,12 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
     }
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         var paymentInstruments = currentBasket.getPaymentInstruments(
             PaymentInstrument.METHOD_CREDIT_CARD
         );
 
-        collections.forEach(paymentInstruments, function (item) {
+        collections.forEach(paymentInstruments, function(item) {
             currentBasket.removePaymentInstrument(item);
         });
 
@@ -174,22 +162,26 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         paymentInstrument.setCreditCardExpirationYear(expirationYear);
 
         // Create card token if save card is true
-        if (paymentInformation.saveCard.value && !paymentInformation.storedPaymentUUID) {
+        if (paymentInformation.saveCard.value) {
             paymentInstrument.setCreditCardToken(
                 paymentInformation.creditCardToken
                     ? paymentInformation.creditCardToken
-                    : createToken()
+                    : createToken({
+                        name: currentBasket.billingAddress.fullName,
+                        cardNumber: paymentInformation.cardNumber.value,
+                        cardType: paymentInformation.cardType.value,
+                        expirationMonth: paymentInformation.expirationMonth.value,
+                        expirationYear: paymentInformation.expirationYear.value,
+                        email: basket.getCustomerEmail(),
+                    })
             );
-        } else if (paymentInformation.storedPaymentUUID) {
-            paymentInstrument.setCreditCardToken(paymentInformation.creditCardToken);
-        };
-
+        }
         paymentInstrument.custom.ckoPaymentData = JSON.stringify({
-            'securityCode': cardSecurityCode,
-            'storedPaymentUUID': paymentInformation.storedPaymentUUID,
-            'saveCard': paymentInformation.creditCardToken ? true : false,
-            'customerNo': req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null ,
-            'madaCard': madaCard
+            securityCode: cardSecurityCode,
+            storedPaymentUUID: paymentInformation.storedPaymentUUID,
+            saveCard: paymentInformation.saveCard.value,
+            customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null,
+            madaCard: madaCard,
         });
     });
 
@@ -210,38 +202,37 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var fieldErrors = {};
     var error = false;
 
-    var ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
+    try {
+        var ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
 
-    Transaction.wrap(function () {
-        paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.custom.ckoPaymentData = "";
-    });
-
-    if (ckoPaymentRequest) {
-
-        try {
-            // Handle errors
-            if (ckoPaymentRequest.error) {
-    
-                throw new Error(ckoPaymentRequest.message);
-            }
-               
-        } catch (e) {
+        // Handle errors
+        if (ckoPaymentRequest.error) {
             error = true;
-            if (ckoPaymentRequest.code) {
-                serverErrors.push(e.message);
-            } else {
-                Resource.msg('error.technical', 'checkout', null);
-            }
+            serverErrors.push(
+                ckoHelper.getPaymentFailureMessage()
+            );
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
+            });
+        } else {
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+                // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
+            });
         }
-
-    } else {
+    } catch (e) {
         error = true;
-        Resource.msg('error.technical', 'checkout', null);
-        return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: false };
+        serverErrors.push(
+            Resource.msg('error.technical', 'checkout', null)
+        );
     }
 
+    // eslint-disable-next-line
     return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
 }
 

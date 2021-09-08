@@ -19,14 +19,15 @@ var googlePayHelper = {
      */
     handleRequest: function(args) {
         // load the order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var paymentInstrument = args.PaymentInstrument;
         var ckoGooglePayData = paymentInstrument.paymentTransaction.custom.ckoGooglePayData;
+        var orderTotal = paymentInstrument.paymentTransaction.amount ? paymentInstrument.paymentTransaction.amount.getValue().toFixed(2) : order.totalGrossPrice.value.toFixed(2);
 
         // Prepare the parameters
         var requestData = {
             type: 'googlepay',
-            token_data: JSON.parse(ckoGooglePayData)
+            token_data: JSON.parse(ckoGooglePayData),
         };
 
         // Perform the request to the payment gateway
@@ -39,13 +40,9 @@ var googlePayHelper = {
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
             var chargeData = {
                 source: this.getSourceObject(tokenResponse),
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency()),
+                amount: ckoHelper.getFormattedPrice(orderTotal, ckoHelper.getCurrency()),
                 currency: ckoHelper.getCurrency(),
                 reference: args.OrderNo,
-                "3ds": {
-                    "enabled": true,
-                    "attempt_n3d": true
-                },
                 capture: ckoHelper.getValue('ckoAutoCapture'),
                 capture_on: ckoHelper.getCaptureTime(),
                 customer: ckoHelper.getCustomer(args),

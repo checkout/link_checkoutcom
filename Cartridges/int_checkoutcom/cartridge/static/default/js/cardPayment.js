@@ -5,11 +5,13 @@ var ckoIsSetId = document.getElementById('default_thumb');
 
 // set event on page load
 document.addEventListener('DOMContentLoaded', function() {
+    $('input[name="dwfrm_cardPaymentForm_owner"]').attr("maxlength", "48");
+    
     // Set schema box
     setBox();
 
     // Set schema image
-    setSchema($('.number :input'));
+    setSchema('#dwfrm_cardPaymentForm_number');
 
     // Checks if card is mada and set schema image
     setMada();
@@ -26,14 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 var clearForm = function() {
     // Owner input
-    $('.owner :input').val('');
-
-    // Number input
-    $('.number :input').val('');
-
-    // Set default thumb
-    setImage('default_thumb');
-    
+    $('#dwfrm_cardPaymentForm_owner').val('');
     // Cvn input
     $('.cvn :input').val('');
 }
@@ -42,14 +37,13 @@ var clearForm = function() {
  * Sets schema box
  */
 var setBox = function() {
-    var id = "#" + $('.number :input').attr('id');
     // Card number input styling
-    $(id).css('padding', '0');
-    $(id).css('padding-left', '40px');
+    $('#dwfrm_cardPaymentForm_number').css('padding', '0');
+    $('#dwfrm_cardPaymentForm_number').css('padding-left', '40px');
 
     // Get object
     var box = document.getElementById('dw_cardTypeDone');
-    var input = document.getElementById($('.number :input').attr('id'));
+    var input = document.getElementById('dwfrm_cardPaymentForm_number');
     if (input) {
         $(input.parentNode).prepend(box);
     }
@@ -65,7 +59,7 @@ var setExpirationYears = function() {
 
     // Add the select list options
     for (var i = 0; i < 10; i++) {
-        $('#dwfrm_billing_paymentMethods_creditCard_expiration_year').append(
+        $('#dwfrm_cardPaymentForm_expiration_year').append(
             new Option(
                 currentYear + i,
                 currentYear + i
@@ -85,15 +79,31 @@ var setSchema = function(inputId) {
             // Sets the schema id
             var imageId = getImageId(type);
             if (imageId) {
+                var creditCardTypes = {
+                    visa: 'Visa',
+                    mastercard: 'Master Card',
+                    amex: 'Amex',
+                    discover: 'Discover',
+                    unknown: 'Unknown'
+                };
+
+                var cardType = creditCardTypes[type];
+                    
+                $('.card-number-wrapper').attr('data-type', type);
+                if (type === 'visa' || type === 'mastercard' || type === 'discover') {
+                    $('#securityCode').attr('maxlength', 3);
+                } else {
+                    $('#securityCode').attr('maxlength', 4);
+                }
                 // Set the schema image exist
                 ckoIsSet = true;
 
                 // Get element cardType from form
-                var cardType = document.getElementById('dwfrm_billing_paymentMethods_creditCard_type');
+                var cardTypeSelector = document.getElementById('dwfrm_cardPaymentForm_type');
 
                 // If element cardType exist set value to type
-                if (cardType) {
-                    cardType.value = ucfirst(type);
+                if (cardTypeSelector) {
+                    cardTypeSelector.value = cardType;
                 }
 
                 // Set card shema image
@@ -200,8 +210,8 @@ var ckoMadaFilter = function(cardNumber, bins) {
  */
 var setMada = function() {
     // Is mada enabled by shop
-    var mada = document.getElementById('dwfrm_billing_paymentMethods_creditCard_mada');
-    var input = document.getElementById($('.number :input').attr('id'));
+    var mada = document.getElementById('dwfrm_cardPaymentForm_mada');
+    var input = document.getElementById('dwfrm_cardPaymentForm_number');
     if (mada) {
         input.addEventListener('keyup', function() {
             var value = this.value;
@@ -226,11 +236,11 @@ var setMada = function() {
                         // If result match mada card
                         if (result) {
                         	// Get element cardType from form
-                        	var cardType = document.getElementById('dwfrm_billing_paymentMethods_creditCard_madaCardType');
+                        	var cardType = document.getElementById('dwfrm_cardPaymentForm_type');
 
                         	// If element cardType exist set value to type
                         	if (cardType) {
-                        		cardType.value = true;
+                        		cardType.value = result;
                         	}
 
                         	// Get card schema
@@ -256,9 +266,4 @@ var setMada = function() {
             }
         });
     }
-};
-
-//Convert the first char of a string to uppercase
-function ucfirst(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
 };

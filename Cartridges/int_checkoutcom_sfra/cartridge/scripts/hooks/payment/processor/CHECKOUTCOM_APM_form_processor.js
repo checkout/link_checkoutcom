@@ -9,33 +9,35 @@
  */
 function processForm(req, paymentForm, viewFormData) {
     var viewData = viewFormData;
-    var ckoSelectedApm = paymentForm.paymentMethod.value.toLowerCase();
+    var ckoSelectedApm = paymentForm.apmForm ? paymentForm.apmForm.ckoSelectedApm.htmlValue : null;
     var error = true;
     var fieldErrors = {};
 
-    if (paymentForm.paymentMethod.value) {
+    if (ckoSelectedApm) {
         error = false;
         viewData.paymentMethod = {
-            value: paymentForm.paymentMethod.value,
-            htmlName: paymentForm.paymentMethod.htmlName
+            value: paymentForm.paymentMethod.htmlValue,
+            htmlName: paymentForm.paymentMethod.htmlName,
         };
 
-        var apm = ckoSelectedApm + 'Form';
-        var apmForm = paymentForm[apm];
+        var apmForm = ckoSelectedApm + 'Form';
+        var apmData = paymentForm[apmForm];
         viewData.paymentInformation = {};
 
-        // If this apm have a form
-        if (apmForm) {
-            Object.keys(apmForm).forEach(function(key) {
-                var type = typeof apmForm[key];
-                if (type === 'object' && apmForm[key] != null) {
+        if (apmData) {
+            viewData.paymentInformation.type = {
+                value: ckoSelectedApm,
+                htmlName: apmData.htmlName,
+            };
+            Object.keys(apmData).forEach(function(key) {
+                var type = typeof apmData[key];
+                if (type === 'object' && apmData[key] != null) {
                     viewData.paymentInformation[key] = {
-                        value: apmForm[key].htmlValue,
-                        htmlName: apmForm[key].htmlName,
+                        value: apmData[key].htmlValue,
+                        htmlName: apmData[key].htmlName,
                     };
                 }
             });
-
         } else {
             viewData.paymentInformation.type = {
                 value: ckoSelectedApm,
@@ -58,7 +60,7 @@ function processForm(req, paymentForm, viewFormData) {
     return {
         error: error,
         viewData: viewData,
-        fieldErrors: fieldErrors
+        fieldErrors: fieldErrors,
     };
 }
 

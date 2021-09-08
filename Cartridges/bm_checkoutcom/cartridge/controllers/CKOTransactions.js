@@ -38,16 +38,23 @@ function remoteCall() {
     var task = request.httpParameterMap.get('task');
 
     // Get the transaction currency
+    // eslint-disable-next-line
     var currency = request.httpParameterMap.get('currency');
 
     // Get the transaction formated amount
+    // eslint-disable-next-line
     var formatedAmount = CKOHelper.getFormattedPrice(request.httpParameterMap.get('amount').stringValue, currency);
+
+    // Get the order number
+    // eslint-disable-next-line
+    var orderNumber = request.httpParameterMap.get('orderNo');
 
     // Prepare the payload
     var gRequest = {
         // eslint-disable-next-line
         amount: formatedAmount, // eslint-disable-next-line
-        chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
+        reference: orderNumber.value, // eslint-disable-next-line
+        chargeId: request.httpParameterMap.get('pid').stringValue,
     };
 
     // Set the service parameter
@@ -58,12 +65,49 @@ function remoteCall() {
         CKOHelper._('cko.request.data', 'cko') + ' - ' + serviceName,
         gRequest
     );
- 
+
     // Perform the request
     var gResponse = CKOHelper.getGatewayClient(
         serviceName,
         gRequest
     );
+
+    // If Gatway response fails with 403 try alternative
+    // Capture and Void Klarna Transactions
+    if (gResponse === 403 && (task.value === 'capture' || task.value === 'void')) {
+        // Prepare the payload
+        gRequest = {
+            // eslint-disable-next-line
+            amount: formatedAmount, // eslint-disable-next-line
+            reference: orderNumber.value, // eslint-disable-next-line
+            chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
+        };
+
+        // eslint-disable-next-line
+        if (task.value === 'capture') {
+            gRequest = {
+                amount: formatedAmount, // eslint-disable-next-line
+                chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
+                reference: orderNumber.value,
+                type: 'klarna',
+                klarna: {
+                    description: CKOHelper.getValue('ckoBusinessName') !== '' && CKOHelper.getValue('ckoBusinessName') !== 'undefined' // eslint-disable-next-line
+                        ? CKOHelper.getValue('ckoBusinessName') : Site.getCurrent().httpHostName,
+                },
+            };
+        }
+
+        if (task.value !== 'refund') {
+            serviceName = 'cko.klarna_transaction.' + task + '.' + mode + '.service';
+        }
+
+
+        // Perform the request
+        gResponse = CKOHelper.getGatewayClient(
+            serviceName,
+            gRequest
+        );
+    }
 
     // Log the payment response data
     CKOHelper.log(
@@ -75,7 +119,6 @@ function remoteCall() {
     // eslint-disable-next-line
     response.writer.println(JSON.stringify(gResponse));
 }
-
 /*
 * Web exposed methods
 */

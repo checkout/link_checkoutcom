@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get the transactions
     // eslint-disable-next-line
-    getTransactions(initTable);
+    initTable();
 }, false);
 
 /**
@@ -63,7 +63,7 @@ function getCookie(cname) {
  * @param {string} callBackFn The callback function
  */
 function getTransactions(callBackFn) {
-    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val();
+    var controllerUrl = jQuery('[id="transactionsControllerUrl"]').val() + '?page=' + window.ckoTransactionsTable.options.ajaxParams.page + '&size=' + window.ckoTransactionsTable.options.ajaxParams.size;
     jQuery.ajax({
         type: 'POST',
         url: controllerUrl,
@@ -81,7 +81,7 @@ function getTransactions(callBackFn) {
  * Initialise the table.
  * @param {string} tableData The table data
  */
-function initTable(tableData) {
+function initTable() {
     // Build the table instance
     // eslint-disable-next-line
     window.ckoTransactionsTable = new Tabulator('#transactions-table', {
@@ -91,8 +91,8 @@ function initTable(tableData) {
         headerFilterPlaceholder: '>',
         placeholder: window.ckoLang.noResults,
         layout: 'fitColumns',
-        data: JSON.parse(tableData),
-        pagination: 'local',
+        pagination: 'remote',
+        ajaxURL: jQuery('[id="transactionsControllerUrl"]').val(),
         paginationSize: 50,
         columns: getTableColumns(), // eslint-disable-line
         langs: getTableStrings(), // eslint-disable-line
@@ -168,10 +168,10 @@ function setPagination(table) {
  */
 function getTableColumns() {
     return [
-        { title: 'Id', field: 'id', visible: false },
-        { title: 'Order No', field: 'order_no', width: 120, formatter: 'html', headerFilter: 'input' },
-        { title: 'Transaction id', field: 'transaction_id', headerFilter: 'input' },
-        { title: 'Payment id', field: 'payment_id', headerFilter: 'input' },
+        { title: 'ID', field: 'id', visible: false },
+        { title: 'Order No.', field: 'order_no', width: 120, formatter: 'html', headerFilter: 'input' },
+        { title: 'Transaction ID', field: 'transaction_id', headerFilter: 'input' },
+        { title: 'Action ID', field: 'action_id', headerFilter: 'input' },
         {
             title: 'Amount',
             field: 'amount',
@@ -211,21 +211,32 @@ function getButtonsHtml(cell) {
 
     // Prepare the variable
     var html = '';
+    var paymentId;
+
+    if (rowData.transaction_id && rowData.transaction_id.indexOf("pay_") != -1) {
+        paymentId = rowData.transaction_id;
+    } else if (rowData.payment_id && rowData.payment_id.indexOf("pay_") != -1) {
+        paymentId = rowData.payment_id
+    }
 
     // Build the action buttons
     if (JSON.parse(rowData.opened) && rowData.type !== 'CREDIT') {
         // Capture
         if (rowData.type === 'AUTH') {
-            html += '<button type="button" id="void-button-' + rowData.transaction_id + '" class="btn btn-default ckoAction">' + window.ckoLang.void + '</button>';
-            html += '<button type="button" id="capture-button-' + rowData.transaction_id + '" class="btn btn-info ckoAction">' + window.ckoLang.capture + '</button>';
+            html += '<button type="button" id="void-button-' + paymentId + '" class="btn btn-default ckoAction">' + window.ckoLang.void + '</button>';
+            html += '<button type="button" id="capture-button-' + paymentId + '" class="btn btn-info ckoAction">' + window.ckoLang.capture + '</button>';
         }
 
         // Void
         if (rowData.type === 'CAPTURE') {
-            html += '<button type="button" id="refund-button-' + rowData.transaction_id + '" class="btn btn-secondary ckoAction">' + window.ckoLang.refund + '</button>';
+            html += '<button type="button" id="refund-button-' + paymentId + '" class="btn btn-secondary ckoAction">' + window.ckoLang.refund + '</button>';
         }
     } else {
-        html += '<div class="ckoLocked">&#x1f512;</div>';
+        if(rowData.refundable_amount != 0) {
+            html += '<button type="button" id="refund-button-' + paymentId + '" class="btn btn-secondary ckoAction">' + window.ckoLang.refund + '</button>';
+        } else {
+            html += '<div class="ckoLocked">&#x1f512;</div>';
+        }
     }
 
     return html;

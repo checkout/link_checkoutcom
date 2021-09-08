@@ -14,12 +14,16 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 var applePayHelper = {
     /**
      * Handle full charge Request to CKO API
-     * @param {Object} args The request arguments
+     * @param {Object} paymentData The payment data
+     * @param {string} processorId The processor ID
+     * @param {string} orderNumber The order number
      * @returns {Object} The gateway response
      */
     handleRequest: function(paymentData, processorId, orderNumber) {
         // Load the order information
         var order = OrderMgr.getOrder(orderNumber);
+        var paymentInstruments = order.getPaymentInstruments();
+        var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
         var gatewayResponse = null;
         var gatewayRequest = null;
 
@@ -44,14 +48,14 @@ var applePayHelper = {
         // If the request is valid, process the response
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
             var args = {
-                OrderNo: orderNumber
-            }
+                OrderNo: orderNumber,
+            };
             gatewayRequest = {
                 source: {
                     type: 'token',
                     token: tokenResponse.token,
                 },
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
+                amount: ckoHelper.getFormattedPrice(paymentInstrumentAmount, order.getCurrencyCode()),
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
                 capture: ckoHelper.getValue('ckoAutoCapture'),
@@ -59,7 +63,7 @@ var applePayHelper = {
                 customer: ckoHelper.getCustomer(args),
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
                 shipping: ckoHelper.getShippingObject(args),
-                metadata: ckoHelper.getApplePayMetadata({}, processorId)
+                metadata: ckoHelper.getApplePayMetadata({}, processorId),
             };
 
             // Log the payment request data
@@ -93,7 +97,7 @@ var applePayHelper = {
             ckoHelper.updateCustomerData(gatewayResponse);
         } else {
             // Update the transaction
-            Transaction.wrap(function() {
+            Transaction.wrap(function() { // eslint-disable-next-line
                 OrderMgr.failOrder(order, true);
             });
         }

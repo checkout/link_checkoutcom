@@ -40,17 +40,25 @@ var transactionHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
+        var paymentProcessorId = hook.data.metadata.payment_processor;
         Transaction.wrap(function() {
             // Create the payment instrument and processor
-            var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
-            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.paymentMethod).getPaymentProcessor();
+            var paymentInstrument = order.getPaymentInstruments();
+
+            if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === hook.data.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
+                paymentInstrument = paymentInstrument[0];
+            } else {
+                paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
+            }
+
+            var paymentMethod = paymentInstrument.paymentMethod === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
 
             // Create the authorization transaction
             paymentInstrument.paymentTransaction.setAmount(transactionAmount);
-            paymentInstrument.paymentTransaction.transactionID = hook.data.action_id;
+            paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.paymentTransaction.custom.ckoPaymentId = hook.data.id;
+            paymentInstrument.paymentTransaction.custom.ckoActionId = hook.data.action_id;
             paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
             paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Authorization';
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH);
@@ -113,7 +121,7 @@ var transactionHelper = {
                 var paymentTransaction = paymentInstruments[j].getPaymentTransaction();
 
                 // Prepare the filter condition
-                var isIdMatch = paymentTransaction.transactionID === transactionId;
+                var isIdMatch = paymentTransaction.custom.ckoActionId === transactionId;
 
                 // Add the payment transaction to the output
                 if (isIdMatch) {

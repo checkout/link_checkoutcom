@@ -157,10 +157,9 @@ server.post('HandleWebhook', function(req, res, next) {
             for (var i = 0; i < parts.length; i++) {
                 func += (i === 0) ? parts[i] : parts[i].charAt(0).toUpperCase() + parts[i].slice(1);
             }
-            Transaction.wrap(function() {
-                // Call the event
-                eventsHelper[func](hook);
-            });
+
+            // Call the event
+            eventsHelper[func](hook);
         }
 
         // Set a success response
@@ -195,25 +194,24 @@ server.get('GetApmFilter', server.middleware.https, function(req, res, next) {
     if (basket) {
         var currencyCode = basket.getCurrencyCode();
         var countryCode = basket.defaultShipment.shippingAddress.countryCode.valueOf();
-    
+
         // Prepare the filter object
         var filterObject = {
             country: countryCode,
             currency: currencyCode,
         };
-    
+
         // Prepare the response object
         var responseObject = {
             filterObject: filterObject,
             ckoApmFilterConfig: ckoApmFilterConfig,
         };
-    
+
         // Write the response
         res.json(responseObject);
     }
 
     return next();
-
 });
 
 /*

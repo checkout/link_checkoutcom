@@ -2,11 +2,9 @@
 
 // Site controller
 var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-
 // API Includes
 var OrderMgr = require('dw/order/OrderMgr');
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var app = require('*/cartridge/scripts/app');
 
 // Business Name
 var businessName = Site.getCurrent().getCustomPreferenceValue('ckoBusinessName');
@@ -313,7 +311,7 @@ var ckoApmConfig = {
      */
     klarnaPayAuthorization: function(args) {
         // Gdt the order
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Klarna form fields
         var klarnaApproved = paymentForm.get('klarna_approved').value();

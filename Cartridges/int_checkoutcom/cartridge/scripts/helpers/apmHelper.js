@@ -40,10 +40,10 @@ var apmHelper = {
                         redirectUrl: session.privacy.redirectUrl // eslint-disable-line
                     });
 
-                    return { authorized: true, redirected: true };
+                    return { authorized: true, redirected: true, response: apmRequest };
                 }
 
-                return { authorized: true };
+                return { authorized: true, response: apmRequest };
             }
 
             return false;
@@ -101,7 +101,7 @@ var apmHelper = {
         var serviceName;
 
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Creating billing address object
         var gatewayRequest = this.getApmRequest(payObject, args);
@@ -123,6 +123,15 @@ var apmHelper = {
 
         // If the charge is valid, process the response
         if (gatewayResponse) {
+            Transaction.wrap(function() {
+                // Create the payment instrument and processor
+                var paymentInstrument = order.getPaymentInstruments();
+
+                if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
+                    paymentInstrument = paymentInstrument[0];
+                }
+                paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);
+            });
             return gatewayResponse;
         }
 
@@ -145,17 +154,19 @@ var apmHelper = {
         var chargeData = false;
 
         // Load the order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
+        var paymentInstruments = order.getPaymentInstruments();
+        var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
 
         // Load the currency and amount
-        var amount = ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), payObject.currency);
+        var amount = ckoHelper.getFormattedPrice(paymentInstrumentAmount, payObject.currency);
 
         // Object APM is SEPA
         if (Object.prototype.hasOwnProperty.call(payObject, 'type') && payObject.type === 'sepa') {
             // Prepare the charge data
             chargeData = {
                 customer: ckoHelper.getCustomer(args),
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), payObject.currency),
+                amount: amount,
                 type: payObject.type,
                 currency: payObject.currency,
                 billing_address: ckoHelper.getBillingObject(args),

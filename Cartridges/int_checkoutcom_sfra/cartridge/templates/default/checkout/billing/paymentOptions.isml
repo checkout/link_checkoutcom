@@ -1,6 +1,7 @@
 <isscript>
     // CSS and JS
     var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/apm.js');
     assets.addJs('/js/checkoutcom.js');
     assets.addCss('/css/checkoutcom.css');
     var translationStrings = JSON.stringify({

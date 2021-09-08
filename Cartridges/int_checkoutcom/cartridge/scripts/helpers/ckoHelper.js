@@ -14,6 +14,9 @@ var Site = require('dw/system/Site');
 // Card Currency Config
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
 
+/* Sensitive Data Helper */
+var sensitiveDataHelper = require('~/cartridge/scripts/helpers/sensitiveDataHelper.js');
+
 /**
  * Module ckoHelper.
  */
@@ -122,14 +125,55 @@ var ckoHelper = {
      */
     log: function(dataType, gatewayData) {
         if (this.getValue('ckoDebugEnabled') === true) {
+            // Create's a deep copy gatewayData, this will prevent data being deleted.
+            var cloneGatewayData = JSON.parse(JSON.stringify(gatewayData));
+
             var logger = Logger.getLogger('ckodebug');
+
+            // Remove sensitive data
+            var cleanData = this.removeSensitiveData(cloneGatewayData);
+
             if (logger) {
                 logger.debug(
                     this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}',
-                    JSON.stringify(gatewayData)
+                    JSON.stringify(cleanData)
                 );
             }
         }
+    },
+
+    /**
+     * Remove sentitive data from the logs.
+     * @param {Object} rawData The log data
+     * @returns {Object} The filtered data
+     */
+    removeSensitiveData: function(rawData) {
+        var data = rawData;
+        if (data) {
+            if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
+                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference')) { data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*'); }
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'source_data')) {
+                data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'source')) {
+                data.source = sensitiveDataHelper.cleanSourceObject(data.source);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'customer')) {
+                data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'shipping')) {
+                data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) {
+                data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
+            }
+        }
+
+        return data;
     },
 
     /**
@@ -265,7 +309,7 @@ var ckoHelper = {
 
             // Loop through the payment instruments
             for (var i = 0; i < paymentInstruments.length; i++) {
-                if (!this.containsObject(item, data)) {
+                if (this.isCkoItem(paymentInstruments[i].paymentMethod) && !this.containsObject(item, data)) {
                     data.push(item);
                 }
             }
@@ -330,11 +374,11 @@ var ckoHelper = {
      */
     paymentSuccess: function(gatewayResponse) {
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'response_code')) {
-            return gatewayResponse.response_code === "10000" || gatewayResponse.response_code === "10100" || gatewayResponse.response_code === "10200";
+            return gatewayResponse.response_code === '10000' || gatewayResponse.response_code === '10100' || gatewayResponse.response_code === '10200';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions')) {
-            return gatewayResponse.actions[0].response_code === "10000" || gatewayResponse.actions[0].response_code === "10100" || gatewayResponse.actions[0].response_code === "10200";
+            return gatewayResponse.actions[0].response_code === '10000' || gatewayResponse.actions[0].response_code === '10100' || gatewayResponse.actions[0].response_code === '10200';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            return gatewayResponse.source.type === "sofort" || "bancontact" || "token";
+            return gatewayResponse.source.type === 'sofort' || 'bancontact' || 'token';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'reference')) {
             return gatewayResponse.reference === this.getOrderId();
         }
@@ -383,7 +427,7 @@ var ckoHelper = {
      */
     getQuantity: function(args) {
         // load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var quantity = order.getProductQuantityTotal();
 
         return quantity;
@@ -409,7 +453,7 @@ var ckoHelper = {
      */
     getProductInformation: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var it = order.productLineItems.iterator();
         var products = [];
 
@@ -442,7 +486,7 @@ var ckoHelper = {
      */
     getTaxObject: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Prepare the tax data
         var tax = {
@@ -467,7 +511,7 @@ var ckoHelper = {
      */
     getShippingValue: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get shipping address object
         var shipping = order.getDefaultShipment();
@@ -494,7 +538,7 @@ var ckoHelper = {
      */
     getCurrencyCode: function(args) {
         // Get the order
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get shipping address object
         var shipping = order.getDefaultShipment().getShippingMethod();
@@ -510,7 +554,7 @@ var ckoHelper = {
      */
     getProductNames: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Prepare the iterator
         var it = order.productLineItems.iterator();
@@ -532,7 +576,7 @@ var ckoHelper = {
      */
     getProductPrices: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get the product itemas
         var items = order.productLineItems.iterator();
@@ -554,7 +598,7 @@ var ckoHelper = {
      */
     getProductIds: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var it = order.productLineItems.iterator();
         var productIds = [];
         while (it.hasNext()) {
@@ -572,7 +616,7 @@ var ckoHelper = {
      */
     getProductQuantity: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Prepare the iterator
         var it = order.productLineItems.iterator();
@@ -594,7 +638,7 @@ var ckoHelper = {
      */
     getHost: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var host = order.getRemoteHost();
 
         return host;
@@ -639,7 +683,7 @@ var ckoHelper = {
      */
     getCustomerName: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -655,7 +699,7 @@ var ckoHelper = {
      */
     getCustomerFirstName: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -671,7 +715,7 @@ var ckoHelper = {
      */
     getCustomerLastName: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -715,11 +759,11 @@ var ckoHelper = {
 
     /**
      * Build the metadata object.
-     * @param {Object} paymentInstrument The request paymentInstrument
+     * @param {Object} data The request data
      * @param {string} args The method arguments
      * @returns {Object} The metadata
      */
-    getMetadataObject: function(paymentInstrument, args) {
+    getMetadataObject: function(data, args) {
         // Prepare the base metadata
         var meta = {
             integration_data: this.getCartridgeMeta(),
@@ -727,19 +771,19 @@ var ckoHelper = {
         };
 
         // Add the data info if needed
-        if (Object.prototype.hasOwnProperty.call(paymentInstrument, 'type')) {
-            meta.udf1 = paymentInstrument.type;
+        if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+            meta.udf1 = data.type;
         }
 
         // Get the payment processor
         var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+        var paymentMethodName = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor().getID();
+        var paymentMethodId = paymentMethodName === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentMethodName;
 
         // Add the payment processor to the metadata
-        meta.payment_processor = paymentProcessor.getID();
+        meta.payment_processor = paymentMethodId;
 
         return meta;
-
     },
 
     /**
@@ -762,6 +806,31 @@ var ckoHelper = {
 
         // Add the payment processor to the metadata
         meta.payment_processor = processorId;
+
+        return meta;
+    },
+
+    /**
+     * Build the metadata string.
+     * @param {Object} data The request data
+     * @param {string} args The method arguments
+     * @returns {string} The metadata
+     */
+    getMetadataString: function(data, args) {
+        // Prepare the base metadata
+        var meta = 'integration_data' + this.getCartridgeMeta() + 'platform_data' + this.getValue('ckoSgPlatformData');
+
+        // Add the data info if needed
+        if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+            meta += 'udf1' + data.type;
+        }
+
+        // Get the payment processor
+        var paymentInstrument = args.PaymentInstrument;
+        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+
+        // Add the payment processor to the metadata
+        meta += 'payment_processor' + paymentProcessor.getID();
 
         return meta;
     },
@@ -791,38 +860,13 @@ var ckoHelper = {
     },
 
     /**
-     * Build the metadata string.
-     * @param {Object} paymentInstrument The request paymentInstrument
-     * @param {string} args The method arguments
-     * @returns {string} The metadata
-     */
-    getMetadataString: function(paymentInstrument, args) {
-        // Prepare the base metadata
-        var meta = 'integration_data' + this.getCartridgeMeta() + 'platform_data' + this.getValue('ckoSgPlatformData');
-
-        // Add the data info if needed
-        if (Object.prototype.hasOwnProperty.call(paymentInstrument, 'type')) {
-            meta += 'udf1' + paymentInstrument.type;
-        }
-
-        // Get the payment processor
-        var paymentInstrument = args.PaymentInstrument;
-        var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
-
-        // Add the payment processor to the metadata
-        meta += 'payment_processor' + paymentProcessor.getID();
-
-        return meta;
-    },
-
-    /**
      * Return the billing object.
      * @param {Object} args The method arguments
      * @returns {Object} The billing data
      */
     getBillingObject: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -847,7 +891,7 @@ var ckoHelper = {
      */
     getBillingCountry: function(args) {
         // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
 
         // Get billing address information
         var billingAddress = order.getBillingAddress();
@@ -938,7 +982,7 @@ var ckoHelper = {
     getOrderBasketObject: function(args) {
         // Prepare some variables
         var currency = this.getAppModeValue('GBP', this.getCurrencyCode(args));
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var it = order.productLineItems.iterator();
         var productsQuantites = [];
 
@@ -1018,7 +1062,7 @@ var ckoHelper = {
      * @returns {Object} The address
      */
     getOrderBasketAddress: function(args) {
-        var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
+        var order = OrderMgr.getOrder(args.OrderNo);
         var address = {
             given_name: order.defaultShipment.shippingAddress.firstName,
             family_name: order.defaultShipment.shippingAddress.lastName,

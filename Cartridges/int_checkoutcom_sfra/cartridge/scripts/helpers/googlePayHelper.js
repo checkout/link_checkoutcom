@@ -49,15 +49,12 @@ var googlePayHelper = {
                     token: tokenResponse.token,
                 },
                 amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
-                "3ds": {
-                    "enabled": true,
-                    "attempt_n3d": true
-                },
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
                 capture: ckoHelper.getValue('ckoAutoCapture'),
                 capture_on: ckoHelper.getCaptureTime(),
                 customer: ckoHelper.getCustomer(order),
+                risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
                 shipping: ckoHelper.getShipping(order),
                 metadata: ckoHelper.getMetadata({}, processorId),
@@ -89,8 +86,6 @@ var googlePayHelper = {
         // Prepare the result
         var result = {
             error: !ckoHelper.paymentSuccess(gatewayResponse),
-            message: gatewayResponse.response_summary ? ckoHelper.errorMessage(gatewayResponse.response_summary.toLowerCase()) : '',
-            code: gatewayResponse.response_code,
             redirectUrl: false,
         };
 

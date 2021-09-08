@@ -5,15 +5,11 @@ var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
 
-// Site controller
-var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
-
 // Shopper cart
-var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
+var Cart = require('*/cartridge/scripts/models/CartModel');
 
 // App
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var app = require('*/cartridge/scripts/app');
 
 // Utility
 var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
@@ -24,7 +20,6 @@ var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
  * @returns {Object} The form validation result
  */
 function Handle(args) {
-
     var cart = Cart.get(args.Basket);
     var paymentMethod = args.PaymentMethodID;
 
@@ -34,7 +29,7 @@ function Handle(args) {
     // Proceed with transaction
     Transaction.wrap(function() {
         cart.removeExistingPaymentInstruments(paymentMethod);
-        var paymentInstrument = cart.createPaymentInstrument(paymentMethod, cart.getNonGiftCertificateAmount());
+        var paymentInstrument = cart.createPaymentInstrument('CHECKOUTCOM_GOOGLE_PAY', cart.getNonGiftCertificateAmount());
         paymentInstrument.paymentTransaction.custom.ckoGooglePayData = googlePayData;
     });
 
@@ -47,41 +42,31 @@ function Handle(args) {
  * @returns {Object} The payment success or failure
  */
 function Authorize(args) {
+    // Preparing payment parameters
+    var paymentInstrument = args.PaymentInstrument;
+    var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
-    // Add order Number to session
+    // Add order number to the session global object
     // eslint-disable-next-line
     session.privacy.ckoOrderId = args.OrderNo;
-    var paymentInstrument = args.PaymentInstrument;
-    var paymentMethod = paymentInstrument.getPaymentMethod();
-    var PaymentMgr = require('dw/order/PaymentMgr');
-    var OrderMgr = require('dw/order/OrderMgr');
-    var order = OrderMgr.getOrder(args.OrderNo, args.Order.orderToken);
-    var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
 
-    try {
-        var paymentAuth = googlePayHelper.handleRequest(args);
-
-        if (paymentAuth !== '' && paymentAuth !== undefined && paymentAuth !== null) {
-            Transaction.wrap(function () {
-                paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
-                paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-                paymentInstrument.paymentTransaction.custom.ckoGooglePayData = '';
-            });
-
-            return {authorized: true, error: false};
-        } else {
-            throw new Error('Authorization Error');
-        }
-    } catch(e) {
-        Transaction.wrap(function () {
-            order.addNote('Payment Authorization Request:', e.message);
-            paymentInstrument.paymentTransaction.transactionID = args.OrderNo;
+    // Make the charge request
+    var chargeResponse = googlePayHelper.handleRequest(args);
+    if (chargeResponse) {
+        // Create the authorization transaction
+        Transaction.wrap(function() {
+            paymentInstrument.paymentTransaction.transactionID = chargeResponse.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.paymentTransaction.custom.ckoGooglePayData = '';
+            paymentInstrument.paymentTransaction.custom.ckoActionId = chargeResponse.action_id;
+            paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = null;
+            paymentInstrument.paymentTransaction.custom.ckoTransactionOpened = true;
+            paymentInstrument.paymentTransaction.custom.ckoTransactionType = 'Authorization';
+            paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH);
         });
 
-        return {authorized: false, error: true, message: e.message };
+        return { authorized: true };
     }
+    return { error: true };
 }
 
 // Module exports

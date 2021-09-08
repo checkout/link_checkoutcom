@@ -5,67 +5,115 @@ var Transaction = require('dw/system/Transaction');
 
 // Site controller
 var Site = require('dw/system/Site');
-var SiteControllerName = Site.getCurrent().getCustomPreferenceValue('ckoSgStorefrontControllers');
 
 // Shopper cart
-var Cart = require(SiteControllerName + '/cartridge/scripts/models/CartModel');
+var Cart = require('*/cartridge/scripts/models/CartModel');
 
 // App
-var app = require(SiteControllerName + '/cartridge/scripts/app');
+var app = require('*/cartridge/scripts/app');
 
 // Utility
 var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 
 /**
+ * Creates a token. This should be replaced by utilizing a tokenization provider
+ * @param {Object} paymentData The data of the payment
+ * @returns {string} a token
+ */
+function createToken(paymentData) {
+
+    var requestData = {
+        source: {
+            type: 'card',
+            number: paymentData.cardNumber.toString(),
+            expiry_month: paymentData.expirationMonth,
+            expiry_year: paymentData.expirationYear,
+            name: paymentData.name,
+        },
+        currency: Site.getCurrent().getDefaultCurrency(),
+        risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+        billing_descriptor: ckoHelper.getBillingDescriptorObject(),
+        customer: {
+            name: paymentData.name,
+            email: paymentData.email,
+        },
+    };
+
+    var idResponse = ckoHelper.gatewayClientRequest(
+        'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+        requestData
+    );
+
+    if (idResponse && idResponse !== 400) {
+        return idResponse.source.id;
+    }
+
+    return '';
+}
+
+/**
  * Verifies that the payment data is valid.
  * @param {Object} args The method arguments
  * @returns {Object} The form validation result
  */
-function Handle(args) { 
-
+function Handle(args) {
     var cart = Cart.get(args.Basket);
-    var creditCardForm = app.getForm('billing.paymentMethods.creditCard');
-    var PaymentMgr = require('dw/order/PaymentMgr');
+    var paymentMethod = args.PaymentMethodID;
 
-    var creditCardHolder = creditCardForm.get('owner').value();
-    var cardNumber = ckoHelper.getFormattedNumber(creditCardForm.get('number').value());
-    var cardSecurityCode = creditCardForm.get('cvn').value();
-    var cardType = creditCardForm.get('type').value();
-    var expirationMonth = creditCardForm.get('expiration.month').value();
-    var expirationYear = creditCardForm.get('expiration.year').value(); 
-    var madaCardType = creditCardForm.get('madaCardType').value();
-    var paymentCard = PaymentMgr.getPaymentCard(cardType);
+    // Get card payment form
+    var paymentForm = app.getForm('cardPaymentForm');
 
-    var creditCardStatus = paymentCard.verify(expirationMonth, expirationYear, cardNumber, cardSecurityCode);
+    // Prepare card data object
+    var cardData = {
+        owner: paymentForm.get('owner').value(),
+        number: ckoHelper.getFormattedNumber(paymentForm.get('number').value()),
+        month: paymentForm.get('expiration.month').value(),
+        year: paymentForm.get('expiration.year').value(),
+        cvn: paymentForm.get('cvn').value(),
+        cardType: paymentForm.get('type').value(),
+    };
 
-    if (creditCardStatus.error) {
+    // Validate expiration date
+    if (cardData.year === new Date().getFullYear() && cardData.month < new Date().getMonth() + 1) {
+        paymentForm.get('expiration.month').invalidateFormElement();
+        paymentForm.get('expiration.year').invalidateFormElement();
 
-        var invalidatePaymentCardFormElements = require('*/cartridge/scripts/checkout/InvalidatePaymentCardFormElements');
-        invalidatePaymentCardFormElements.invalidatePaymentCardForm(creditCardStatus, session.forms.billing.paymentMethods.creditCard);
-
-        return {error: true};
+        return { error: true };
     }
 
     // Save card feature
-    if (creditCardForm.get('saveCard').value()) {
+    if (paymentForm.get('saveCard').value()) {
         var i,
             creditCards,
             newCreditCard;
 
         // eslint-disable-next-line
-        creditCards = customer.profile.getWallet().getPaymentInstruments(dw.order.PaymentInstrument.METHOD_CREDIT_CARD);
+        creditCards = customer.profile.getWallet().getPaymentInstruments(paymentMethod);
+        var token;
+        if (paymentForm.object.cardToken.value && paymentForm.object.cardToken.value != 'false') {
+            token = paymentForm.object.cardToken.value;
+        } else {
+            token = createToken({
+                cardNumber: cardData.number,
+                expirationMonth: cardData.month,
+                expirationYear: cardData.year,
+                name: cardData.owner,
+                email: customer.profile.getEmail(),
+            });
+        }
 
         Transaction.wrap(function() {
             // eslint-disable-next-line
-            newCreditCard = customer.profile.getWallet().createPaymentInstrument(dw.order.PaymentInstrument.METHOD_CREDIT_CARD);
+            newCreditCard = customer.profile.getWallet().createPaymentInstrument(paymentMethod);
 
             // copy the credit card details to the payment instrument
-            newCreditCard.setCreditCardHolder(creditCardHolder);
-            newCreditCard.setCreditCardNumber(cardNumber);
-            newCreditCard.setCreditCardExpirationMonth(expirationMonth);
-            newCreditCard.setCreditCardExpirationYear(expirationYear);
-            newCreditCard.setCreditCardType(cardType);
+            newCreditCard.setCreditCardHolder(cardData.owner);
+            newCreditCard.setCreditCardNumber(cardData.number);
+            newCreditCard.setCreditCardExpirationMonth(cardData.month);
+            newCreditCard.setCreditCardExpirationYear(cardData.year);
+            newCreditCard.setCreditCardType(cardData.cardType);
+            newCreditCard.setCreditCardToken(token);
 
             for (i = 0; i < creditCards.length; i++) {
                 var creditcard = creditCards[i];
@@ -78,19 +126,24 @@ function Handle(args) {
         });
     }
 
-    Transaction.wrap(function () {
-        cart.removeExistingPaymentInstruments(dw.order.PaymentInstrument.METHOD_CREDIT_CARD);
-        var paymentInstrument = cart.createPaymentInstrument(dw.order.PaymentInstrument.METHOD_CREDIT_CARD, cart.getNonGiftCertificateAmount());
+    // Proceed with transaction
+    Transaction.wrap(function() {
+        cart.removeExistingPaymentInstruments(paymentMethod);
+        var paymentInstrument = cart.createPaymentInstrument(paymentMethod, cart.getNonGiftCertificateAmount());
+        paymentInstrument.creditCardHolder = cardData.owner;
+        paymentInstrument.creditCardNumber = cardData.number;
+        paymentInstrument.creditCardExpirationMonth = cardData.month;
+        paymentInstrument.creditCardExpirationYear = cardData.year;
+        paymentInstrument.creditCardType = cardData.cardType;
 
-        paymentInstrument.creditCardHolder = creditCardHolder;
-        paymentInstrument.creditCardNumber = cardNumber;
-        paymentInstrument.creditCardType = cardType;
-        paymentInstrument.creditCardExpirationMonth = expirationMonth;
-        paymentInstrument.creditCardExpirationYear = expirationYear;
-        paymentInstrument.custom.ckoPaymentData = JSON.stringify({cvn: cardSecurityCode, madaCard: madaCardType ? 'yes' : ''});
+        if (paymentForm.object.cardToken.value && paymentForm.object.cardToken.value != 'false') {
+            paymentInstrument.setCreditCardToken(paymentForm.object.cardToken.value);
+        } else if (token) {
+            paymentInstrument.setCreditCardToken(token);
+        }
     });
 
-    return {success: true};
+    return { success: true };
 }
 
 
@@ -100,37 +153,34 @@ function Handle(args) {
  * @returns {Object} The payment success or failure
  */
 function Authorize(args) {
-    var orderNo = args.OrderNo;
+    // Preparing payment parameters
+    var paymentInstrument = args.PaymentInstrument;
 
     // Add order number to the session global object
     // eslint-disable-next-line
     session.privacy.ckoOrderId = args.OrderNo;
-    var paymentInstrument = args.PaymentInstrument;
-    var PaymentMgr = require('dw/order/PaymentMgr');
-    var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
 
-    try {
+    // Get card payment form
+    var paymentForm = app.getForm('cardPaymentForm');
 
-        var paymentAuth = cardHelper.cardAuthorization(paymentInstrument, args);
+    // Build card data object
+    var cardData = {
+        name: paymentInstrument.creditCardHolder,
+        number: ckoHelper.getFormattedNumber(paymentForm.get('number').value()),
+        expiryMonth: paymentInstrument.creditCardExpirationMonth,
+        expiryYear: paymentInstrument.creditCardExpirationYear,
+        cvv: paymentForm.get('cvn').value(),
+        type: paymentInstrument.creditCardType,
+        creditCardToken: paymentInstrument.getCreditCardToken(),
+    };
 
-        Transaction.wrap(function () {
-            paymentInstrument.paymentTransaction.transactionID = orderNo;
-            paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
-            paymentInstrument.custom.ckoPaymentData = '';
-        });
-
-        if (paymentAuth) { 
-
-            return {authorized: true, error: false};
-        } else {
-            throw new Error({mssage: 'Authorization Error'});
-        }
-    } catch(e) {
-
-        return {authorized: false, error: true, message: e.message };
+    if (cardHelper.cardAuthorization(cardData, args)) {
+        return { success: true };
     }
+    return { error: true };
 }
 
 // Module exports
 exports.Handle = Handle;
 exports.Authorize = Authorize;
+exports.createToken = createToken;
