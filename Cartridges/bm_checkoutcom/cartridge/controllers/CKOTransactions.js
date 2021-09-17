@@ -30,6 +30,7 @@ function getTransactionsData() {
  * Perform a remote Hub Call
  */
 function remoteCall() {
+
     // Get the operating mode
     var mode = CKOHelper.getValue('ckoMode');
 
@@ -38,23 +39,20 @@ function remoteCall() {
     var task = request.httpParameterMap.get('task');
 
     // Get the transaction currency
-    // eslint-disable-next-line
     var currency = request.httpParameterMap.get('currency');
 
     // Get the transaction formated amount
-    // eslint-disable-next-line
     var formatedAmount = CKOHelper.getFormattedPrice(request.httpParameterMap.get('amount').stringValue, currency);
 
     // Get the order number
-    // eslint-disable-next-line
     var orderNumber = request.httpParameterMap.get('orderNo');
 
     // Prepare the payload
     var gRequest = {
         // eslint-disable-next-line
         amount: formatedAmount, // eslint-disable-next-line
-        reference: orderNumber.value, // eslint-disable-next-line
-        chargeId: request.httpParameterMap.get('pid').stringValue,
+        reference: orderNumber.value,
+        chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
     };
 
     // Set the service parameter
@@ -71,15 +69,16 @@ function remoteCall() {
         serviceName,
         gRequest
     );
-
+    
     // If Gatway response fails with 403 try alternative
     // Capture and Void Klarna Transactions
-    if (gResponse === 403 && (task.value === 'capture' || task.value === 'void')) {
+    if (gResponse === 403 && task.value === 'capture' || task.value === 'void') {
+
         // Prepare the payload
         gRequest = {
             // eslint-disable-next-line
             amount: formatedAmount, // eslint-disable-next-line
-            reference: orderNumber.value, // eslint-disable-next-line
+            reference: orderNumber.value,
             chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
         };
 
@@ -89,12 +88,12 @@ function remoteCall() {
                 amount: formatedAmount, // eslint-disable-next-line
                 chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
                 reference: orderNumber.value,
-                type: 'klarna',
+                type: "klarna",
                 klarna: {
-                    description: CKOHelper.getValue('ckoBusinessName') !== '' && CKOHelper.getValue('ckoBusinessName') !== 'undefined' // eslint-disable-next-line
-                        ? CKOHelper.getValue('ckoBusinessName') : Site.getCurrent().httpHostName,
-                },
-            };
+                    description: CKOHelper.getValue('ckoBusinessName') !== '' && CKOHelper.getValue('ckoBusinessName') !== 'undefined' 
+                        ? CKOHelper.getValue('ckoBusinessName') : Site.getCurrent().httpHostName
+                }
+            }
         }
 
         if (task.value !== 'refund') {
@@ -107,7 +106,7 @@ function remoteCall() {
             serviceName,
             gRequest
         );
-    }
+    };
 
     // Log the payment response data
     CKOHelper.log(
@@ -118,7 +117,9 @@ function remoteCall() {
     // Return the response
     // eslint-disable-next-line
     response.writer.println(JSON.stringify(gResponse));
+
 }
+
 /*
 * Web exposed methods
 */
