@@ -60,7 +60,7 @@ function openModal(elt) {
 
     // Get the transaction data
     var tidExists = members[2] !== null && members[2] !== 'undefined';
-    var isValidTid = members[2].length > 0 && members[2].indexOf('act_') === 0;
+    var isValidTid = members[2].length > 0 && members[2].indexOf('pay_') === 0;
     if (tidExists && isValidTid) {
         // eslint-disable-next-line
         getTransactionData(members);
@@ -94,7 +94,7 @@ function getTransactionData(members) {
         data: { tid: transactionId },
         success: function(data) {
             // Get the data
-            var transaction = JSON.parse(data)[0];
+            var transaction = JSON.parse(data).data[0];
 
             // Set the transation data field ids
             var field1Id = '[id="' + task + '_value"]';
@@ -157,18 +157,18 @@ function performAction(task) {
     // Set the transaction id
     var paymentId = jQuery('[id="' + task + '_payment_id"]').text();
 
-    // Set the currency
-    var currency = jQuery('[id="' + task + '_currency"]').text();
-
     // Set the transaction value field id
     var amount = jQuery('[id="' + task + '_value"]').val();
+
+    if(paymentId.indexOf('pay_') == -1) {
+        paymentId = jQuery('[id="' + task + '_transaction_id"]').text();
+    }
 
     // Prepare the action data
     var data = {
         pid: paymentId,
         task: task,
         amount: amount,
-        currency: currency
     };
 
     // Send the AJAX request
@@ -201,8 +201,9 @@ function performAction(task) {
  * @param {string} tableData The table data
  */
 function reloadTable(tableData) {
+    var data = JSON.parse(tableData);
     // Update the row data
-    window.ckoTransactionsTable.replaceData(tableData);
+    window.ckoTransactionsTable.replaceData(data.data);
 
     // Show the success message
     // eslint-disable-next-line
