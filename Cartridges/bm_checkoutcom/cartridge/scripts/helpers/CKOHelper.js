@@ -34,6 +34,9 @@ var CKOHelper = {
     getCkoOrders: function() {
         // Prepare the output array
         var data = [];
+        var formattedResult = [];
+        var generalCounter = 0;
+        var sizeCounter = 0;
 
         // Query the orders
         var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
@@ -50,7 +53,24 @@ var CKOHelper = {
         
         totalPages = Math.ceil(result.getCount() / pagination);
 
-        return result.asList(start, pagination)
+        data = result.asList();
+
+        for (var i = 0; i < data.length; i++) {
+            var piLength = data[i].paymentInstruments.length - 1 ;
+            if (data[i].paymentTransaction.paymentProcessor 
+                && data[i].paymentTransaction.paymentProcessor.ID.indexOf('CHECKOUTCOM_') != -1
+                && this.isTransactionNeeded(data[i].paymentTransaction, data[i].paymentInstruments[piLength])) {
+                if (start == 0 || generalCounter > start) {
+                    formattedResult[sizeCounter] = data[i];
+                    sizeCounter++;
+                } else {
+                    generalCounter++;
+                }
+            }
+            if (sizeCounter > pagination) {
+                return formattedResult;
+            }
+        }
     },
 
     /**
