@@ -1,7 +1,8 @@
 'use strict';
 
 /* API Includes */
-var SystemObjectMgr = require('dw/object/SystemObjectMgr');
+var Calendar = require('dw/util/Calendar');
+var StringUtils = require("dw/util/StringUtils");
 var OrderMgr = require('dw/order/OrderMgr');
 var PaymentMgr = require('dw/order/PaymentMgr');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
@@ -39,7 +40,7 @@ var CKOHelper = {
         var sizeCounter = 0;
 
         // Query the orders
-        var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
+        var result = OrderMgr.searchOrders('', 'creationDate desc');
 
         var query = this.parseQuery(request.httpQueryString);
 
@@ -53,23 +54,35 @@ var CKOHelper = {
         
         totalPages = Math.ceil(result.getCount() / pagination);
 
-        data = result.asList();
-
-        for (var i = 0; i < data.length; i++) {
-            var piLength = data[i].paymentInstruments.length - 1 ;
-            if (data[i].paymentTransaction.paymentProcessor 
-                && data[i].paymentTransaction.paymentProcessor.ID.indexOf('CHECKOUTCOM_') != -1
-                && this.isTransactionNeeded(data[i].paymentTransaction, data[i].paymentInstruments[piLength])) {
+        while (result.hasNext()) {
+            var pi = result.next();
+            var piLength = pi.paymentInstruments.length - 1 ;
+            if (pi.paymentTransaction.paymentProcessor 
+                && pi.paymentTransaction.paymentProcessor.ID.indexOf('CHECKOUTCOM_') != -1
+                && this.isTransactionNeeded(pi.paymentTransaction, pi.paymentInstruments[piLength])) {
                 if (start == 0 || generalCounter > start) {
-                    formattedResult[sizeCounter] = data[i];
+                    formattedResult[sizeCounter] = pi;
                     sizeCounter++;
                 } else {
                     generalCounter++;
                 }
             }
+            
             if (sizeCounter > pagination) {
                 return formattedResult;
             }
+
+            if (!result.hasNext()) {
+                var queryDate = StringUtils.formatCalendar(new Calendar(pi.creationDate), "yyyy-MM-dd'T'HH:mm:ss'+Z'");
+                var queryString = 'creationDate <= ' + queryDate;
+                result = OrderMgr.searchOrders(queryString, 'creationDate desc');
+            }
+        }
+
+        data = result.asList();
+
+        for (var i = 0; i < data.length; i++) {
+            
         }
     },
 
@@ -348,7 +361,7 @@ var CKOHelper = {
      */
     getFormattedPrice: function(amount, currency) {
         var totalFormated;
-        if (currency) {
+        if (currency && typeof (currency) == 'string') {
             var ckoFormateBy = this.getCkoFormatedValue(currency);
             totalFormated = amount * ckoFormateBy;
     
@@ -396,7 +409,7 @@ var CKOHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
+        var str = this.getValue('ckoMode') == 'live' ? 'Live' : 'Sandbox';
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
