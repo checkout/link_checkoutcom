@@ -78,12 +78,6 @@ var CKOHelper = {
                 result = OrderMgr.searchOrders(queryString, 'creationDate desc');
             }
         }
-
-        data = result.asList();
-
-        for (var i = 0; i < data.length; i++) {
-            
-        }
     },
 
     /**
