@@ -110,12 +110,15 @@ var eventsHelper = {
 
         // Get the payment processor id
         var paymentProcessorId = hook.data.metadata.payment_processor;
+        if (paymentProcessorId == 'CHECKOUTCOM_CARD') {
+            paymentProcessorId = 'CREDIT_CARD';
+        }
 
         // Create the captured transaction
         Transaction.wrap(function() {
             // Create the transaction
             var paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
-            var paymentMethod = paymentInstrument.paymentMethod === 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
+            var paymentMethod = paymentInstrument.paymentMethod == 'CHECKOUTCOM_CARD' ? 'CREDIT_CARD' : paymentInstrument.paymentMethod;
             var paymentProcessor = PaymentMgr.getPaymentMethod(paymentMethod).getPaymentProcessor();
             paymentInstrument.paymentTransaction.transactionID = hook.data.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;

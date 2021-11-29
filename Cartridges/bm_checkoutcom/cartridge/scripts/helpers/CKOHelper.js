@@ -1,7 +1,8 @@
 'use strict';
 
 /* API Includes */
-var SystemObjectMgr = require('dw/object/SystemObjectMgr');
+var Calendar = require('dw/util/Calendar');
+var StringUtils = require("dw/util/StringUtils");
 var OrderMgr = require('dw/order/OrderMgr');
 var PaymentMgr = require('dw/order/PaymentMgr');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
@@ -11,6 +12,7 @@ var Site = require('dw/system/Site');
 
 // Card Currency Config
 var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
+var totalPages;
 
 /**
  * Helper functions for the Checkout.com cartridge integration.
@@ -33,26 +35,45 @@ var CKOHelper = {
     getCkoOrders: function() {
         // Prepare the output array
         var data = [];
+        var formattedResult = [];
+        var generalCounter = 0;
+        var sizeCounter = 0;
 
         // Query the orders
-        var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
+        var result = OrderMgr.searchOrders('custom.isCheckoutOrder = {0}', 'creationDate desc', true);
 
-        // Loop through the results
-        while (result.hasNext()) {
-            var item = result.next();
+        var query = this.parseQuery(request.httpQueryString);
 
-            // Get the payment instruments
-            var paymentInstruments = item.getPaymentInstruments().toArray();
-
-            // Loop through the payment instruments
-            for (var i = 0; i < paymentInstruments.length; i++) {
-                if (this.isCkoItem(paymentInstruments[i].paymentMethod) && !this.containsObject(item, data)) {
-                    data.push(item);
-                }
-            }
+        if (!query.page) {
+            return result.asList();
         }
 
-        return data;
+        var page = query.page,
+            pagination = query.size,
+            start = (page - 1) * pagination;
+        
+        totalPages = Math.ceil(result.getCount() / pagination);
+
+        while (result.hasNext()) {
+            var pi = result.next();
+            var piLength = pi.paymentInstruments.length - 1 ;
+            if (start == 0 || generalCounter > start) {
+                formattedResult[sizeCounter] = pi;
+                sizeCounter++;
+            } else {
+                generalCounter++;
+            }
+            
+            if (sizeCounter > pagination) {
+                return formattedResult;
+            }
+
+            if (!result.hasNext()) {
+                var queryDate = StringUtils.formatCalendar(new Calendar(pi.creationDate), "yyyy-MM-dd'T'HH:mm:ss'+Z'");
+                var queryString = 'creationDate <= ' + queryDate;
+                result = OrderMgr.searchOrders(queryString, 'creationDate desc');
+            }
+        }
     },
 
     /**
@@ -71,45 +92,58 @@ var CKOHelper = {
         for (var j = 0; j < result.length; j++) {
             // Get the payment instruments
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
+            var k = paymentInstruments.length - 1;
+            
+            var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            // Add the payment transaction to the output
+            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
+                // Build the row data
+                var row = {
+                    id: i,
+                    order_no: result[j].orderNo,
+                    transaction_id: paymentTransaction.transactionID,
+                    payment_id: paymentTransaction.custom.ckoPaymentId,
+                    opened: paymentTransaction.custom.ckoTransactionOpened,
+                    amount: paymentTransaction.amount.value,
+                    currency: paymentTransaction.amount.currencyCode,
+                    creation_date: paymentTransaction.getCreationDate().toDateString(),
+                    type: paymentTransaction.type.displayValue,
+                    processor: this.getProcessorId(paymentInstruments[k]),
+                    refundable_amount: 0,
+                    data_type: paymentTransaction.type.toString(),
+                };
 
-            // Loop through the payment instruments
-            for (var k = 0; k < paymentInstruments.length; k++) {
-                // Get the payment transaction
-                var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
-
-                // Add the payment transaction to the output
-                if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
-                    // Build the row data
-                    var row = {
-                        id: i,
-                        order_no: result[j].orderNo,
-                        transaction_id: paymentTransaction.transactionID,
-                        payment_id: paymentTransaction.custom.ckoPaymentId,
-                        opened: paymentTransaction.custom.ckoTransactionOpened,
-                        amount: paymentTransaction.amount.value,
-                        currency: paymentTransaction.amount.currencyCode,
-                        creation_date: paymentTransaction.getCreationDate().toDateString(),
-                        type: paymentTransaction.type.displayValue,
-                        processor: this.getProcessorId(paymentInstruments[k]),
-                        refundable_amount: 0,
-                        data_type: paymentTransaction.type.toString(),
-                    };
-
-                    // Calculate the refundable amount
-                    var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
-                    var condition2 = row.opened !== false;
-                    if (condition1 && condition2) {
-                        row.refundable_amount = this.getRefundableAmount(paymentInstruments);
-                    }
-
-                    // Add the transaction
-                    data.push(row);
-                    i++;
+                // Calculate the refundable amount
+                var condition1 = row.data_type === PaymentTransaction.TYPE_CAPTURE;
+                var condition2 = row.opened !== false;
+                if (condition1 && condition2) {
+                    row.refundable_amount = this.getRefundableAmount(paymentInstruments);
                 }
+
+                // Add the transaction
+                data.push(row);
+                i++;
             }
         }
 
-        return data;
+        return {
+            "last_page" : totalPages,
+            "data" : data
+        };
+    },
+
+    /**
+     * Parse a query string 
+     * @param {String} queryString The query string of the URL
+     */
+    parseQuery: function(queryString) {
+        var query = {};
+        var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].split('=');
+            query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+        }
+        return query;
     },
 
     /**
@@ -153,16 +187,14 @@ var CKOHelper = {
     isTransactionNeeded: function(paymentTransaction, paymentInstrument) {
         // Get an optional transaction id
         // eslint-disable-next-line
-        var tid = request.httpParameterMap.get('tid').stringValue;
+        var pid = request.httpParameterMap.get('tid').stringValue;
 
         // Return true only if conditions are met
-        var condition1 = (tid && paymentTransaction.transactionID === tid) || !tid;
-        var condition2 = this.isCkoItem(paymentInstrument.paymentMethod);
-        var condition3 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition4 = paymentTransaction.custom.ckoPaymentId !== null && paymentTransaction.custom.ckoPaymentId !== '';
-        var condition5 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId == pid || paymentTransaction.transactionID == pid) || !pid;
+        var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
+        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if (condition1 && condition2 && condition3 && condition4 && condition5) {
+        if (condition1 && condition2 && condition3) {
             return true;
         }
 
@@ -319,7 +351,7 @@ var CKOHelper = {
      */
     getFormattedPrice: function(amount, currency) {
         var totalFormated;
-        if (currency) {
+        if (currency && typeof (currency) == 'string') {
             var ckoFormateBy = this.getCkoFormatedValue(currency);
             totalFormated = amount * ckoFormateBy;
     
@@ -367,7 +399,7 @@ var CKOHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
+        var str = this.getValue('ckoMode') == 'live' ? 'Live' : 'Sandbox';
 
         keys.publicKey = this.getValue('cko' + str + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + 'SecretKey');
