@@ -15,11 +15,6 @@ var StringUtils = require('dw/util/StringUtils');
 var Transaction = require('dw/system/Transaction');
 var Logger = require('dw/system/Logger').getLogger('ProcessOut', 'processoutHelper');
 var Money = require('dw/value/Money');
-
-// Custom code includes
-var processOutCurrencyConfig = require('*/cartridge/scripts/config/processOutCurrencyConfig');
-var sensitiveDataHelper = require('*/cartridge/scripts/helpers/sensitiveDataHelper.js');
-var CartUtils = require('app_lora/cartridge/scripts/cart/CartUtils');
 var totalPages;
 
 function test() {
