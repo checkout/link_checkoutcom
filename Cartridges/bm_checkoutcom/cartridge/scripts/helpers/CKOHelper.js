@@ -40,7 +40,7 @@ var CKOHelper = {
         var sizeCounter = 0;
 
         // Query the orders
-        OrderMgr.searchOrders('custom.isCheckoutOrder = {0}', 'creationDate desc', true);
+        var result = OrderMgr.searchOrders('custom.isCheckoutOrder = {0}', 'creationDate desc', true);
 
         var query = this.parseQuery(request.httpQueryString);
 
