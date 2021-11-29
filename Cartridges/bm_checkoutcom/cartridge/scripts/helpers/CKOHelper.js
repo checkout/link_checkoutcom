@@ -40,7 +40,7 @@ var CKOHelper = {
         var sizeCounter = 0;
 
         // Query the orders
-        var result = OrderMgr.searchOrders('', 'creationDate desc');
+        OrderMgr.searchOrders('custom.isCheckoutOrder = {0}', 'creationDate desc', true);
 
         var query = this.parseQuery(request.httpQueryString);
 
@@ -57,15 +57,11 @@ var CKOHelper = {
         while (result.hasNext()) {
             var pi = result.next();
             var piLength = pi.paymentInstruments.length - 1 ;
-            if (pi.paymentTransaction.paymentProcessor 
-                && pi.paymentTransaction.paymentProcessor.ID.indexOf('CHECKOUTCOM_') != -1
-                && this.isTransactionNeeded(pi.paymentTransaction, pi.paymentInstruments[piLength])) {
-                if (start == 0 || generalCounter > start) {
-                    formattedResult[sizeCounter] = pi;
-                    sizeCounter++;
-                } else {
-                    generalCounter++;
-                }
+            if (start == 0 || generalCounter > start) {
+                formattedResult[sizeCounter] = pi;
+                sizeCounter++;
+            } else {
+                generalCounter++;
             }
             
             if (sizeCounter > pagination) {
