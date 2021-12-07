@@ -2,12 +2,12 @@
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
-
-// Site controller
-var Site = require('dw/system/Site');
+var Status = require('dw/system/Status');
 
 // Shopper cart
 var Cart = require('*/cartridge/scripts/models/CartModel');
+var BasketMgr = require('dw/order/BasketMgr');
+var PaymentInstrument = require('dw/order/PaymentInstrument');
 
 // App
 var app = require('*/cartridge/scripts/app');
@@ -16,41 +16,6 @@ var app = require('*/cartridge/scripts/app');
 var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
 
-/**
- * Creates a token. This should be replaced by utilizing a tokenization provider
- * @param {Object} paymentData The data of the payment
- * @returns {string} a token
- */
-function createToken(paymentData) {
-
-    var requestData = {
-        source: {
-            type: 'card',
-            number: paymentData.cardNumber.toString(),
-            expiry_month: paymentData.expirationMonth,
-            expiry_year: paymentData.expirationYear,
-            name: paymentData.name,
-        },
-        currency: Site.getCurrent().getDefaultCurrency(),
-        risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
-        billing_descriptor: ckoHelper.getBillingDescriptorObject(),
-        customer: {
-            name: paymentData.name,
-            email: paymentData.email,
-        },
-    };
-
-    var idResponse = ckoHelper.gatewayClientRequest(
-        'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
-        requestData
-    );
-
-    if (idResponse && idResponse !== 400) {
-        return idResponse.source.id;
-    }
-
-    return '';
-}
 
 /**
  * Verifies that the payment data is valid.
@@ -94,7 +59,7 @@ function Handle(args) {
         if (paymentForm.object.cardToken.value && paymentForm.object.cardToken.value != 'false') {
             token = paymentForm.object.cardToken.value;
         } else {
-            token = createToken({
+            token = cardHelper.createToken({
                 cardNumber: cardData.number,
                 expirationMonth: cardData.month,
                 expirationYear: cardData.year,
@@ -174,13 +139,27 @@ function Authorize(args) {
         creditCardToken: paymentInstrument.getCreditCardToken(),
     };
 
-    if (cardHelper.cardAuthorization(cardData, args)) {
+    var cardAuthResult = cardHelper.cardAuthorization(cardData, args);
+    if (cardAuthResult && cardAuthResult.redirected) {
+        return { redirected: true };
+    } else if (cardAuthResult) {
         return { success: true };
     }
-    return { error: true };
+
+    var basket = BasketMgr.getCurrentOrNewBasket();
+    var paymentInstrs = basket.getPaymentInstruments();
+    var iter = paymentInstrs.iterator();
+
+    while (iter.hasNext()) {
+        var existingPI = iter.next();
+        if (!PaymentInstrument.METHOD_GIFT_CERTIFICATE.equals(existingPI.paymentMethod)) {
+            basket.removePaymentInstrument(existingPI);
+        }
+    }
+    return { error: true,
+        PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical') };
 }
 
 // Module exports
 exports.Handle = Handle;
 exports.Authorize = Authorize;
-exports.createToken = createToken;

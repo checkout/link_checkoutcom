@@ -780,7 +780,7 @@ var ckoHelper = {
 
         // Add the data info if needed
         if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-            meta.udf1 = data.type;
+            meta.udf1 = (data.madaCard == true) ? 'mada' : data.type;
         }
 
         // Add the payment processor to the metadata

@@ -6,6 +6,7 @@ var OrderMgr = require('dw/order/OrderMgr');
 var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
 var CustomerMgr = require('dw/customer/CustomerMgr');
+var Site = require('dw/system/Site');
 
 // App
 var app = require('*/cartridge/scripts/app');
@@ -17,6 +18,40 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
  * Module cardHelper.
  */
 var cardHelper = {
+    /**
+     * Creates a token. This should be replaced by utilizing a tokenization provider
+     * @param {Object} paymentData The data of the payment
+     * @returns {string} a token
+     */
+    createToken: function(paymentData) {
+
+       var requestData = {
+           source: {
+               type: 'card',
+               number: paymentData.cardNumber.toString(),
+               expiry_month: paymentData.expirationMonth,
+               expiry_year: paymentData.expirationYear,
+               name: paymentData.name,
+           },
+           currency: Site.getCurrent().getDefaultCurrency(),
+           customer: {
+               name: paymentData.name,
+               email: paymentData.email,
+           },
+       };
+
+       var idResponse = ckoHelper.gatewayClientRequest(
+           'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+           requestData
+       );
+     
+       if (idResponse && idResponse !== 400) {
+           return idResponse.source.id;
+       }
+
+       return '';
+    },
+
     /**
      * Creates Site Genesis Transaction Object.
      * @param {Object} payObject The payment data
@@ -37,7 +72,7 @@ var cardHelper = {
                     redirectUrl: session.privacy.redirectUrl,
                 });
 
-                return { authorized: true, redirected: true };
+                return { authorized: false, redirected: true };
             }
 
             return { authorized: true };
@@ -97,8 +132,6 @@ var cardHelper = {
             if (this.handleFullChargeResponse(gatewayResponse)) {
                 return gatewayResponse;
             }
-
-            return null;
         }
 
         // Fail the order
@@ -158,8 +191,8 @@ var cardHelper = {
             amount: ckoHelper.getFormattedPrice(orderTotal, ckoHelper.getCurrency()),
             currency: ckoHelper.getCurrency(),
             reference: args.OrderNo,
-            capture: ckoHelper.getValue('ckoAutoCapture'),
-            capture_on: ckoHelper.getCaptureTime(),
+            capture: (paymentData.madaCard === true) ? '' : ckoHelper.getValue('ckoAutoCapture'),
+            capture_on: (paymentData.madaCard === true) ? '' : ckoHelper.getCaptureTime(),
             customer: ckoHelper.getCustomer(args),
             billing_descriptor: ckoHelper.getBillingDescriptorObject(),
             shipping: this.getShippingObject(args),

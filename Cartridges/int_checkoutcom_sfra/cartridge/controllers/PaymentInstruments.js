@@ -179,8 +179,7 @@ server.get(
 // //////////////////////////////////////////       Modified         ///////////////////////////////////////////////
 server.post('SavePayment', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var formErrors = require('*/cartridge/scripts/formErrors');
-    var HookMgr = require('dw/system/HookMgr');
-    var PaymentMgr = require('dw/order/PaymentMgr');
+    var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
     var dwOrderPaymentInstrument = require('dw/order/PaymentInstrument');
     var accountHelpers = require('*/cartridge/scripts/helpers/accountHelpers');
 
@@ -209,12 +208,13 @@ server.post('SavePayment', csrfProtection.validateAjaxRequest, function(req, res
                 paymentInstrument.setCreditCardExpirationMonth(formInfo.expirationMonth);
                 paymentInstrument.setCreditCardExpirationYear(formInfo.expirationYear);
 
-                var processor = PaymentMgr.getPaymentMethod(dwOrderPaymentInstrument.METHOD_CREDIT_CARD).getPaymentProcessor();
-                var token = HookMgr.callHook(
-                    'app.payment.processor.' + processor.ID.toLowerCase(),
-                    'createToken',
-                    result
-                );
+                var token = cardHelper.createToken({
+                    cardNumber: formInfo.cardNumber,
+                    expirationMonth: formInfo.expirationMonth,
+                    expirationYear: formInfo.expirationYear,
+                    name: formInfo.name,
+                    email: customer.profile.getEmail(),
+                });
 
                 paymentInstrument.setCreditCardToken(token);
             });

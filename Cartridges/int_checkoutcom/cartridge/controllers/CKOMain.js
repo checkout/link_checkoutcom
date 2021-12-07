@@ -6,13 +6,16 @@ var guard = require('*/cartridge/scripts/guard');
 var ISML = require('dw/template/ISML');
 var OrderMgr = require('dw/order/OrderMgr');
 var BasketMgr = require('dw/order/BasketMgr');
+var Status = require('dw/system/Status');
 var Transaction = require('dw/system/Transaction');
+var PaymentInstrument = require('dw/order/PaymentInstrument');
 
 // Checkout.com Event functions
 var eventsHelper = require('~/cartridge/scripts/helpers/eventsHelper');
 
 // Utility
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var Order = app.getModel('Order');
 
 // Apm Filter Configuration file
 var ckoApmFilterConfig = require('~/cartridge/scripts/config/ckoApmFilterConfig');
@@ -30,9 +33,19 @@ function handleFail() {
 
     // Restore the cart
     OrderMgr.failOrder(order, true);
+    
+    var basket = BasketMgr.getCurrentOrNewBasket();
+    var paymentInstrs = basket.getPaymentInstruments();
+    var iter = paymentInstrs.iterator();
 
-    // Send back to the error page
-    ISML.renderTemplate('custom/common/response/failed.isml');
+    while (iter.hasNext()) {
+        var existingPI = iter.next();
+        if (!PaymentInstrument.METHOD_GIFT_CERTIFICATE.equals(existingPI.paymentMethod)) {
+            basket.removePaymentInstrument(existingPI);
+        }
+    }
+
+    app.getController('COBilling').Start({PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical')});
 }
 
 /**
@@ -79,6 +92,12 @@ function handleReturn() {
 
                     // Test the response
                     if (ckoHelper.paymentSuccess(gVerify)) {
+                        var orderPlacementStatus = Order.submit(order);
+                        if (!orderPlacementStatus.error) {
+                            session.forms.singleshipping.clearFormElement();
+                            session.forms.multishipping.clearFormElement();
+                            session.forms.billing.clearFormElement();
+                        }
                         // Show order confirmation page
                         app.getController('COSummary').ShowConfirmation(order);
                     } else {
@@ -108,6 +127,12 @@ function handleReturn() {
 
                 // Process the response data
                 if (ckoHelper.paymentIsValid(gResponse)) {
+                    var orderPlacementStatus = Order.submit(order);
+                    if (!orderPlacementStatus.error) {
+                        session.forms.singleshipping.clearFormElement();
+                        session.forms.multishipping.clearFormElement();
+                        session.forms.billing.clearFormElement();
+                    }
                     app.getController('COSummary').ShowConfirmation(order);
                 } else {
                     handleFail(gResponse);

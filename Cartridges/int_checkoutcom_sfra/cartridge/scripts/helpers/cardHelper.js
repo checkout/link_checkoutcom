@@ -3,6 +3,7 @@
 /* API Includes */
 var OrderMgr = require('dw/order/OrderMgr');
 var URLUtils = require('dw/web/URLUtils');
+var Site = require('dw/system/Site');
 
 /** Utility **/
 var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
@@ -11,6 +12,40 @@ var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
  * Utility functions.
  */
 var cardHelper = {
+    /**
+     * Creates a token. This should be replaced by utilizing a tokenization provider
+     * @param {Object} paymentData The data of the payment
+     * @returns {string} a token
+     */
+    createToken: function(paymentData) {
+
+       var requestData = {
+           source: {
+               type: 'card',
+               number: paymentData.cardNumber.toString(),
+               expiry_month: paymentData.expirationMonth,
+               expiry_year: paymentData.expirationYear,
+               name: paymentData.name,
+           },
+           currency: Site.getCurrent().getDefaultCurrency(),
+           customer: {
+               name: paymentData.name,
+               email: paymentData.email,
+           },
+       };
+
+       var idResponse = ckoHelper.gatewayClientRequest(
+           'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+           requestData
+       );
+    
+       if (idResponse && idResponse !== 400) {
+           return idResponse.source.id;
+       }
+
+       return '';
+    },
+
     /**
      * Handle the payment request.
      * @param {string} orderNumber The order number
@@ -91,8 +126,8 @@ var cardHelper = {
             amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
             currency: order.getCurrencyCode(),
             reference: orderNumber,
-            capture: ckoHelper.getValue('ckoAutoCapture'),
-            capture_on: ckoHelper.getCaptureTime(),
+            capture: (paymentData.madaCard === true) ? '' : ckoHelper.getValue('ckoAutoCapture'),
+            capture_on: (paymentData.madaCard === true) ? '' : ckoHelper.getCaptureTime(),
             customer: ckoHelper.getCustomer(order),
             billing_descriptor: ckoHelper.getBillingDescriptor(),
             shipping: ckoHelper.getShipping(order),
@@ -100,7 +135,7 @@ var cardHelper = {
             risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
-            metadata: ckoHelper.getMetadata({}, paymentProcessor),
+            metadata: ckoHelper.getMetadata(paymentData, paymentProcessor),
         };
 
         // Handle the save card request
