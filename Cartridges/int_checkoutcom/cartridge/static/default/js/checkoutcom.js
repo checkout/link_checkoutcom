@@ -87,6 +87,7 @@ function getCardData(elt, dataUrl) {
 function setFields(data)
 {
     var $creditCard = $('[data-method="CREDIT_CARD"]');
+    $creditCard.find('[name$="_saveCard"]')[0].checked = false;
     $creditCard.find('input[name$="_cardPaymentForm_owner"]').val(data.cardHolder);
     $creditCard.find('input[name$="_cardPaymentForm_number"]').val(data.cardNumber);
     $creditCard.find('input[name$="_cardPaymentForm_cardToken"]').val(data.cardToken);
@@ -97,7 +98,10 @@ function setFields(data)
     $creditCard.find('[name$="_month"]').val(data.expiryMonth);
     $creditCard.find('[name$="_year"]').val(data.expiryYear);
     $creditCard.find('[name$="_year"]').val(data.expiryYear);
-    $creditCard.find('[name$="_saveCard"]').click();
-    $creditCard.find('[name$="_saveCard"]').attr('disabled', 'true');
+    if(data.cardNumber.indexOf('*') == -1 && !$creditCard.find('[name$="_saveCard"]')[0].checked) {
+        $creditCard.find('[name$="_saveCard"]').click();
+        $creditCard.find('[name$="_saveCard"]').hide();
+        $creditCard.find('[for$="_saveCard"]').hide();
+    }
     $creditCard.find('input[name$="_cvn"]').val('');
 }
