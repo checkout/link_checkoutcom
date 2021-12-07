@@ -126,8 +126,8 @@ var cardHelper = {
             amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
             currency: order.getCurrencyCode(),
             reference: orderNumber,
-            capture: ckoHelper.getValue('ckoAutoCapture'),
-            capture_on: ckoHelper.getCaptureTime(),
+            capture: (paymentData.madaCard === true) ? '' : ckoHelper.getValue('ckoAutoCapture'),
+            capture_on: (paymentData.madaCard === true) ? '' : ckoHelper.getCaptureTime(),
             customer: ckoHelper.getCustomer(order),
             billing_descriptor: ckoHelper.getBillingDescriptor(),
             shipping: ckoHelper.getShipping(order),
@@ -135,7 +135,7 @@ var cardHelper = {
             risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
-            metadata: ckoHelper.getMetadata({}, paymentProcessor),
+            metadata: ckoHelper.getMetadata(paymentData, paymentProcessor),
         };
 
         // Handle the save card request
