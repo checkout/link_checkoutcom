@@ -95,6 +95,7 @@ function processForm(req, paymentForm, viewFormData) {
         viewData.paymentInformation.expirationYear.value = paymentInstrument.creditCardExpirationYear;
         viewData.paymentInformation.creditCardToken = paymentInstrument.raw.creditCardToken;
         viewData.paymentInformation.storedPaymentUUID = viewData.storedPaymentUUID;
+        viewData.paymentInformation.cardBin = paymentInstrument.raw.custom.ckoCreditCardBin;
     }
 
     return {

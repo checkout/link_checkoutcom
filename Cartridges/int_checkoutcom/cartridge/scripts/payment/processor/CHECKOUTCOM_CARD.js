@@ -1,21 +1,61 @@
+/* eslint-disable block-scoped-var */
+/* eslint-disable no-undef */
+/* eslint-disable eqeqeq */
 'use strict';
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
-var Status = require('dw/system/Status');
+
+// Site controller
+var Site = require('dw/system/Site');
 
 // Shopper cart
 var Cart = require('*/cartridge/scripts/models/CartModel');
-var BasketMgr = require('dw/order/BasketMgr');
-var PaymentInstrument = require('dw/order/PaymentInstrument');
 
 // App
 var app = require('*/cartridge/scripts/app');
 
 // Utility
-var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var cardHelper = require('*/cartridge/scripts/helpers/cardHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
+
+/**
+ * Creates a token. This should be replaced by utilizing a tokenization provider
+ * @param {Object} paymentData The data of the payment
+ * @returns {string} a token
+ */
+function createToken(paymentData) {
+    var requestData = {
+        source: {
+            type: 'card',
+            number: paymentData.cardNumber.toString(),
+            expiry_month: paymentData.expirationMonth,
+            expiry_year: paymentData.expirationYear,
+            name: paymentData.name,
+        },
+        currency: Site.getCurrent().getDefaultCurrency(),
+        risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
+        billing_descriptor: ckoHelper.getBillingDescriptorObject(),
+        customer: {
+            name: paymentData.name,
+            email: paymentData.email,
+        },
+    };
+
+    var idResponse = ckoHelper.gatewayClientRequest(
+        'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
+        requestData
+    );
+
+    if (idResponse && idResponse !== 400) {
+        return idResponse.source.id;
+    }
+
+    return '';
+}
 
 /**
  * Verifies that the payment data is valid.
@@ -59,7 +99,7 @@ function Handle(args) {
         if (paymentForm.object.cardToken.value && paymentForm.object.cardToken.value != 'false') {
             token = paymentForm.object.cardToken.value;
         } else {
-            token = cardHelper.createToken({
+            token = createToken({
                 cardNumber: cardData.number,
                 expirationMonth: cardData.month,
                 expirationYear: cardData.year,
@@ -141,25 +181,15 @@ function Authorize(args) {
 
     var cardAuthResult = cardHelper.cardAuthorization(cardData, args);
     if (cardAuthResult && cardAuthResult.redirected) {
-        return { redirected: true };
+        return { redirectURL: cardAuthResult.redirectUrl };
     } else if (cardAuthResult) {
         return { success: true };
     }
 
-    var basket = BasketMgr.getCurrentOrNewBasket();
-    var paymentInstrs = basket.getPaymentInstruments();
-    var iter = paymentInstrs.iterator();
-
-    while (iter.hasNext()) {
-        var existingPI = iter.next();
-        if (!PaymentInstrument.METHOD_GIFT_CERTIFICATE.equals(existingPI.paymentMethod)) {
-            basket.removePaymentInstrument(existingPI);
-        }
-    }
-    return { error: true,
-        PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical') };
+    return { error: true };
 }
 
 // Module exports
 exports.Handle = Handle;
 exports.Authorize = Authorize;
+exports.createToken = createToken;

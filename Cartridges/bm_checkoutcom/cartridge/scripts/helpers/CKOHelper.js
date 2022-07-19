@@ -1,7 +1,6 @@
 'use strict';
 
 /* API Includes */
-var SystemObjectMgr = require('dw/object/SystemObjectMgr');
 var OrderMgr = require('dw/order/OrderMgr');
 var PaymentMgr = require('dw/order/PaymentMgr');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
@@ -10,8 +9,11 @@ var Logger = require('dw/system/Logger');
 var Site = require('dw/system/Site');
 
 // Card Currency Config
-var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
+var ckoCurrencyConfig = require('*/cartridge/config/ckoCurrencyConfig');
 var totalPages;
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Helper functions for the Checkout.com cartridge integration.
@@ -32,11 +34,20 @@ var CKOHelper = {
      * @returns {array} Retuns the orders array
      */
     getCkoOrders: function() {
-        // Query the orders
-        var result = SystemObjectMgr.querySystemObjects('Order', '', 'creationDate desc');
-
         // eslint-disable-next-line
         var query = this.parseQuery(request.httpQueryString);
+        var year;
+        if (query.year) {
+            year = query.year;
+        } else {
+            // eslint-disable-next-line no-undef
+            year = request.httpParameterMap.get('year').stringValue;
+        }
+
+        var split = year.split('-');
+        var startDate = new Date(split[0], '00', '01');
+        var endDate = new Date(split[1], '00', '01');
+        var result = OrderMgr.searchOrders('creationDate >= {0} AND creationDate < {1}', 'creationDate desc', startDate, endDate);
 
         if (!query.page) {
             return result.asList();
@@ -77,7 +88,7 @@ var CKOHelper = {
                     id: i,
                     order_no: result[j].orderNo,
                     transaction_id: paymentTransaction.transactionID,
-                    action_id: paymentTransaction.custom.ckoPaymentId || paymentTransaction.custom.ckoActionId,
+                    action_id: paymentTransaction.custom.ckoActionId,
                     opened: paymentTransaction.custom.ckoTransactionOpened,
                     amount: result[j].getTotalGrossPrice().value,
                     currency: paymentTransaction.amount.currencyCode,
@@ -85,7 +96,9 @@ var CKOHelper = {
                     type: paymentTransaction.type.displayValue,
                     processor: this.getProcessorId(paymentInstruments[k]),
                     refundable_amount: this.getRefundableAmount(paymentInstruments),
+                    captured_amount: this.getCapturedAmount(paymentInstruments),
                     data_type: paymentTransaction.type.toString(),
+                    abcOrNasEnabled: result[j].custom.orderProcessedByABCorNAS,
                 };
 
                 // Add the transaction
@@ -148,6 +161,31 @@ var CKOHelper = {
     },
 
     /**
+     * Check if a partial capture transaction can allow captures.
+     * @param {array} paymentInstruments The paymentInstruments array
+     * @returns {number} The captured amount
+     */
+    getCapturedAmount: function(paymentInstruments) {
+        // Prepare the totals
+        var totalCaptured = 0;
+
+        // Loop through the payment instruments
+        // eslint-disable-next-line
+        for (var i = 0; i < paymentInstruments.length; i++) {
+            // Get the payment transaction
+            var paymentTransaction = paymentInstruments[i].getPaymentTransaction();
+
+            // Calculate the total captures
+            if (paymentTransaction.type.toString() === PaymentTransaction.TYPE_CAPTURE) {
+                totalCaptured += parseFloat(paymentTransaction.amount.value);
+            }
+        }
+
+        // Return the final amount
+        var finalAmount = totalCaptured;
+        return finalAmount.toFixed(2);
+    },
+    /**
      * Checks if a transaction should be returned in the reaults.
      * @param {Object} paymentTransaction The paymentTransaction object
      * @param {Object} paymentInstrument The paymentInstrument object
@@ -160,11 +198,11 @@ var CKOHelper = {
 
         // Return true only if conditions are met
         // eslint-disable-next-line
-        var condition1 = pid && (paymentTransaction.custom.ckoPaymentId === pid || paymentTransaction.transactionID === pid) || !pid;
-        var condition2 = this.isCkoItem(this.getProcessorId(paymentInstrument));
-        var condition3 = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
+        var isPidExist = pid && (paymentTransaction.custom.ckoActionId === pid || paymentTransaction.transactionID === pid) || !pid;
+        var isCheckoutComProcessor = this.isCkoItem(this.getProcessorId(paymentInstrument));
+        var isTransactionIdExist = paymentTransaction.transactionID && paymentTransaction.transactionID !== '';
 
-        if (condition1 && condition2 && condition3) {
+        if (isPidExist && isCheckoutComProcessor && isTransactionIdExist) {
             return true;
         }
 
@@ -239,7 +277,7 @@ var CKOHelper = {
      * @param {Object} gatewayData The gateway data
      */
     log: function(dataType, gatewayData) {
-        if (this.getValue('ckoDebugEnabled') === 'true' && (gatewayData)) {
+        if (this.getValue(constants.CKO_DEBUG_ENABLED) === true && (gatewayData)) {
             // Get the logger
             var logger = Logger.getLogger('ckodebug');
 
@@ -248,7 +286,7 @@ var CKOHelper = {
             gatewayData = this.removeSentisiveData(gatewayData);
 
             if (logger) {
-                logger.debug(this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}', gatewayData);
+                logger.debug(this._('cko.gateway.name', 'cko') + ' ' + dataType + ' : {0}', JSON.stringify(gatewayData));
             }
         }
     },
@@ -318,7 +356,7 @@ var CKOHelper = {
         var action = parts[2];
         var mode = parts[3];
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
-        var svcClass = require('~/cartridge/scripts/services/' + svcFile);
+        var svcClass = require('*/cartridge/scripts/services/' + svcFile);
 
         return svcClass[mode]();
     },
@@ -380,13 +418,26 @@ var CKOHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
+        var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
+        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
 
-        keys.publicKey = this.getValue('cko' + str + 'PublicKey');
-        keys.secretKey = this.getValue('cko' + str + 'SecretKey');
-        keys.privateKey = this.getValue('cko' + str + 'PrivateKey');
+        keys.publicKey = this.getValue('cko' + str + abcOrNasEnabled + 'PublicKey');
+        keys.secretKey = this.getValue('cko' + str + abcOrNasEnabled + 'SecretKey');
+        keys.privateKey = this.getValue('cko' + str + abcOrNasEnabled + 'PrivateKey');
 
         return keys;
+    },
+
+    /**
+     * Get live or sandbox abc or nas enabled value.
+     * @returns {Object} The ABC or NAS value
+     */
+    getAbcOrNasEnabled: function() {
+        var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
+        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
+        return abcOrNasEnabled;
     },
 };
 

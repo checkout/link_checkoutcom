@@ -4,9 +4,13 @@
 // API Includes
 var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
+var URLUtils = require('dw/web/URLUtils');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Module googlePayHelper
@@ -32,29 +36,35 @@ var googlePayHelper = {
 
         // Perform the request to the payment gateway
         var tokenResponse = ckoHelper.gatewayClientRequest(
-            'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
+            'cko.network.token.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
             JSON.stringify(requestData)
         );
 
         // If the request is valid, process the response
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
             var chargeData = {
-                source: this.getSourceObject(tokenResponse),
+                source: ckoHelper.getSourceObject(tokenResponse),
                 amount: ckoHelper.getFormattedPrice(orderTotal, ckoHelper.getCurrency()),
                 currency: ckoHelper.getCurrency(),
                 reference: args.OrderNo,
-                capture: ckoHelper.getValue('ckoAutoCapture'),
-                capture_on: ckoHelper.getCaptureTime(),
+                capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
                 customer: ckoHelper.getCustomer(args),
+                '3ds': (tokenResponse.token_format === 'pan_only') ? ckoHelper.getGooglePay3Ds() : { enabled: false },
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
                 shipping: ckoHelper.getShippingObject(args),
                 payment_ip: ckoHelper.getHost(args),
                 metadata: ckoHelper.getMetadataObject([], args),
+                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
+                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             };
+
+            if (ckoHelper.getValue(constants.CKO_AUTO_CAPTURE) === true) {
+                chargeData.capture_on = ckoHelper.getCaptureTime();
+            }
 
             // Perform the request to the payment gateway
             var gatewayResponse = ckoHelper.gatewayClientRequest(
-                'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+                'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
                 chargeData
             );
 
@@ -73,21 +83,6 @@ var googlePayHelper = {
         });
 
         return null;
-    },
-
-    /**
-     * Build a gateway source object
-     * @param {Object} tokenData The token data
-     * @returns {Object} The gateway source
-     */
-    getSourceObject: function(tokenData) {
-        // Source object
-        var source = {
-            type: 'token',
-            token: tokenData.token,
-        };
-
-        return source;
     },
 };
 

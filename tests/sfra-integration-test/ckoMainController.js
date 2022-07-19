@@ -7,7 +7,7 @@ describe('CKO Main Controller Test', () => {
     context('CKO Main HandleReturn', () => {
         const Path = "CKOMain-HandleReturn";
         it('Should return a 500 response statusCode', () => {
-            return Request.get(Url + Path)
+            return Request.post(Url + Path)
                 .set('content-type', 'application/json')
                 .end((data) => {
                     assert.equal(data.response.statusCode, 500, 'Should return a 500 response statusCode');

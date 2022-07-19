@@ -4,7 +4,7 @@
 var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
 
 /* Utility */
-var util = require('~/cartridge/scripts/helpers/ckoHelper');
+var util = require('*/cartridge/scripts/helpers/ckoHelper');
 
 var wrapper = {
     /**

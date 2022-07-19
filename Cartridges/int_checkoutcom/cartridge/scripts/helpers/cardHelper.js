@@ -1,57 +1,27 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-undef */
 'use strict';
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
-var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
 var CustomerMgr = require('dw/customer/CustomerMgr');
-var Site = require('dw/system/Site');
+var PaymentMgr = require('dw/order/PaymentMgr');
 
 // App
 var app = require('*/cartridge/scripts/app');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Module cardHelper.
  */
 var cardHelper = {
-    /**
-     * Creates a token. This should be replaced by utilizing a tokenization provider
-     * @param {Object} paymentData The data of the payment
-     * @returns {string} a token
-     */
-    createToken: function(paymentData) {
-
-       var requestData = {
-           source: {
-               type: 'card',
-               number: paymentData.cardNumber.toString(),
-               expiry_month: paymentData.expirationMonth,
-               expiry_year: paymentData.expirationYear,
-               name: paymentData.name,
-           },
-           currency: Site.getCurrent().getDefaultCurrency(),
-           customer: {
-               name: paymentData.name,
-               email: paymentData.email,
-           },
-       };
-
-       var idResponse = ckoHelper.gatewayClientRequest(
-           'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
-           requestData
-       );
-     
-       if (idResponse && idResponse !== 400) {
-           return idResponse.source.id;
-       }
-
-       return '';
-    },
-
     /**
      * Creates Site Genesis Transaction Object.
      * @param {Object} payObject The payment data
@@ -64,15 +34,15 @@ var cardHelper = {
 
         // Handle apm result
         if (cardRequest) {
+            var gatewayLinks = cardRequest._links;
+            var redirectURL;
+            // Add 3DS redirect URL to session if exists
+            if (Object.prototype.hasOwnProperty.call(gatewayLinks, 'redirect')) {
+                redirectURL = gatewayLinks.redirect.href;
+            }
             // eslint-disable-next-line
-            if (session.privacy.redirectUrl) {
-                // 3ds redirection
-                ISML.renderTemplate('redirects/3DSecure.isml', {
-                    // eslint-disable-next-line
-                    redirectUrl: session.privacy.redirectUrl,
-                });
-
-                return { authorized: false, redirected: true };
+            if (redirectURL) {
+                return { authorized: true, redirected: true, redirectUrl: redirectURL };
             }
 
             return { authorized: true };
@@ -90,12 +60,12 @@ var cardHelper = {
     handleCardRequest: function(cardData, args) {
         // Prepare the parameters
         var order = OrderMgr.getOrder(args.OrderNo);
-        var serviceName = 'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service';
+        var serviceName = 'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service';
 
         // Create billing address object
         var gatewayRequest = this.getCardRequest(cardData, args);
 
-        // Log the payment response data
+        // Log the payment request data
         ckoHelper.log(
             serviceName + ' - ' + ckoHelper._('cko.request.data', 'cko'),
             gatewayRequest
@@ -109,12 +79,6 @@ var cardHelper = {
 
         // If the charge is valid, process the response
         if (gatewayResponse) {
-            // Log the payment response data
-            ckoHelper.log(
-                serviceName + ' - ' + ckoHelper._('cko.response.data', 'cko'),
-                gatewayResponse
-            );
-
             Transaction.wrap(function() {
                 // Create the payment instrument and processor
                 var paymentInstrument = order.getPaymentInstruments();
@@ -125,13 +89,17 @@ var cardHelper = {
                     paymentInstrument = order.createPaymentInstrument(paymentProcessorId, transactionAmount);
                 }
 
+                var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
                 paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
             });
 
             // Handle the response
             if (this.handleFullChargeResponse(gatewayResponse)) {
                 return gatewayResponse;
             }
+
+            return null;
         }
 
         // Fail the order
@@ -148,26 +116,8 @@ var cardHelper = {
      * @returns {boolean} The payment success or failure
      */
     handleFullChargeResponse: function(gatewayResponse) {
-        // Clean the session
-        // eslint-disable-next-line
-        session.privacy.redirectUrl = null;
-
         // Update customer data
         ckoHelper.updateCustomerData(gatewayResponse);
-
-        // Get the gateway links
-        // eslint-disable-next-line
-        var gatewayLinks = gatewayResponse._links;
-
-        // Add 3DS redirect URL to session if exists
-        if (Object.prototype.hasOwnProperty.call(gatewayLinks, 'redirect')) {
-            // Save redirect link to session
-            // eslint-disable-next-line
-            session.privacy.redirectUrl = gatewayLinks.redirect.href;
-
-            // Check if its a valid response
-            return ckoHelper.paymentSuccess(gatewayResponse);
-        }
 
         // Check if its a valid response
         return ckoHelper.paymentSuccess(gatewayResponse);
@@ -185,25 +135,36 @@ var cardHelper = {
         var paymentData = app.getForm('cardPaymentForm');
         var orderTotal = args.PaymentInstrument.paymentTransaction.amount ? args.PaymentInstrument.paymentTransaction.amount.getValue().toFixed(2) : order.totalGrossPrice.value.toFixed(2);
 
+        if (cardData.type === 'mada') {
+            if (empty(cardData)) {
+                cardData = { type: 'mada' };
+            } else {
+                cardData.type = 'mada';
+            }
+        }
+
         // Prepare the charge data
         var chargeData = {
             source: this.getCardSource(args.PaymentInstrument),
             amount: ckoHelper.getFormattedPrice(orderTotal, ckoHelper.getCurrency()),
             currency: ckoHelper.getCurrency(),
             reference: args.OrderNo,
-            capture: (paymentData.madaCard === true) ? '' : ckoHelper.getValue('ckoAutoCapture'),
-            capture_on: (paymentData.madaCard === true) ? '' : ckoHelper.getCaptureTime(),
+            capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
             customer: ckoHelper.getCustomer(args),
             billing_descriptor: ckoHelper.getBillingDescriptorObject(),
-            shipping: this.getShippingObject(args),
-            '3ds': (cardData.type === 'mada') ? { enabled: true } : this.get3Ds(),
-            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+            shipping: ckoHelper.getShippingObject(args),
+            '3ds': (cardData.type === 'mada') ? { enabled: true } : ckoHelper.get3Ds(),
+            risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             payment_ip: ckoHelper.getHost(args),
             metadata: ckoHelper.getMetadataObject(cardData, args),
             udf5: ckoHelper.getMetadataString(cardData, args),
         };
+
+        if (ckoHelper.getValue(constants.CKO_AUTO_CAPTURE) === true) {
+            chargeData.capture_on = ckoHelper.getCaptureTime();
+        }
 
         // Handle the save card request
         if (paymentData.get('saveCard').value()) {
@@ -228,12 +189,13 @@ var cardHelper = {
         var cardSource;
         var paymentData = app.getForm('cardPaymentForm');
 
-        if (paymentData.get('cardToken').value() && paymentData.get('cardToken').value() !== 'false' ) {
+        if (paymentData.get('cardToken').value() && paymentData.get('cardToken').value() !== 'false') {
             cardSource = {
                 type: 'id',
                 id: paymentData.get('cardToken').value(),
                 cvv: paymentData.get('cvn').value(),
             };
+        // eslint-disable-next-line eqeqeq
         } else if (paymentInstrument.getCreditCardToken() && paymentInstrument.getCreditCardToken() != 'undefined') {
             cardSource = {
                 type: 'id',
@@ -251,17 +213,6 @@ var cardHelper = {
         }
 
         return cardSource;
-    },
-
-    /**
-     * Build 3ds object.
-     * @returns {Object} The 3ds object
-     */
-    get3Ds: function() {
-        return {
-            enabled: ckoHelper.getValue('cko3ds'),
-            attempt_n3d: ckoHelper.getValue('ckoN3ds'),
-        };
     },
 
     /**
@@ -287,37 +238,6 @@ var cardHelper = {
         };
 
         return billingDetails;
-    },
-
-    /**
-     * Build the shipping object.
-     * @param {Object} args The request data
-     * @returns {Object} The shipping object
-     */
-    getShippingObject: function(args) {
-        // Load the card and order information
-        var order = OrderMgr.getOrder(args.OrderNo);
-
-        // Get shipping address object
-        var shippingAddress = order.getDefaultShipment().getShippingAddress();
-
-        // Creating address object
-        var shippingDetails = {
-            address_line1: shippingAddress.getAddress1(),
-            address_line2: shippingAddress.getAddress2(),
-            city: shippingAddress.getCity(),
-            state: shippingAddress.getStateCode(),
-            zip: shippingAddress.getPostalCode(),
-            country: shippingAddress.getCountryCode().value,
-        };
-
-        // Build the shipping object
-        var shipping = {
-            address: shippingDetails,
-            phone: ckoHelper.getPhoneObject(args),
-        };
-
-        return shipping;
     },
 };
 

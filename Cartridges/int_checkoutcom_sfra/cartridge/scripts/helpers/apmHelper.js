@@ -6,7 +6,10 @@ var OrderMgr = require('dw/order/OrderMgr');
 var URLUtils = require('dw/web/URLUtils');
 
 /* Utility */
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /*
 * Utility functionss.
@@ -23,7 +26,7 @@ var apmHelper = {
         // Prepare required parameters
         var gatewayResponse = null;
         var order = OrderMgr.getOrder(orderNumber);
-        var serviceId = 'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service';
+        var serviceId = 'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service';
 
         // Create the payment request
         var gatewayRequest = this.getApmRequest(order, processorId, apmConfigData);
@@ -35,14 +38,14 @@ var apmHelper = {
         );
 
         // Test the APM type
-        var condition1 = Object.prototype.hasOwnProperty.call(gatewayRequest, 'type');
-        var condition2 = Object.prototype.hasOwnProperty.call(gatewayRequest, 'source')
+        var isReqContainType = Object.prototype.hasOwnProperty.call(gatewayRequest, 'type');
+        var isReqContainSource = Object.prototype.hasOwnProperty.call(gatewayRequest, 'source')
         && Object.prototype.hasOwnProperty.call(gatewayRequest.source, 'type');
 
         // Set the service id
-        if (condition1 || condition2) {
+        if (isReqContainType || isReqContainSource) {
             if (gatewayRequest.type === 'sepa') {
-                serviceId = 'cko.card.sources.' + ckoHelper.getValue('ckoMode') + '.service';
+                serviceId = 'cko.card.sources.' + ckoHelper.getValue(constants.CKO_MODE) + '.service';
             }
 
             // Perform the request to the payment gateway
@@ -51,9 +54,6 @@ var apmHelper = {
                 gatewayRequest
             );
         }
-
-        // Log the payment response data
-        ckoHelper.log(processorId + ' ' + ckoHelper._('cko.response.data', 'cko'), gatewayResponse);
 
         // Process the response
         return this.handleResponse(gatewayResponse, orderNumber);
@@ -82,19 +82,19 @@ var apmHelper = {
             ckoHelper.updateCustomerData(gatewayResponse);
 
             // Test the SEPA redirection
-            var condition1 = Object.prototype.hasOwnProperty.call(gatewayResponse, 'type')
+            var isResContainSepaType = Object.prototype.hasOwnProperty.call(gatewayResponse, 'type')
             && gatewayResponse.type === 'Sepa';
 
             // Test other redirections
-            var condition2 = Object.prototype.hasOwnProperty.call(gatewayResponse, '_links')
+            var isResContainRedirectLinks = Object.prototype.hasOwnProperty.call(gatewayResponse, '_links')
             && Object.prototype.hasOwnProperty.call(gatewayResponse._links, 'redirect');
 
             // Handle the redirection logic
-            if (condition1) {
+            if (isResContainSepaType) {
                 result.redirectUrl = URLUtils.url('CKOSepa-Mandate').toString()
                 + '?orderNumber=' + orderNumber
                 + '&sepaResponseId=' + gatewayResponse.id;
-            } else if (condition2) {
+            } else if (isResContainRedirectLinks) {
                 result.redirectUrl = gatewayResponse._links.redirect.href;
             }
         }
@@ -145,12 +145,14 @@ var apmHelper = {
                 reference: order.orderNo,
                 metadata: ckoHelper.getMetadata({}, processorId),
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
+                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
+                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             };
-        }
 
-        // Test Klarna
-        if (chargeData.source.type === 'klarna') {
-            chargeData.capture = false;
+            // Test Klarna
+            if (chargeData.source.type === 'klarna') {
+                chargeData.capture = false;
+            }
         }
 
         return chargeData;
@@ -167,7 +169,7 @@ var apmHelper = {
         var gatewayResponse = false;
 
         // Perform the request to the payment gateway
-        gatewayResponse = ckoHelper.gatewayClientRequest('cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service', payObject);
+        gatewayResponse = ckoHelper.gatewayClientRequest('cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service', payObject);
 
         // If the charge is valid, process the response
         if (gatewayResponse) {

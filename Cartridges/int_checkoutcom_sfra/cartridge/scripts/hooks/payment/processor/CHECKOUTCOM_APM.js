@@ -9,9 +9,9 @@ var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
 
 /** CKO Util */
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
-var apmConfig = require('~/cartridge/scripts/config/ckoApmConfig');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var apmHelper = require('*/cartridge/scripts/helpers/apmHelper');
+var apmConfig = require('*/cartridge/config/ckoApmConfig');
 
 /**
  * Verifies that the payment data is valid.

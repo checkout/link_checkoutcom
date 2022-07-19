@@ -20,6 +20,7 @@
 				<p><span class="label">${Resource.msg('cko.action.id', 'cko', null)}:</span><span id="capture_transaction_id"></span></p>
 				<p><span class="label">${Resource.msg('cko.payment.id', 'cko', null)}:</span><span id="capture_payment_id"></span></p>
 				<p><span class="label">${Resource.msg('cko.full.amount', 'cko', null)}:</span><span id="capture_full_amount"></span></p>
+				<p><span class="label">${Resource.msg('cko.captured.amount', 'cko', null)}:</span><span id="capture_captured_amount"></span></p>
 			</div>
 			<div class="input-row">
 				<p>

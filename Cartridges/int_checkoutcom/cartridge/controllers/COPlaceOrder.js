@@ -1,3 +1,6 @@
+/* eslint-disable consistent-return */
+/* eslint-disable no-undef */
+/* eslint-disable no-use-before-define */
 'use strict';
 
 /**
@@ -17,12 +20,14 @@ var Status = require('dw/system/Status');
 var Transaction = require('dw/system/Transaction');
 
 /* Script Modules */
-var app = require('~/cartridge/scripts/app');
-var guard = require('~/cartridge/scripts/guard');
+var base = module.superModule;
+var app = require('*/cartridge/scripts/app');
+var guard = require('*/cartridge/scripts/guard');
 
 var Cart = app.getModel('Cart');
 var Order = app.getModel('Order');
 var PaymentProcessor = app.getModel('PaymentProcessor');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
 /**
  * Responsible for payment handling. This function uses PaymentProcessorModel methods to
@@ -36,39 +41,40 @@ var PaymentProcessor = app.getModel('PaymentProcessor');
  * @return {Object} JSON object containing information about missing payments, errors, or an empty object if the function is successful.
  */
 function handlePayments(order) {
-
     if (order.getTotalNetPrice().value !== 0.00) {
-
         var paymentInstruments = order.getPaymentInstruments();
 
         if (paymentInstruments.length === 0) {
             return {
-                missingPaymentInfo: true
+                missingPaymentInfo: true,
             };
         }
         /**
          * Sets the transaction ID for the payment instrument.
          */
-        var handlePaymentTransaction = function () {
+        var handlePaymentTransaction = function() {
+            // eslint-disable-next-line block-scoped-var
             paymentInstrument.getPaymentTransaction().setTransactionID(order.getOrderNo());
         };
 
         for (var i = 0; i < paymentInstruments.length; i++) {
             var paymentInstrument = paymentInstruments[i];
-
             if (PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor() === null) {
-
                 Transaction.wrap(handlePaymentTransaction);
-
             } else {
+                Transaction.wrap(function() {
+                    /* eslint-disable no-param-reassign */
+                    order.custom.orderProcessedByABCorNAS = ckoHelper.getAbcOrNasEnabled();
+                });
 
                 var authorizationResult = PaymentProcessor.authorize(order, paymentInstrument);
 
                 if (authorizationResult.not_supported || authorizationResult.error) {
                     return {
-                        error: true
+                        error: true,
                     };
                 }
+                return authorizationResult;
             }
         }
     }
@@ -108,13 +114,13 @@ function start() {
         return {};
     }
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         cart.calculate();
     });
 
     var COBilling = app.getController('COBilling');
 
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         if (!COBilling.ValidatePayment(cart)) {
             COBilling.Start();
             return {};
@@ -123,7 +129,7 @@ function start() {
 
     // Recalculate the payments. If there is only gift certificates, make sure it covers the order total, if not
     // back to billing page.
-    Transaction.wrap(function () {
+    Transaction.wrap(function() {
         if (!cart.calculatePaymentTransactionTotal()) {
             COBilling.Start();
             return {};
@@ -136,7 +142,7 @@ function start() {
     if (!saveCCResult) {
         return {
             error: true,
-            PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical')
+            PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical'),
         };
     }
 
@@ -151,38 +157,44 @@ function start() {
         return {};
     }
     var handlePaymentsResult = handlePayments(order);
-
+    var paymentRedirectUrl;
     if (handlePaymentsResult.error) {
-        return Transaction.wrap(function () {
+        return Transaction.wrap(function() {
             OrderMgr.failOrder(order);
             return {
                 error: true,
-                PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical')
+                PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical'),
             };
         });
-
     } else if (handlePaymentsResult.missingPaymentInfo) {
-        return Transaction.wrap(function () {
+        return Transaction.wrap(function() {
             OrderMgr.failOrder(order);
             return {
                 error: true,
-                PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical')
+                PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical'),
             };
         });
     }
 
-    if (handlePaymentsResult && !handlePaymentsResult.redirected) {
-        var orderPlacementStatus = Order.submit(order);
-        if (!orderPlacementStatus.error) {
-            clearForms();
-        }
-        return orderPlacementStatus;
-    } else {
-        return {};
+    if (handlePaymentsResult && handlePaymentsResult.redirectURL) {
+        paymentRedirectUrl = handlePaymentsResult.redirectURL;
     }
-    
+
+    if (paymentRedirectUrl) {
+        response.redirect(paymentRedirectUrl);
+        return {
+            error: false,
+        };
+    }
+
+    var orderPlacementStatus = Order.submit(order);
+    if (!orderPlacementStatus.error) {
+        clearForms();
+    }
+    return orderPlacementStatus;
 }
 
+// eslint-disable-next-line require-jsdoc
 function clearForms() {
     // Clears all forms used in the checkout process.
     session.forms.singleshipping.clearFormElement();
@@ -190,73 +202,9 @@ function clearForms() {
     session.forms.billing.clearFormElement();
 }
 
-/**
- * Asynchronous Callbacks for OCAPI. These functions result in a JSON response.
- * Sets the payment instrument information in the form from values in the httpParameterMap.
- * Checks that the payment instrument selected is valid and authorizes the payment. Renders error
- * message information if the payment is not authorized.
- */
-function submitPaymentJSON() {
-    var order = Order.get(request.httpParameterMap.order_id.stringValue);
-    if (!order.object || request.httpParameterMap.order_token.stringValue !== order.getOrderToken()) {
-        app.getView().render('checkout/components/faults');
-        return;
-    }
-    session.forms.billing.paymentMethods.clearFormElement();
 
-    var requestObject = JSON.parse(request.httpParameterMap.requestBodyAsString);
-    var form = session.forms.billing.paymentMethods;
-
-    for (var requestObjectItem in requestObject) {
-        var asyncPaymentMethodResponse = requestObject[requestObjectItem];
-
-        var terms = requestObjectItem.split('_');
-        if (terms[0] === 'creditCard') {
-            var value = (terms[1] === 'month' || terms[1] === 'year') ?
-                Number(asyncPaymentMethodResponse) : asyncPaymentMethodResponse;
-            form.creditCard[terms[1]].setValue(value);
-        } else if (terms[0] === 'selectedPaymentMethodID') {
-            form.selectedPaymentMethodID.setValue(asyncPaymentMethodResponse);
-        }
-    }
-
-    if (app.getController('COBilling').HandlePaymentSelection('cart').error || handlePayments().error) {
-        app.getView().render('checkout/components/faults');
-        return;
-    }
-    app.getView().render('checkout/components/payment_methods_success');
-}
-
-/*
- * Asynchronous Callbacks for SiteGenesis.
- * Identifies if an order exists, submits the order, and shows a confirmation message.
- */
-function submit() {
-    var order = Order.get(request.httpParameterMap.order_id.stringValue);
-    var orderPlacementStatus;
-    if (order.object && request.httpParameterMap.order_token.stringValue === order.getOrderToken()) {
-        orderPlacementStatus = Order.submit(order.object);
-        if (!orderPlacementStatus.error) {
-            clearForms();
-            return app.getController('COSummary').ShowConfirmation(order.object);
-        }
-    }
-    app.getController('COSummary').Start();
-}
-
-/*
- * Module exports
- */
-
-/*
- * Web exposed methods
- */
-/** @see module:controllers/COPlaceOrder~submitPaymentJSON */
-exports.SubmitPaymentJSON = guard.ensure(['https'], submitPaymentJSON);
-/** @see module:controllers/COPlaceOrder~submitPaymentJSON */
-exports.Submit = guard.ensure(['https'], submit);
-
-/*
- * Local methods
- */
-exports.Start = start;
+module.exports = Object.create(base, {
+    Start: {
+        value: guard.ensure(['https', 'post', 'csrf'], start),
+    },
+});

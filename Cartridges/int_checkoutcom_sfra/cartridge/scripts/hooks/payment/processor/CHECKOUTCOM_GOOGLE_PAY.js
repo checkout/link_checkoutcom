@@ -1,8 +1,8 @@
 'use strict';
 
 /** Utility **/
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var googlePayHelper = require('*/cartridge/scripts/helpers/googlePayHelper');
 var Transaction = require('dw/system/Transaction');
 
 /**

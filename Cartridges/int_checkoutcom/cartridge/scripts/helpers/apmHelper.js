@@ -2,11 +2,15 @@
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
-var ISML = require('dw/template/ISML');
 var OrderMgr = require('dw/order/OrderMgr');
+var URLUtils = require('dw/web/URLUtils');
+var PaymentMgr = require('dw/order/PaymentMgr');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * APM utility funnctions.
@@ -26,21 +30,17 @@ var apmHelper = {
         if (apmRequest) {
             if (this.handleApmChargeResponse(apmRequest)) {
                 // eslint-disable-next-line
-                if (session.privacy.redirectUrl) {
-                    // Set the redirection template
-                    var templatePath;
-                    if (Object.prototype.hasOwnProperty.call(payObject, 'type') && payObject.type === 'sepa') {
-                        templatePath = 'redirects/sepaMandate.isml';
-                    } else {
-                        templatePath = 'redirects/apm.isml';
-                    }
-
-                    // Redirect
-                    ISML.renderTemplate(templatePath, {
-                        redirectUrl: session.privacy.redirectUrl // eslint-disable-line
-                    });
-
-                    return { authorized: true, redirected: true, response: apmRequest };
+                var gatewayLinks = apmRequest._links;
+                var type = apmRequest.type;
+                var redirectURL;
+                if (type === 'Sepa') {
+                    redirectURL = URLUtils.url('CKOSepa-Mandate').toString(); // eslint-disable-line
+                }
+                if (Object.prototype.hasOwnProperty.call(gatewayLinks, 'redirect')) {
+                    redirectURL = gatewayLinks.redirect.href;
+                }
+                if (redirectURL) {
+                    return { authorized: true, redirected: true, redirectUrl: redirectURL, response: apmRequest };
                 }
 
                 return { authorized: true, response: apmRequest };
@@ -60,30 +60,16 @@ var apmHelper = {
     handleApmChargeResponse: function(gatewayResponse) {
         // Clean the session
         // eslint-disable-next-line
-        session.privacy.redirectUrl = null;
 
         // Update customer data
         ckoHelper.updateCustomerData(gatewayResponse);
-
-        // Get the response links
-        // eslint-disable-next-line
-        var gatewayLinks = gatewayResponse._links;
 
         // Get the response type
         var type = gatewayResponse.type;
 
         // Add redirect to sepa source reqeust
         if (type === 'Sepa') {
-            session.privacy.redirectUrl = "${URLUtils.url('CKOSepa-Mandate')}"; // eslint-disable-line
             session.privacy.sepaResponseId = gatewayResponse.id; // eslint-disable-line
-        }
-
-        // Add redirect URL to session if exists
-        if (Object.prototype.hasOwnProperty.call(gatewayLinks, 'redirect')) {
-            // eslint-disable-next-line
-            session.privacy.redirectUrl = gatewayLinks.redirect.href;
-
-            return ckoHelper.paymentSuccess(gatewayResponse);
         }
 
         return ckoHelper.paymentSuccess(gatewayResponse);
@@ -115,11 +101,8 @@ var apmHelper = {
         : 'cko.card.charge.';
 
         // Perform the request to the payment gateway
-        serviceName += ckoHelper.getValue('ckoMode') + '.service';
+        serviceName += ckoHelper.getValue(constants.CKO_MODE) + '.service';
         gatewayResponse = ckoHelper.gatewayClientRequest(serviceName, gatewayRequest);
-
-        // Log the payment response data
-        ckoHelper.log(serviceName + ' ' + ckoHelper._('cko.response.data', 'cko'), gatewayResponse);
 
         // If the charge is valid, process the response
         if (gatewayResponse) {
@@ -130,7 +113,10 @@ var apmHelper = {
                 if (paymentInstrument[0] && (paymentInstrument[0].paymentTransaction.transactionID === gatewayResponse.id || paymentInstrument[0].paymentTransaction.transactionID === '')) {
                     paymentInstrument = paymentInstrument[0];
                 }
+
+                var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
                 paymentInstrument.paymentTransaction.setTransactionID(gatewayResponse.id);
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
             });
             return gatewayResponse;
         }
@@ -189,6 +175,8 @@ var apmHelper = {
                 payment_ip: ckoHelper.getHost(args),
                 metadata: ckoHelper.getMetadataObject(payObject, args),
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
+                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
+                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             };
         } else {
             // Prepare chargeData object
@@ -201,6 +189,8 @@ var apmHelper = {
                 payment_ip: ckoHelper.getHost(args),
                 metadata: ckoHelper.getMetadataObject(payObject, args),
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
+                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
+                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             };
         }
 
@@ -219,7 +209,7 @@ var apmHelper = {
 
         // Perform the request to the payment gateway
         gatewayResponse = ckoHelper.gatewayClientRequest(
-            'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+            'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
             payObject
         );
 

@@ -95,12 +95,21 @@
                 <min-length>0</min-length>
                 <field-length>0</field-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoCreditCardBin">
+                <display-name xml:lang="x-default">ckoCreditCardBin</display-name>
+                <description xml:lang="x-default">Checkout.com Credit Card Bin</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
         </custom-attribute-definitions>
         <group-definitions>
             <attribute-group group-id="ckoPayment">
                 <display-name xml:lang="x-default">ckoPayment</display-name>
                 <attribute attribute-id="ckoCreditCardType"/>
                 <attribute attribute-id="ckoPaymentData"/>
+                <attribute attribute-id="ckoCreditCardBin"/>
             </attribute-group>
         </group-definitions>
     </type-extension>
@@ -576,49 +585,131 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoSandboxPublicKey">
-                <display-name xml:lang="x-default">Public Key</display-name>
-                <description xml:lang="x-default">Sandbox public key provided by Checkout.com.</description>
+            <attribute-definition attribute-id="ckoSandboxABCPrivateSharedKey">
+                <display-name xml:lang="x-default">ABC Private Shared Key</display-name>
+                <description xml:lang="x-default">ABC Sandbox private shared key provided by Checkout.com.</description>
                 <type>string</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoSandboxPrivateSharedKey">
-                <display-name xml:lang="x-default">Private Shared Key</display-name>
-                <description xml:lang="x-default">Sandbox private shared key provided by Checkout.com.</description>
+            <attribute-definition attribute-id="ckoSandboxABCPublicKey">
+                <display-name xml:lang="x-default">ABC Public Key</display-name>
+                <description xml:lang="x-default">ABC Sandbox public key provided by Checkout.com.</description>
                 <type>string</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoSandboxSecretKey">
-                <display-name xml:lang="x-default">Secret Key</display-name>
-                <description xml:lang="x-default">Sandbox secret key provided by Checkout.com.</description>
+            <attribute-definition attribute-id="ckoSandboxABCSecretKey">
+                <display-name xml:lang="x-default">ABC Secret Key</display-name>
+                <description xml:lang="x-default">ABC Sandbox secret key provided by Checkout.com.</description>
                 <type>string</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoLivePublicKey">
-                <display-name xml:lang="x-default">Public Key</display-name>
-                <description xml:lang="x-default">Live public key provided by Checkout.com.</description>
+            <attribute-definition attribute-id="ckoSandboxABCorNASEnabled">
+                <display-name xml:lang="x-default">ABC or NAS Enabled</display-name>
+                <description xml:lang="x-default">Either used ABC keys or NAS keys.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">ABC</display>
+                        <value>ABC</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">NAS</display>
+                        <value>NAS</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoSandboxNASPrivateSharedKey">
+                <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
+                <description xml:lang="x-default">NAS Sandbox private shared key provided by Checkout.com.</description>
                 <type>string</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoLivePrivateSharedKey">
-                <display-name xml:lang="x-default">Private Shared Key</display-name>
-                <description xml:lang="x-default">Live private shared key provided by Checkout.com.</description>
+            <attribute-definition attribute-id="ckoSandboxNASPublicKey">
+                <display-name xml:lang="x-default">NAS Public Key</display-name>
+                <description xml:lang="x-default">NAS Sandbox public key provided by Checkout.com.</description>
                 <type>string</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoLiveSecretKey">
-                <display-name xml:lang="x-default">Secret key</display-name>
-                <description xml:lang="x-default">Live secret key provided by Checkout.com.</description>
+            <attribute-definition attribute-id="ckoSandboxNASSecretKey">
+                <display-name xml:lang="x-default">NAS Secret Key</display-name>
+                <description xml:lang="x-default">NAS Sandbox secret key provided by Checkout.com.</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveABCPrivateSharedKey">
+                <display-name xml:lang="x-default">ABC Private Shared Key</display-name>
+                <description xml:lang="x-default">ABC Live private shared key provided by Checkout.com.</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveABCPublicKey">
+                <display-name xml:lang="x-default">ABC Public Key</display-name>
+                <description xml:lang="x-default">ABC Live public key provided by Checkout.com.</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveABCSecretKey">
+                <display-name xml:lang="x-default">ABC Secret key</display-name>
+                <description xml:lang="x-default">ABC Live secret key provided by Checkout.com.</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveABCorNASEnabled">
+                <display-name xml:lang="x-default">ABC or NAS Enabled</display-name>
+                <description xml:lang="x-default">Either used ABC keys or NAS keys</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">ABC</display>
+                        <value>ABC</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">NAS</display>
+                        <value>NAS</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveNASPrivateSharedKey">
+                <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
+                <description xml:lang="x-default">NAS Live private shared key provided by Checkout.com.</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveNASPublicKey">
+                <display-name xml:lang="x-default">NAS Public Key</display-name>
+                <description xml:lang="x-default">NAS Live public key provided by Checkout.com.</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveNASSecretKey">
+                <display-name xml:lang="x-default">NAS Secret key</display-name>
+                <description xml:lang="x-default">NAS Live secret key provided by Checkout.com.</description>
                 <type>string</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
@@ -674,6 +765,22 @@
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
+            <attribute-definition attribute-id="cko3dsGooglePay">
+                <display-name xml:lang="x-default">Enable 3D Secure For Google Pay</display-name>
+                <description xml:lang="x-default">Enable payments with Google Pay using 3D Secure authentication.</description>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoStartFilterYear">
+                <display-name xml:lang="x-default">Checkout.com Start Filter Year</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <default-value>2014</default-value>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoApplePayEnabled">
                 <display-name xml:lang="x-default">Enable Apple Pay</display-name>
                 <description xml:lang="x-default">Enable payments with Apple Pay.</description>
@@ -724,20 +831,35 @@
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoMADABins">
+                <display-name xml:lang="x-default">Checkout MADA Bins</display-name>
+                <description xml:lang="x-default">To store MADA Cards JSON Bin Config</description>
+                <type>text</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
         </custom-attribute-definitions>
 
         <group-definitions>
             <attribute-group group-id="CKO [1] Sandbox Keys">
                 <display-name xml:lang="x-default">Checkout.com Sandbox API Keys</display-name>
-                <attribute attribute-id="ckoSandboxPublicKey"/>
-                <attribute attribute-id="ckoSandboxSecretKey"/>
-                <attribute attribute-id="ckoSandboxPrivateSharedKey"/>
+                <attribute attribute-id="ckoSandboxABCorNASEnabled"/>
+                <attribute attribute-id="ckoSandboxABCPublicKey"/>
+                <attribute attribute-id="ckoSandboxABCSecretKey"/>
+                <attribute attribute-id="ckoSandboxABCPrivateSharedKey"/>
+                <attribute attribute-id="ckoSandboxNASPublicKey"/>
+                <attribute attribute-id="ckoSandboxNASSecretKey"/>
+                <attribute attribute-id="ckoSandboxNASPrivateSharedKey"/>
             </attribute-group>
             <attribute-group group-id="CKO [2] Live Keys">
                 <display-name xml:lang="x-default">Checkout.com Live API Keys</display-name>
-                <attribute attribute-id="ckoLivePublicKey"/>
-                <attribute attribute-id="ckoLiveSecretKey"/>
-                <attribute attribute-id="ckoLivePrivateSharedKey"/>
+                <attribute attribute-id="ckoLiveABCorNASEnabled"/>
+                <attribute attribute-id="ckoLiveABCPublicKey"/>
+                <attribute attribute-id="ckoLiveABCSecretKey"/>
+                <attribute attribute-id="ckoLiveABCPrivateSharedKey"/>
+                <attribute attribute-id="ckoLiveNASPublicKey"/>
+                <attribute attribute-id="ckoLiveNASSecretKey"/>
+                <attribute attribute-id="ckoLiveNASPrivateSharedKey"/>
             </attribute-group>
             <attribute-group group-id="CKO [3] Business Details">
                 <display-name xml:lang="x-default">Checkout.com Business Details</display-name>
@@ -760,6 +882,7 @@
                 <attribute attribute-id="cko3ds"/>
                 <attribute attribute-id="ckoN3ds"/>
                 <attribute attribute-id="ckoMada"/>
+                <attribute attribute-id="ckoMADABins"/>
             </attribute-group>
             <attribute-group group-id="CKO [5] APM Settings">
                 <display-name xml:lang="x-default">Checkout.com Alternative Payment Methods Settings</display-name>
@@ -788,6 +911,7 @@
                 <attribute attribute-id="ckoGooglePayEnvironment"/>
                 <attribute attribute-id="ckoGooglePayMerchantId"/>
                 <attribute attribute-id="ckoGooglePayButton"/>
+                <attribute attribute-id="cko3dsGooglePay"/>
             </attribute-group>
             <attribute-group group-id="CKO [7] Apple Pay Settings">
                 <display-name xml:lang="x-default">Checkout.com Apple Pay Settings</display-name>
@@ -799,4 +923,23 @@
        </group-definitions>
        
     </type-extension>
+
+    <type-extension type-id="Order">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="orderProcessedByABCorNAS">
+                <display-name xml:lang="x-default">Order Processed By ABC or NAS</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </custom-attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="ckoOrder">
+                <display-name xml:lang="x-default">CKO Order</display-name>
+                <attribute attribute-id="orderProcessedByABCorNAS"/>
+            </attribute-group>
+        </group-definitions>
+    </type-extension>
+
 </metadata>

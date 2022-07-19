@@ -4,14 +4,12 @@
 var Transaction = require('dw/system/Transaction');
 var Cart = require('*/cartridge/scripts/models/CartModel');
 var app = require('*/cartridge/scripts/app');
-var OrderMgr = require('dw/order/OrderMgr');
-var Status = require('dw/system/Status');
+
 // Utility
-var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
-var PaymentInstrument = require('dw/order/PaymentInstrument');
+var apmHelper = require('*/cartridge/scripts/helpers/apmHelper');
 
 // APM Configuration
-var apmConfig = require('~/cartridge/scripts/config/ckoApmConfig');
+var apmConfig = require('*/cartridge/config/ckoApmConfig');
 
 /**
  * Verifies that the payment data is valid.
@@ -51,35 +49,15 @@ function Authorize(args) {
 
     // Get the required apm pay config object
     var payObject = apmConfig[func](args);
-    var payResponse = apmHelper.apmAuthorization(payObject, args);
-    if (payResponse && payResponse.redirected) {
-        return { redirected: true };
-    } else if (payResponse) {
+
+    var apmAuthResult = apmHelper.apmAuthorization(payObject, args);
+    if (apmAuthResult && apmAuthResult.redirected) {
+        return { redirectURL: apmAuthResult.redirectUrl };
+    } else if (apmAuthResult) {
         return { success: true };
     }
 
-    var order = OrderMgr.getOrder(args.OrderNo);
-    
-    // Fail the order
-    Transaction.wrap(function() {
-        OrderMgr.failOrder(order, true);
-    });
-
-    var basket = BasketMgr.getCurrentOrNewBasket();
-    var paymentInstrs = basket.getPaymentInstruments();
-    var iter = paymentInstrs.iterator();
-
-    while (iter.hasNext()) {
-        var existingPI = iter.next();
-        if (!PaymentInstrument.METHOD_GIFT_CERTIFICATE.equals(existingPI.paymentMethod)) {
-            basket.removePaymentInstrument(existingPI);
-        }
-    }
-
-    return {
-        error: true,
-        PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical')
-    };
+    return { error: true };
 }
 
 // Local methods

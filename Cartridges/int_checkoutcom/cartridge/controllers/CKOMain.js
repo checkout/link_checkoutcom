@@ -3,25 +3,28 @@
 // API Includes
 var app = require('*/cartridge/scripts/app');
 var guard = require('*/cartridge/scripts/guard');
+var Order = app.getModel('Order');
 var ISML = require('dw/template/ISML');
 var OrderMgr = require('dw/order/OrderMgr');
 var BasketMgr = require('dw/order/BasketMgr');
-var Status = require('dw/system/Status');
 var Transaction = require('dw/system/Transaction');
-var PaymentInstrument = require('dw/order/PaymentInstrument');
+var Status = require('dw/system/Status');
+var Locale = require('dw/util/Locale');
 
 // Checkout.com Event functions
-var eventsHelper = require('~/cartridge/scripts/helpers/eventsHelper');
+var eventsHelper = require('*/cartridge/scripts/helpers/eventsHelper');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var Order = app.getModel('Order');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
 // Apm Filter Configuration file
-var ckoApmFilterConfig = require('~/cartridge/scripts/config/ckoApmFilterConfig');
+var ckoApmFilterConfig = require('*/cartridge/config/ckoApmFilterConfig');
 
 // Card Mada Bins
-var ckoMadaConfig = require('~/cartridge/scripts/config/ckoMadaConfig');
+var ckoMadaConfig = require('*/cartridge/config/ckoMadaConfig');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Handles a failed payment from the Checkout.com payment gateway
@@ -32,20 +35,14 @@ function handleFail() {
     var order = OrderMgr.getOrder(session.privacy.ckoOrderId);
 
     // Restore the cart
-    OrderMgr.failOrder(order, true);
-    
-    var basket = BasketMgr.getCurrentOrNewBasket();
-    var paymentInstrs = basket.getPaymentInstruments();
-    var iter = paymentInstrs.iterator();
+    Transaction.wrap(function() {
+        OrderMgr.failOrder(order, true);
+    });
 
-    while (iter.hasNext()) {
-        var existingPI = iter.next();
-        if (!PaymentInstrument.METHOD_GIFT_CERTIFICATE.equals(existingPI.paymentMethod)) {
-            basket.removePaymentInstrument(existingPI);
-        }
-    }
-
-    app.getController('COBilling').Start({PlaceOrderError: new Status(Status.ERROR, 'confirm.error.technical')});
+    // Send back to the error page
+    app.getController('COSummary').Start({
+        PlaceOrderError: new Status(Status.ERROR, 'confirm.error.declined'),
+    });
 }
 
 /**
@@ -54,10 +51,11 @@ function handleFail() {
 function handleReturn() {
     // Prepare some variables
     var gResponse = false;
-    var mode = ckoHelper.getValue('ckoMode');
+    var mode = ckoHelper.getValue(constants.CKO_MODE);
     var serviceName = 'cko.verify.charges.' + mode + '.service';
     var orderId = ckoHelper.getOrderId();
     var gVerify;
+    var orderPlacementStatus;
 
     // If there is a track id
     if (orderId) {
@@ -76,64 +74,64 @@ function handleReturn() {
                     { paymentToken: sessionId }
                 );
 
-                // Log the payment verify data
-                ckoHelper.log(
-                    serviceName + ' - ' + ckoHelper._('cko.verify.data', 'cko'),
-                    gVerify
-                );
-
                 // If there is a valid response
                 if (typeof (gVerify) === 'object' && Object.prototype.hasOwnProperty.call(gVerify, 'id')) {
-                    // Log the payment response data
-                    ckoHelper.log(
-                        serviceName + ' - ' + ckoHelper._('cko.response.data', 'cko'),
-                        gVerify
-                    );
-
                     // Test the response
                     if (ckoHelper.paymentSuccess(gVerify)) {
-                        var orderPlacementStatus = Order.submit(order);
-                        if (!orderPlacementStatus.error) {
-                            session.forms.singleshipping.clearFormElement();
-                            session.forms.multishipping.clearFormElement();
-                            session.forms.billing.clearFormElement();
-                        }
                         // Show order confirmation page
-                        app.getController('COSummary').ShowConfirmation(order);
+                        orderPlacementStatus = Order.submit(order);
+                        if (orderPlacementStatus.error) {
+                            Transaction.wrap(function() {
+                                OrderMgr.failOrder(order, true);
+                            });
+
+                            app.getController('COSummary').Start({
+                                PlaceOrderError: new Status(Status.ERROR, 'confirm.error.declined'),
+                            });
+                        } else {
+                            app.getController('COSummary').ShowConfirmation(order);
+                        }
                     } else {
                         // Restore the cart
-                        OrderMgr.failOrder(order, true);
+                        Transaction.wrap(function() {
+                            OrderMgr.failOrder(order, true);
+                        });
 
                         // Send back to the error page
-                        ISML.renderTemplate('custom/common/response/failed.isml');
+                        app.getController('COSummary').Start({
+                            PlaceOrderError: new Status(Status.ERROR, 'confirm.error.declined'),
+                        });
                     }
                 } else {
                     // Restore the cart
-                    OrderMgr.failOrder(order, true);
+                    Transaction.wrap(function() {
+                        OrderMgr.failOrder(order, true);
+                    });
 
                     // Send back to the error page
-                    ISML.renderTemplate('custom/common/response/failed.isml');
+                    app.getController('COSummary').Start({
+                        PlaceOrderError: new Status(Status.ERROR, 'confirm.error.declined'),
+                    });
                 }
             } else {
                 // Get the response
                 // eslint-disable-next-line
                 gResponse = JSON.parse(request.httpParameterMap.getRequestBodyAsString());
 
-                // Log the payment response data
-                ckoHelper.log(
-                    serviceName + ' - ' + ckoHelper._('cko.response.data', 'cko'),
-                    gResponse
-                );
-
                 // Process the response data
                 if (ckoHelper.paymentIsValid(gResponse)) {
-                    var orderPlacementStatus = Order.submit(order);
-                    if (!orderPlacementStatus.error) {
-                        session.forms.singleshipping.clearFormElement();
-                        session.forms.multishipping.clearFormElement();
-                        session.forms.billing.clearFormElement();
+                    orderPlacementStatus = Order.submit(order);
+                    if (orderPlacementStatus.error) {
+                        Transaction.wrap(function() {
+                            OrderMgr.failOrder(order, true);
+                        });
+
+                        app.getController('COSummary').Start({
+                            PlaceOrderError: new Status(Status.ERROR, 'confirm.error.declined'),
+                        });
+                    } else {
+                        app.getController('COSummary').ShowConfirmation(order);
                     }
-                    app.getController('COSummary').ShowConfirmation(order);
                 } else {
                     handleFail(gResponse);
                 }
@@ -252,7 +250,18 @@ function getApmFilter() {
  */
 function getMadaBin() {
     try {
-        var madaBins = ckoMadaConfig;
+        // eslint-disable-next-line no-undef
+        var binType = request.httpParameterMap.get('type').stringValue;
+        var madaBins = {};
+
+        // eslint-disable-next-line no-undef
+        var currentLocale = request.getLocale();
+        var locale = Locale.getLocale(currentLocale);
+        var countryCode = locale.getCountry();
+
+        if (ckoHelper.isMADAPaymentsEnabled() && countryCode === 'SA') {
+            madaBins = ckoMadaConfig[binType] || {};
+        }
 
         // Write the response
         return ckoHelper.ckoResponse(madaBins);

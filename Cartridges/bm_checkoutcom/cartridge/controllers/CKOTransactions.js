@@ -2,16 +2,21 @@
 
 /* API Includes */
 var ISML = require('dw/template/ISML');
+var currentSite = require('dw/system/Site').getCurrent();
 
 /* Checkout.com Helper functions */
-var CKOHelper = require('~/cartridge/scripts/helpers/CKOHelper');
+var CKOHelper = require('*/cartridge/scripts/helpers/CKOHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Get the transactions list
  */
 function listTransactions() {
     // Render the template
-    ISML.renderTemplate('transactions/list');
+    var startFilterYear = currentSite.getCustomPreferenceValue('ckoStartFilterYear');
+    ISML.renderTemplate('transactions/list', { startFilterYear: startFilterYear });
 }
 
 /**
@@ -31,7 +36,7 @@ function getTransactionsData() {
  */
 function remoteCall() {
     // Get the operating mode
-    var mode = CKOHelper.getValue('ckoMode');
+    var mode = CKOHelper.getValue(constants.CKO_MODE);
 
     // Get the transaction task
     // eslint-disable-next-line
@@ -39,7 +44,7 @@ function remoteCall() {
 
     // Get the transaction currency
     // eslint-disable-next-line
-    var currency = request.httpParameterMap.get('currency');
+    var currency = request.httpParameterMap.get('currency').stringValue;
 
     // Get the transaction formated amount
     // eslint-disable-next-line
@@ -56,6 +61,10 @@ function remoteCall() {
         reference: orderNumber.value, // eslint-disable-next-line
         chargeId: request.httpParameterMap.get('pid').stringValue,
     };
+
+    if (CKOHelper.getAbcOrNasEnabled().value === 'NAS' && task.value === 'capture') {
+        gRequest.capture_type = 'NonFinal';
+    }
 
     // Set the service parameter
     var serviceName = 'cko.transaction.' + task + '.' + mode + '.service';
@@ -91,8 +100,8 @@ function remoteCall() {
                 reference: orderNumber.value,
                 type: 'klarna',
                 klarna: {
-                    description: CKOHelper.getValue('ckoBusinessName') !== '' && CKOHelper.getValue('ckoBusinessName') !== 'undefined' // eslint-disable-next-line
-                        ? CKOHelper.getValue('ckoBusinessName') : Site.getCurrent().httpHostName,
+                    description: CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== '' && CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== 'undefined' // eslint-disable-next-line
+                        ? CKOHelper.getValue(constants.CKO_BUSINESS_NAME) : Site.getCurrent().httpHostName,
                 },
             };
         }
@@ -108,12 +117,6 @@ function remoteCall() {
             gRequest
         );
     }
-
-    // Log the payment response data
-    CKOHelper.log(
-        CKOHelper._('cko.response.data', 'cko') + ' - ' + serviceName,
-        gResponse
-    );
 
     // Return the response
     // eslint-disable-next-line

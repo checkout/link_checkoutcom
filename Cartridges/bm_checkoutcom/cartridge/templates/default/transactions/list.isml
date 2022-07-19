@@ -28,10 +28,16 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 		</button>
 	</div>
 
-	<!-- Main content table -->	
+	<!-- Main content table -->
+	<div id="container" class="transactions-table-controls-year">
+		${Resource.msg('cko.filter.year', 'cko', null)}:
+		<select id="year" class="transactions-table-pager-year" name="transactions-table-pager-year" >
+		</select>
+	</div>
+
 	<div class="transactions-table-controls">
 		${Resource.msg('cko.pager.rows', 'cko', null)}: 
-		<select class="transactions-table-pager" name="transactions-table-pager">
+		<select id="row" class="transactions-table-pager" name="transactions-table-pager">
 			<option value="10">${Resource.msg('cko.number.10', 'cko', null)}</option>
 			<option value="50" selected>${Resource.msg('cko.number.50', 'cko', null)}</option>
 			<option value="100">${Resource.msg('cko.number.100', 'cko', null)}</option>
@@ -51,6 +57,9 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 
 <!-- Translation strings -->
 <input type="hidden" id="translationStrings" value="${translationStrings}">
+
+<!-- Start Filter Year -->
+<input type="hidden" id="startFilterYear" value="${pdict.startFilterYear}">
 
 <!-- Current locale -->
 <input type="hidden" id="currentLocale" value="${pdict.CurrentRequest.getLocale()}">

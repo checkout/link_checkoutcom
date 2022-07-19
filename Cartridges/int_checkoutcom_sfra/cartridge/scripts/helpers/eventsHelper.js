@@ -7,9 +7,16 @@ var PaymentTransaction = require('dw/order/PaymentTransaction');
 var PaymentMgr = require('dw/order/PaymentMgr');
 
 /* Checkout.com Helper functions */
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var savedCardHelper = require('~/cartridge/scripts/helpers/savedCardHelper');
-var transactionHelper = require('~/cartridge/scripts/helpers/transactionHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var savedCardHelper = require('*/cartridge/scripts/helpers/savedCardHelper');
+var transactionHelper = require('*/cartridge/scripts/helpers/transactionHelper');
+
+var CONSTANTS = {
+    PAYMENT_STATUS_PAID: 'PAYMENT_STATUS_PAID',
+    PAYMENT_STATUS_NOTPAID: 'PAYMENT_STATUS_NOTPAID',
+    ORDER_STATUS_CANCELLED: 'ORDER_STATUS_CANCELLED',
+    ORDER_STATUS_FAILED: 'ORDER_STATUS_FAILED',
+};
 
 /**
  * Sets the payment status of an order based on the amount paid
@@ -103,7 +110,7 @@ var eventsHelper = {
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
 
         // Create the webhook info
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_PAID', null);
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_PAID, null);
 
         // Load the order
         var order = OrderMgr.getOrder(hook.data.reference);
@@ -143,7 +150,7 @@ var eventsHelper = {
      */
     paymentApproved: function(hook) {
         // Create the webhook info
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', null);
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, null);
 
         // Create the authorized transaction
         transactionHelper.createAuthorization(hook);
@@ -157,7 +164,7 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     cardVerified: function(hook) {
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', null);
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, null);
     },
 
     /**
@@ -165,7 +172,7 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentDeclined: function(hook) {
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', 'ORDER_STATUS_FAILED');
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED);
 
         // Delete the card if needed
         savedCardHelper.updateSavedCard(hook);
@@ -176,7 +183,7 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentCaptureDeclined: function(hook) {
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', 'ORDER_STATUS_FAILED');
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED);
     },
 
     /**
@@ -188,7 +195,7 @@ var eventsHelper = {
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
 
         // Create the webhook info
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_PAID', 'ORDER_STATUS_CANCELLED');
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_PAID, CONSTANTS.ORDER_STATUS_CANCELLED);
 
         // Load the order
         var order = OrderMgr.getOrder(hook.data.reference);
@@ -228,7 +235,7 @@ var eventsHelper = {
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
 
         // Create the webhook info
-        this.addWebhookInfo(hook, 'PAYMENT_STATUS_NOTPAID', 'ORDER_STATUS_CANCELLED');
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_CANCELLED);
 
         // Load the order
         var order = OrderMgr.getOrder(hook.data.reference);

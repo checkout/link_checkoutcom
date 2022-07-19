@@ -8,17 +8,21 @@ var OrderMgr = require('dw/order/OrderMgr');
 var BasketMgr = require('dw/order/BasketMgr');
 var Resource = require('dw/web/Resource');
 var Transaction = require('dw/system/Transaction');
+var Locale = require('dw/util/Locale');
 var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 
 /* Checkout.com Event functions */
-var eventsHelper = require('~/cartridge/scripts/helpers/eventsHelper');
+var eventsHelper = require('*/cartridge/scripts/helpers/eventsHelper');
 
 /** Utility **/
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var paymentHelper = require('~/cartridge/scripts/helpers/paymentHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var paymentHelper = require('*/cartridge/scripts/helpers/paymentHelper');
 
 /** Apm Filter Configuration file **/
-var ckoApmFilterConfig = require('~/cartridge/scripts/config/ckoApmFilterConfig');
+var ckoApmFilterConfig = require('*/cartridge/config/ckoApmFilterConfig');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Handles responses from the Checkout.com payment gateway.
@@ -28,21 +32,17 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
     // Prepare some variables
     var order;
     var placeOrderResult;
-    var mode = ckoHelper.getValue('ckoMode');
-
+    var mode = ckoHelper.getValue(constants.CKO_MODE);
+    var request = req;
     // Check if a session id is available
-    var condition1 = Object.prototype.hasOwnProperty.call(req, 'querystring');
-    var condition2 = Object.prototype.hasOwnProperty.call(req.querystring, 'cko-session-id');
-    if (condition1 && condition2) {
-        // Reset the session URL
-        // eslint-disable-next-line
-        session.privacy.redirectUrl = null;
-
+    var isQueryString = Object.prototype.hasOwnProperty.call(request, 'querystring');
+    var isCkoSessionID = Object.prototype.hasOwnProperty.call(request.querystring, 'cko-session-id');
+    if (isQueryString && isCkoSessionID) {
         // Perform the request to the payment gateway
         var gVerify = ckoHelper.gatewayClientRequest(
             'cko.verify.charges.' + mode + '.service',
             {
-                paymentToken: req.querystring['cko-session-id'],
+                paymentToken: request.querystring['cko-session-id'],
             }
         );
 
@@ -52,10 +52,10 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
             order = OrderMgr.getOrder(gVerify.reference);
 
             // If there is a valid response
-            var condition = order && typeof (gVerify) === 'object'
+            var isValidResult = order && typeof (gVerify) === 'object'
             && Object.prototype.hasOwnProperty.call(gVerify, 'id')
             && ckoHelper.redirectPaymentSuccess(gVerify);
-            if (condition) {
+            if (isValidResult) {
                 // Place the order
                 placeOrderResult = COHelpers.placeOrder(order, { status: '' });
                 if (placeOrderResult.error) {
@@ -74,9 +74,9 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
                 paymentHelper.getFailurePageRedirect(res);
             }
         }
-    } else if (condition1 && ckoHelper.paymentSuccess(req.querystring)) {
+    } else if (isQueryString && ckoHelper.paymentSuccess(request.querystring)) {
         // Place the order
-        order = OrderMgr.getOrder(req.querystring.reference);
+        order = OrderMgr.getOrder(request.querystring.reference);
         placeOrderResult = COHelpers.placeOrder(order, { status: '' });
         if (placeOrderResult.error) {
             Transaction.wrap(function() {
@@ -102,17 +102,18 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
 server.get('HandleFail', server.middleware.https, function(req, res, next) {
     // Prepare some variables
     var order;
-    var mode = ckoHelper.getValue('ckoMode');
+    var mode = ckoHelper.getValue(constants.CKO_MODE);
+    var request = req;
 
     // Check if a session id is available
-    var condition1 = Object.prototype.hasOwnProperty.call(req, 'querystring');
-    var condition2 = Object.prototype.hasOwnProperty.call(req.querystring, 'cko-session-id');
-    if (condition1 && condition2) {
+    var isQueryString = Object.prototype.hasOwnProperty.call(request, 'querystring');
+    var isCkoSessionID = Object.prototype.hasOwnProperty.call(request.querystring, 'cko-session-id');
+    if (isQueryString && isCkoSessionID) {
         // Perform the request to the payment gateway
         var gVerify = ckoHelper.gatewayClientRequest(
             'cko.verify.charges.' + mode + '.service',
             {
-                paymentToken: req.querystring['cko-session-id'],
+                paymentToken: request.querystring['cko-session-id'],
             }
         );
 
@@ -144,10 +145,11 @@ server.get('HandleFail', server.middleware.https, function(req, res, next) {
  * Handles webhook responses from the Checkout.com payment gateway.
  * @returns {string} The controller response
  */
-server.post('HandleWebhook', function(req, res, next) {
-    if (ckoHelper.isValidResponse(req)) {
+server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
+    var request = req;
+    if (ckoHelper.isValidResponse(request)) {
         // Get the response as JSON object
-        var hook = JSON.parse(req.body);
+        var hook = JSON.parse(request.body);
 
         // Check the webhook event
         if (hook !== null && Object.prototype.hasOwnProperty.call(hook, 'type')) {
@@ -193,7 +195,10 @@ server.get('GetApmFilter', server.middleware.https, function(req, res, next) {
     var basket = BasketMgr.getCurrentBasket();
     if (basket) {
         var currencyCode = basket.getCurrencyCode();
-        var countryCode = basket.defaultShipment.shippingAddress.countryCode.valueOf();
+        // eslint-disable-next-line no-undef
+        var currentLocale = request.getLocale();
+        var locale = Locale.getLocale(currentLocale);
+        var countryCode = locale.getCountry();
 
         // Prepare the filter object
         var filterObject = {

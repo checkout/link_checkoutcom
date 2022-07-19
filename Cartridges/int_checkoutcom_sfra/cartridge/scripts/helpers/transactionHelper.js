@@ -8,7 +8,10 @@ var Transaction = require('dw/system/Transaction');
 var Money = require('dw/value/Money');
 
 /* Utility */
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Transaction helper module.
@@ -73,7 +76,7 @@ var transactionHelper = {
      */
     getParentTransaction: function(hook, transactionType) {
         // Prepare the payload
-        var mode = ckoHelper.getValue('ckoMode');
+        var mode = ckoHelper.getValue(constants.CKO_MODE);
         var ckoChargeData = {
             chargeId: hook.data.id,
         };

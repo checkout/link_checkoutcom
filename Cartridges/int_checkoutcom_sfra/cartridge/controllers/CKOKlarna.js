@@ -12,13 +12,16 @@ var BasketMgr = require('dw/order/BasketMgr');
 var Resource = require('dw/web/Resource');
 
 /** Utility **/
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Initiate the Kalrna session.
  * @returns {string} The controller response
  */
-server.get('KlarnaSession', function(req, res, next) {
+server.get('KlarnaSession', server.middleware.https, function(req, res, next) {
     // Prepare the basket
     var basket = BasketMgr.getCurrentBasket();
     var countryCode = basket.defaultShipment.shippingAddress.countryCode.valueOf();
@@ -30,7 +33,6 @@ server.get('KlarnaSession', function(req, res, next) {
         var total = ckoHelper.getFormattedPrice(basket.getTotalGrossPrice().value, currency);
         var tax = ckoHelper.getFormattedPrice(basket.getTotalTax().value, currency);
         var products = ckoHelper.getBasketObject(basket);
-        var billing = null;
 
         // Prepare the request object
         var requestObject = {
@@ -40,12 +42,14 @@ server.get('KlarnaSession', function(req, res, next) {
             amount: total,
             tax_amount: tax,
             products: products,
-            billing_address: billing,
+            billing_address: {
+                email: basket.customerEmail,
+            },
         };
 
         // Perform the request to the payment gateway
         var gSession = ckoHelper.gatewayClientRequest(
-            'cko.klarna.session.' + ckoHelper.getValue('ckoMode') + '.service',
+            'cko.klarna.session.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
             requestObject
         );
 

@@ -3,13 +3,18 @@
 // Script Modules
 var app = require('*/cartridge/scripts/app');
 var guard = require('*/cartridge/scripts/guard');
-var ISML = require('dw/template/ISML');
 var URLUtils = require('dw/web/URLUtils');
 var OrderMgr = require('dw/order/OrderMgr');
+var Order = app.getModel('Order');
+var Transaction = require('dw/system/Transaction');
+var Status = require('dw/system/Status');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var apmHelper = require('*/cartridge/scripts/helpers/apmHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Initiate the mandate session.
@@ -18,14 +23,14 @@ var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
 function mandate() {
     // Prepare the varirables
     // eslint-disable-next-line
-    var url = session.privacy.redirectUrl;
     var orderId = ckoHelper.getOrderId();
     var order = OrderMgr.getOrder(orderId);
-    var paymentInstruments = order.getPaymentInstruments();
-    var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
 
     // Process the URL
-    if (url) {
+    if (order) {
+        var paymentInstruments = order.getPaymentInstruments();
+        var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
+
         app.getView({
             // Prepare the view parameters
             creditAmount: order.totalGrossPrice.value.toFixed(2),
@@ -39,11 +44,11 @@ function mandate() {
             debtorCountryCode: order.billingAddress.countryCode.toString().toLocaleUpperCase(),
 
             // Prepare the creditor information
-            creditor: ckoHelper.upperCaseFirst(ckoHelper.getValue('ckoBusinessName')),
-            creditorAddress1: ckoHelper.upperCaseFirst(ckoHelper.getValue('ckoBusinessAddressLine1')),
-            creditorAddress2: ckoHelper.upperCaseFirst(ckoHelper.getValue('ckoBusinessAddressLine2')),
-            creditorCity: ckoHelper.upperCaseFirst(ckoHelper.getValue('ckoBusinessCity')),
-            creditorCountry: ckoHelper.upperCaseFirst(ckoHelper.getValue('ckoBusinessCountry')),
+            creditor: ckoHelper.upperCaseFirst(ckoHelper.getValue(constants.CKO_BUSINESS_NAME)),
+            creditorAddress1: ckoHelper.upperCaseFirst(ckoHelper.getValue(constants.CKO_BUSINESS_ADDRESS_LINE1)),
+            creditorAddress2: ckoHelper.upperCaseFirst(ckoHelper.getValue(constants.CKO_BUSINESS_ADDRESS_LINE2)),
+            creditorCity: ckoHelper.upperCaseFirst(ckoHelper.getValue(constants.CKO_BUSINESS_CITY)),
+            creditorCountry: ckoHelper.upperCaseFirst(ckoHelper.getValue(constants.CKO_BUSINESS_COUNTRY)),
             ContinueURL: URLUtils.https('CKOSepa-HandleMandate'),
         }).render('sepaForm');
     } else {
@@ -67,7 +72,9 @@ function handleMandate() {
             if (orderId) {
                 // Load the order
                 var order = OrderMgr.getOrder(orderId);
-                OrderMgr.failOrder(order, true);
+                Transaction.wrap(function() {
+                    OrderMgr.failOrder(order, true);
+                });
             }
 
             app.getController('COBilling').Start();
@@ -80,10 +87,6 @@ function handleMandate() {
             if (mandateValue) {
                 // Clear form
                 app.getForm('sepaForm').clear();
-
-                // Set session redirect url to null
-                // eslint-disable-next-line
-                session.privacy.redirectUrl = null;
 
                 // Get the response object from session
                 // eslint-disable-next-line
@@ -112,19 +115,38 @@ function handleMandate() {
 
                     // Handle the SEPA request
                     var sepaRequest = apmHelper.handleSepaControllerRequest(payObject, order);
-                    if (apmHelper.handleApmChargeResponse(sepaRequest, order)) {
-                        // Show the confirmation screen
-                        app.getController('COSummary').ShowConfirmation(order);
+                    if (sepaRequest) {
+                        if (apmHelper.handleApmChargeResponse(sepaRequest, order)) {
+                            var orderPlacementStatus = Order.submit(order);
+                            if (orderPlacementStatus.error) {
+                                Transaction.wrap(function() {
+                                    OrderMgr.failOrder(order, true);
+                                });
+
+                                // Return to the billing start page
+                                app.getController('COBilling').Start();
+                            } else {
+                                // Show the confirmation screen
+                                app.getController('COSummary').ShowConfirmation(order);
+                            }
+                        } else {
+                            // Return to the billing start page
+                            app.getController('COBilling').Start();
+                        }
                     } else {
                         // Return to the billing start page
                         app.getController('COBilling').Start();
                     }
                 } else {
                     // Restore the cart
-                    OrderMgr.failOrder(order, true);
+                    Transaction.wrap(function() {
+                        OrderMgr.failOrder(order, true);
+                    });
 
                     // Send back to the error page
-                    ISML.renderTemplate('custom/common/response/failed.isml');
+                    app.getController('COSummary').Start({
+                        PlaceOrderError: new Status(Status.ERROR, 'confirm.error.declined'),
+                    });
                 }
             } else {
                 // load the mandate form
