@@ -74,7 +74,7 @@
 	</isif>
 
 	<!-- MADA BIN filter URL -->
-  	<input type="hidden" id="ckoMadaBinUrl" value="${URLUtils.https('CKOMain-GetMadaBin')}" />
+  	<input type="hidden" id="ckoMadaBinUrl" value="${URLUtils.https('CKOMain-GetMadaBin', 'type', 'creditCard')}" />
 
   	<isinputfield type="hidden" id="cardToken" formfield="${pdict.CurrentForms.cardPaymentForm.cardToken}"/>
 	

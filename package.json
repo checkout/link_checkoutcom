@@ -1,6 +1,6 @@
 {
-  "name": "link_checkoutcom",
-  "packageName": "link_checkoutcom",
+  "name": "int_checkoutcom_sfra",
+  "packageName": "int_checkoutcom_sfra",
   "version": "21.1.0",
   "description": "Checkout.com payment integrations for SFCC",
   "main": "index.js",
@@ -66,5 +66,8 @@
   "browserslist": [
     "last 2 versions",
     "ie >= 10"
-  ]
+  ],
+  "paths": {
+    "base": "../../storefront-reference-architecture-6.0.0/cartridges/app_storefront_base/"
+  }
 }

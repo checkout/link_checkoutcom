@@ -6,7 +6,10 @@ var Transaction = require('dw/system/Transaction');
 var OrderMgr = require('dw/order/OrderMgr');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Module applePayHelper
@@ -38,46 +41,53 @@ var applePayHelper = {
 
         // Perform the request to the payment gateway
         var tokenResponse = ckoHelper.gatewayClientRequest(
-            'cko.network.token.' + ckoHelper.getValue('ckoMode') + '.service',
+            'cko.network.token.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
             JSON.stringify(tokenRequest)
         );
 
-        // Log the payment token response data
-        ckoHelper.log(processorId + ' ' + ckoHelper._('cko.tokenresponse.data', 'cko'), tokenResponse);
-
         // If the request is valid, process the response
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
+            var cardBin;
+            var madaCard;
+            var metadata;
+            if (tokenResponse.bin) {
+                cardBin = tokenResponse.bin;
+                madaCard = ckoHelper.isMadaCard(cardBin, { type: 'applePay' });
+
+                if (madaCard === true) {
+                    metadata = ckoHelper.getApplePayMetadata({ type: 'mada' }, processorId);
+                } else {
+                    metadata = ckoHelper.getApplePayMetadata({}, processorId);
+                }
+            }
+
             var args = {
                 OrderNo: orderNumber,
             };
             gatewayRequest = {
-                source: {
-                    type: 'token',
-                    token: tokenResponse.token,
-                },
+                source: ckoHelper.getSourceObject(tokenResponse),
                 amount: ckoHelper.getFormattedPrice(paymentInstrumentAmount, order.getCurrencyCode()),
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
-                capture: ckoHelper.getValue('ckoAutoCapture'),
-                capture_on: ckoHelper.getCaptureTime(),
+                capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
                 customer: ckoHelper.getCustomer(args),
                 billing_descriptor: ckoHelper.getBillingDescriptorObject(),
                 shipping: ckoHelper.getShippingObject(args),
-                metadata: ckoHelper.getApplePayMetadata({}, processorId),
+                metadata: metadata,
             };
 
+            if (ckoHelper.getValue(constants.CKO_AUTO_CAPTURE) === true) {
+                gatewayRequest.capture_on = ckoHelper.getCaptureTime();
+            }
             // Log the payment request data
             ckoHelper.log(processorId + ' ' + ckoHelper._('cko.request.data', 'cko'), gatewayRequest);
 
             // Perform the request to the payment gateway
             gatewayResponse = ckoHelper.gatewayClientRequest(
-                'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+                'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
                 gatewayRequest
             );
         }
-
-        // Log the payment response data
-        ckoHelper.log(processorId + ' ' + ckoHelper._('cko.response.data', 'cko'), gatewayRequest);
 
         // Process the response
         return this.handleResponse(gatewayResponse);
@@ -90,10 +100,13 @@ var applePayHelper = {
      */
     handleResponse: function(gatewayResponse) {
         // Prepare the result
-        var result = ckoHelper.paymentSuccess(gatewayResponse);
+        var result = {
+            error: !ckoHelper.paymentSuccess(gatewayResponse),
+            gatewayResponse: gatewayResponse,
+        };
 
         // Update customer data
-        if (result) {
+        if (!result.error) {
             ckoHelper.updateCustomerData(gatewayResponse);
         } else {
             // Update the transaction
@@ -103,20 +116,6 @@ var applePayHelper = {
         }
 
         return result;
-    },
-
-    /**
-     * Build Gateway Source Object
-     * @param {Object} tokenData The token data
-     * @returns {Object} The source object
-     */
-    getSourceObject: function(tokenData) {
-        var source = {
-            type: 'token',
-            token: tokenData.token,
-        };
-
-        return source;
     },
 };
 

@@ -12,7 +12,7 @@ var Cart = require('*/cartridge/scripts/models/CartModel');
 var app = require('*/cartridge/scripts/app');
 
 // Utility
-var googlePayHelper = require('~/cartridge/scripts/helpers/googlePayHelper');
+var googlePayHelper = require('*/cartridge/scripts/helpers/googlePayHelper');
 
 /**
  * Verifies that the payment data is valid.
@@ -55,6 +55,7 @@ function Authorize(args) {
     if (chargeResponse) {
         // Create the authorization transaction
         Transaction.wrap(function() {
+            paymentInstrument.paymentTransaction.custom.ckoGooglePayData = '';
             paymentInstrument.paymentTransaction.transactionID = chargeResponse.id;
             paymentInstrument.paymentTransaction.paymentProcessor = paymentProcessor;
             paymentInstrument.paymentTransaction.custom.ckoActionId = chargeResponse.action_id;
@@ -64,7 +65,15 @@ function Authorize(args) {
             paymentInstrument.paymentTransaction.setType(PaymentTransaction.TYPE_AUTH);
         });
 
-        return { authorized: true };
+        var isResContainLinks = Object.prototype.hasOwnProperty.call(chargeResponse, '_links');
+        var isResContainRedirect = isResContainLinks && Object.prototype.hasOwnProperty.call(chargeResponse._links, 'redirect');
+        var redirectUrl = '';
+        if (isResContainRedirect) {
+            // eslint-disable-next-line
+            redirectUrl = chargeResponse._links.redirect.href;
+        }
+
+        return { authorized: true, redirectURL: redirectUrl };
     }
     return { error: true };
 }

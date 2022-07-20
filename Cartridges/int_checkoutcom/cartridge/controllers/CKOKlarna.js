@@ -5,7 +5,10 @@ var guard = require('*/cartridge/scripts/guard');
 var BasketMgr = require('dw/order/BasketMgr');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Initiate the Kalrna session
@@ -37,7 +40,7 @@ function klarnaSession() {
 
         // Perform the request to the payment gateway
         var gSession = ckoHelper.gatewayClientRequest(
-            'cko.klarna.session.' + ckoHelper.getValue('ckoMode') + '.service',
+            'cko.klarna.session.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
             requestObject
         );
 

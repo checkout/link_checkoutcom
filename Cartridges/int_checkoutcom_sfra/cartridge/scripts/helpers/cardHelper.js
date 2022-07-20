@@ -3,49 +3,17 @@
 /* API Includes */
 var OrderMgr = require('dw/order/OrderMgr');
 var URLUtils = require('dw/web/URLUtils');
-var Site = require('dw/system/Site');
 
 /** Utility **/
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Utility functions.
  */
 var cardHelper = {
-    /**
-     * Creates a token. This should be replaced by utilizing a tokenization provider
-     * @param {Object} paymentData The data of the payment
-     * @returns {string} a token
-     */
-    createToken: function(paymentData) {
-
-       var requestData = {
-           source: {
-               type: 'card',
-               number: paymentData.cardNumber.toString(),
-               expiry_month: paymentData.expirationMonth,
-               expiry_year: paymentData.expirationYear,
-               name: paymentData.name,
-           },
-           currency: Site.getCurrent().getDefaultCurrency(),
-           customer: {
-               name: paymentData.name,
-               email: paymentData.email,
-           },
-       };
-
-       var idResponse = ckoHelper.gatewayClientRequest(
-           'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
-           requestData
-       );
-    
-       if (idResponse && idResponse !== 400) {
-           return idResponse.source.id;
-       }
-
-       return '';
-    },
-
     /**
      * Handle the payment request.
      * @param {string} orderNumber The order number
@@ -66,12 +34,9 @@ var cardHelper = {
 
         // Perform the request to the payment gateway
         var gatewayResponse = ckoHelper.gatewayClientRequest(
-            'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+            'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
             gatewayRequest
         );
-
-        // Log the payment response data
-        ckoHelper.log(paymentProcessor.ID + ' ' + ckoHelper._('cko.response.data', 'cko'), gatewayResponse);
 
         // Process the response
         return this.handleResponse(gatewayResponse);
@@ -96,9 +61,9 @@ var cardHelper = {
             ckoHelper.updateCustomerData(gatewayResponse);
 
             // Add 3DS redirect URL to session if exists
-            var condition1 = Object.prototype.hasOwnProperty.call(gatewayResponse, '_links');
-            var condition2 = condition1 && Object.prototype.hasOwnProperty.call(gatewayResponse._links, 'redirect');
-            if (condition2) {
+            var isResContainLinks = Object.prototype.hasOwnProperty.call(gatewayResponse, '_links');
+            var isResContainRedirect = isResContainLinks && Object.prototype.hasOwnProperty.call(gatewayResponse._links, 'redirect');
+            if (isResContainRedirect) {
                 result.error = false;
                 // eslint-disable-next-line
                 result.redirectUrl = gatewayResponse._links.redirect.href;
@@ -119,6 +84,29 @@ var cardHelper = {
         // Load the order
         var order = OrderMgr.getOrder(orderNumber);
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+        var metadata;
+        var udf5Metadata;
+
+        if (paymentData.saveCard === false) {
+            if (paymentData.madaCard === true) {
+                metadata = ckoHelper.getMetadata({ type: 'mada' }, paymentProcessor, paymentInstrument);
+                udf5Metadata = ckoHelper.getMetadataString({ type: 'mada' }, paymentProcessor);
+            } else {
+                metadata = ckoHelper.getMetadata({}, paymentProcessor, paymentInstrument);
+                udf5Metadata = ckoHelper.getMetadataString(paymentData, paymentProcessor);
+            }
+        } else {
+            var cardBinNumber = paymentData.cardBin;
+            var madaCard = ckoHelper.isMadaCard(cardBinNumber, { type: 'creditCard' });
+
+            if (madaCard === true) {
+                metadata = ckoHelper.getMetadata({ type: 'mada' }, paymentProcessor, paymentInstrument);
+                udf5Metadata = ckoHelper.getMetadataString({ type: 'mada' }, paymentProcessor);
+            } else {
+                metadata = ckoHelper.getMetadata({}, paymentProcessor, paymentInstrument);
+                udf5Metadata = ckoHelper.getMetadataString(paymentData, paymentProcessor);
+            }
+        }
 
         // Prepare the charge data
         var chargeData = {
@@ -126,18 +114,21 @@ var cardHelper = {
             amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
             currency: order.getCurrencyCode(),
             reference: orderNumber,
-            capture: (paymentData.madaCard === true) ? '' : ckoHelper.getValue('ckoAutoCapture'),
-            capture_on: (paymentData.madaCard === true) ? '' : ckoHelper.getCaptureTime(),
+            capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
             customer: ckoHelper.getCustomer(order),
             billing_descriptor: ckoHelper.getBillingDescriptor(),
             shipping: ckoHelper.getShipping(order),
-            '3ds': (paymentData.madaCard === true) ? { enabled: true } : this.get3Ds(),
-            risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+            '3ds': (paymentData.madaCard === true) ? { enabled: true } : ckoHelper.get3Ds(),
+            risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
-            metadata: ckoHelper.getMetadata(paymentData, paymentProcessor),
+            metadata: metadata,
+            udf5: udf5Metadata,
         };
 
+        if (ckoHelper.getValue(constants.CKO_AUTO_CAPTURE) === true) {
+            chargeData.capture_on = ckoHelper.getCaptureTime();
+        }
         // Handle the save card request
         if (paymentData.saveCard) {
             // Update the metadata
@@ -175,17 +166,6 @@ var cardHelper = {
         }
 
         return cardSource;
-    },
-
-    /**
-     * Build a 3ds object.
-     * @returns {Object} The 3ds parameters
-     */
-    get3Ds: function() {
-        return {
-            enabled: ckoHelper.getValue('cko3ds'),
-            attempt_n3d: ckoHelper.getValue('ckoN3ds'),
-        };
     },
 };
 

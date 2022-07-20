@@ -1,5 +1,6 @@
 'use strict';
 
+var server = require('server');
 var collections = require('*/cartridge/scripts/util/collections');
 
 var PaymentInstrument = require('dw/order/PaymentInstrument');
@@ -9,10 +10,12 @@ var Resource = require('dw/web/Resource');
 var Transaction = require('dw/system/Transaction');
 
 /** CKO Util */
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var cardHelper = require('~/cartridge/scripts/helpers/cardHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var cardHelper = require('*/cartridge/scripts/helpers/cardHelper');
 var Site = require('dw/system/Site');
 
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Creates a token. This should be replaced by utilizing a tokenization provider
@@ -20,7 +23,6 @@ var Site = require('dw/system/Site');
  * @returns {string} a token
  */
 function createToken(paymentData) {
-    // Prepare the parameters
     var requestData = {
         source: {
             type: 'card',
@@ -30,7 +32,7 @@ function createToken(paymentData) {
             name: paymentData.name,
         },
         currency: Site.getCurrent().getDefaultCurrency(),
-        risk: { enabled: ckoHelper.getValue('ckoEnableRiskFlag') },
+        risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
         billing_descriptor: ckoHelper.getBillingDescriptor(),
         customer: {
             name: paymentData.name,
@@ -39,12 +41,12 @@ function createToken(paymentData) {
     };
 
     var idResponse = ckoHelper.gatewayClientRequest(
-        'cko.card.charge.' + ckoHelper.getValue('ckoMode') + '.service',
+        'cko.card.charge.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
         requestData
     );
 
     if (idResponse && idResponse !== 400) {
-        return idResponse.source.id;
+        return { sourceId: idResponse.source.id, bin: idResponse.source.bin };
     }
 
     return '';
@@ -104,7 +106,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             );
 
             // Validate Mada Card
-            madaCard = ckoHelper.isMadaCard(cardNumber);
+            madaCard = ckoHelper.isMadaCard(cardNumber, { type: 'creditCard' });
         } else {
             cardErrors[paymentInformation.cardNumber.htmlName] =
                 Resource.msg('error.invalid.card.number', 'creditCard', null);
@@ -162,26 +164,44 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         paymentInstrument.setCreditCardExpirationYear(expirationYear);
 
         // Create card token if save card is true
+        var creditCardBin;
         if (paymentInformation.saveCard.value) {
-            paymentInstrument.setCreditCardToken(
-                paymentInformation.creditCardToken
-                    ? paymentInformation.creditCardToken
-                    : createToken({
-                        name: currentBasket.billingAddress.fullName,
-                        cardNumber: paymentInformation.cardNumber.value,
-                        cardType: paymentInformation.cardType.value,
-                        expirationMonth: paymentInformation.expirationMonth.value,
-                        expirationYear: paymentInformation.expirationYear.value,
-                        email: basket.getCustomerEmail(),
-                    })
-            );
+            var paymentForm = server.forms.getForm('creditCard');
+            // Clear form before saving values, these are used in token creation
+            paymentForm.clear();
+
+            paymentForm.cardOwner.value = currentBasket.billingAddress.fullName;
+            paymentForm.cardNumber.value = paymentInformation.cardNumber.value;
+            paymentForm.cardType.value = paymentInformation.cardType.value;
+            paymentForm.expirationMonth.value = paymentInformation.expirationMonth.value;
+            paymentForm.expirationYear.value = paymentInformation.expirationYear.value;
+
+            var creditCardToken;
+            if (paymentInformation.creditCardToken) {
+                creditCardToken = paymentInformation.creditCardToken;
+                creditCardBin = paymentInformation.cardBin;
+            } else {
+                var tokenResult = createToken({
+                    name: currentBasket.billingAddress.fullName,
+                    cardNumber: paymentInformation.cardNumber.value,
+                    cardType: paymentInformation.cardType.value,
+                    expirationMonth: paymentInformation.expirationMonth.value,
+                    expirationYear: paymentInformation.expirationYear.value,
+                    email: basket.getCustomerEmail(),
+                });
+                creditCardToken = tokenResult.sourceId;
+                creditCardBin = tokenResult.bin;
+            }
+            paymentInstrument.setCreditCardToken(creditCardToken);
         }
         paymentInstrument.custom.ckoPaymentData = JSON.stringify({
             securityCode: cardSecurityCode,
             storedPaymentUUID: paymentInformation.storedPaymentUUID,
             saveCard: paymentInformation.saveCard.value,
+            type: paymentInformation.cardType.value,
             customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null,
             madaCard: madaCard,
+            cardBin: creditCardBin,
         });
     });
 

@@ -6,7 +6,7 @@ var CustomerMgr = require('dw/customer/CustomerMgr');
 var URLUtils = require('dw/web/URLUtils');
 
 /** Utility **/
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
 /**
   * Saved card functions for the Checkout.com cartridge integration.
@@ -65,8 +65,8 @@ var savedCardHelper = {
         // Match the saved cards
         for (var i = 0; i < paymentInstruments.length; i++) {
             var paymentInstrument = paymentInstruments[i];
-            var condition = (processorId) ? paymentInstrument.paymentMethod === processorId : true;
-            if (condition) {
+            var processorExist = (processorId) ? paymentInstrument.paymentMethod === processorId : true;
+            if (processorExist) {
                 // Card data
                 var card = {
                     creditCardHolder: paymentInstrument.creditCardHolder,
@@ -134,9 +134,9 @@ var savedCardHelper = {
      */
     updateSavedCard: function(hook) {
         if (hook) {
-            var condition1 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'card_uuid');
-            var condition2 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'customer_id');
-            if (condition1 && condition2) {
+            var isHookMetaContainCardUUID = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'card_uuid');
+            var isHookMetaContainCustomerID = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'customer_id');
+            if (isHookMetaContainCardUUID && isHookMetaContainCustomerID) {
                 // Get the card
                 var card = this.getSavedCard(
                     hook.data.metadata.card_uuid,
@@ -162,10 +162,10 @@ var savedCardHelper = {
      */
     deleteSavedCard: function(hook) {
         if (hook) {
-            var condition1 = Object.prototype.hasOwnProperty.call(hook, 'data') && Object.prototype.hasOwnProperty.call(hook.data, 'metadata');
-            var condition2 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'card_uuid');
-            var condition3 = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'customer_id');
-            if (condition1 && condition2 && condition3) {
+            var isHookContainMetadata = Object.prototype.hasOwnProperty.call(hook, 'data') && Object.prototype.hasOwnProperty.call(hook.data, 'metadata');
+            var isHookMetaContainCardUUID = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'card_uuid');
+            var isHookMetaContainCustomerID = Object.prototype.hasOwnProperty.call(hook.data.metadata, 'customer_id');
+            if (isHookContainMetadata && isHookMetaContainCardUUID && isHookMetaContainCustomerID) {
                 // Set the customer and card uuiid
                 var customerId = hook.data.metadata.customer_id;
                 var cardUuid = hook.data.metadata.card_uuid;

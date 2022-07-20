@@ -32,7 +32,7 @@
         </option>
     </isif>
     <isinclude template="checkout/billing/addressSelectorShipping">
-    <isif condition="${pdict.customer.addresses && pdict.customer.addresses.length > 1}">
+    <isif condition="${pdict.customer.addresses && pdict.customer.addresses.length > 0}">
         <option disabled>${Resource.msg('msg.account.addresses', 'checkout', null)}</option>
         <isloop items="${pdict.customer.addresses}" var="address">
             <option value="${address.ID}"

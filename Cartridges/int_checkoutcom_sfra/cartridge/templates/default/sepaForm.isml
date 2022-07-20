@@ -67,7 +67,8 @@
 
 	<div class="cko-sepa-button-container">
 		<fieldset class="cko-button-group">
-			<button type="submit" name="submit" class="cko-sepa-submit-btn" valid-form="true">${Resource.msg('cko.sepa.paynow','cko',null)}</button>
+			<button type="submit" name="submit" class="cko-sepa-submit-btn" value="true">${Resource.msg('cko.sepa.paynow','cko',null)}</button>
+			<button type="cancel" name="cancel" class="cko-sepa-cancel-btn" value="true">${Resource.msg('cko.sepa.cancel','cko',null)}</button>
 		</fieldset>
 	</div>
 </form>

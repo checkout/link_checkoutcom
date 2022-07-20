@@ -4,18 +4,19 @@
 var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
 
 /* Utility */
-var util = require('~/cartridge/scripts/helpers/ckoHelper');
+var util = require('*/cartridge/scripts/helpers/ckoHelper');
 
 /**
  * Transaction service wrapper.
  */
 var wrapper = {
     /**
-     * Initialize HTTP service for the Checkout.com sandbox full card refund.
+     * Initialize HTTP service for the Checkout.com sandbox full card charge.
+     * @param {string} serviceId Service Id
      * @returns {Object} The service instance
      */
-    sandbox: function() {
-        return LocalServiceRegistry.createService('cko.transaction.refund.sandbox.service', {
+    sandbox: function(serviceId) {
+        return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
                 // Prepare the http service
                 svc.addHeader('Authorization', util.getAccountKeys().secretKey);
@@ -40,11 +41,12 @@ var wrapper = {
     },
 
     /**
-     * Initialize HTTP service for the Checkout.com live full card refund.
+     * Initialize HTTP service for the Checkout.com live full card charge.
+     * @param {string} serviceId Service Id
      * @returns {Object} The service instance
      */
-    live: function() {
-        return LocalServiceRegistry.createService('cko.transaction.refund.live.service', {
+    live: function(serviceId) {
+        return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
                 // Prepare the http service
                 svc.addHeader('Authorization', util.getAccountKeys().secretKey);

@@ -3,15 +3,15 @@
 var Status = require('dw/system/Status');
 
 /** Utility **/
-var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
+var applePayHelper = require('*/cartridge/scripts/helpers/applePayHelper');
 var Transaction = require('dw/system/Transaction');
 
 exports.authorizeOrderPayment = function(order, event) {
-    var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
+    var isEventTrusted = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
     && order;
 
-    if (condition) {
+    if (isEventTrusted) {
         // Payment request
         var result = applePayHelper.handleRequest(
             event.payment.token.paymentData,

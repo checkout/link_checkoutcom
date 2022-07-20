@@ -49,9 +49,11 @@ function processForm(req, paymentForm, viewFormData) {
         if (viewData.paymentInformation) {
             Object.keys(viewData.paymentInformation).forEach(function(key) {
                 var currentElement = viewData.paymentInformation[key];
-                if (currentElement.value === '') {
-                    error = true;
-                    fieldErrors[currentElement.htmlName] = 'required';
+                if (ckoSelectedApm === 'sepa' && (key !== 'sepa' && key !== 'sepa_bic')) {
+                    if (currentElement.value === '') {
+                        error = true;
+                        fieldErrors[currentElement.htmlName] = 'required';
+                    }
                 }
             });
         }

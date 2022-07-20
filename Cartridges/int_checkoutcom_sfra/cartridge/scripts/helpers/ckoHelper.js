@@ -8,13 +8,16 @@ var Logger = require('dw/system/Logger');
 var SystemObjectMgr = require('dw/object/SystemObjectMgr');
 var Resource = require('dw/web/Resource');
 var Site = require('dw/system/Site');
+var Locale = require('dw/util/Locale');
 
 /* Card Currency Config */
-var ckoCurrencyConfig = require('~/cartridge/scripts/config/ckoCurrencyConfig');
-var madaBins = require('~/cartridge/scripts/config/ckoMadaConfig');
+var ckoCurrencyConfig = require('*/cartridge/config/ckoCurrencyConfig');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /* Sensitive Data Helper */
-var sensitiveDataHelper = require('~/cartridge/scripts/helpers/sensitiveDataHelper.js');
+var sensitiveDataHelper = require('*/cartridge/scripts/helpers/sensitiveDataHelper.js');
 
 /**
  * Utility functions.
@@ -130,7 +133,7 @@ var ckoHelper = {
     log: function(dataType, gatewayData) {
         // Create's a deep copy gatewayData, this will prevent data being deleted.
         var cloneGatewayData = JSON.parse(JSON.stringify(gatewayData));
-        if (this.getValue('ckoDebugEnabled') === true) {
+        if (this.getValue(constants.CKO_DEBUG_ENABLED) === true) {
             // Get the logger
             var logger = Logger.getLogger('ckodebug');
 
@@ -188,7 +191,7 @@ var ckoHelper = {
      */
     getOrderId: function() {
         // eslint-disable-next-line
-        var orderId = (this.getValue('cko3ds')) ? request.httpParameterMap.get('reference').stringValue : request.httpParameterMap.get('reference').stringValue;
+        var orderId = (this.getValue(constants.CKO_3DS)) ? request.httpParameterMap.get('reference').stringValue : request.httpParameterMap.get('reference').stringValue;
         if (orderId === null) {
             // eslint-disable-next-line
             orderId = session.privacy.ckoOrderId;
@@ -202,7 +205,7 @@ var ckoHelper = {
      * @returns {string} The platform data
      */
     getCartridgeMeta: function() {
-        return this.getValue('ckoSfraPlatformData');
+        return this.getValue(constants.CKO_SFRA_PLATFORM_DATA);
     },
 
     /**
@@ -224,13 +227,26 @@ var ckoHelper = {
      */
     getAccountKeys: function() {
         var keys = {};
-        var str = this.getValue('ckoMode') === 'live' ? 'Live' : 'Sandbox';
+        var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
+        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
 
-        keys.publicKey = this.getValue('cko' + str + 'PublicKey');
-        keys.secretKey = this.getValue('cko' + str + 'SecretKey');
-        keys.privateSharedKey = this.getValue('cko' + str + 'PrivateSharedKey');
+        keys.publicKey = this.getValue('cko' + str + abcOrNasEnabled + 'PublicKey');
+        keys.secretKey = this.getValue('cko' + str + abcOrNasEnabled + 'SecretKey');
+        keys.privateSharedKey = this.getValue('cko' + str + abcOrNasEnabled + 'PrivateSharedKey');
 
         return keys;
+    },
+
+    /**
+     * Get live or sandbox abc or nas enabled value.
+     * @returns {Object} The ABC or NAS value
+     */
+    getAbcOrNasEnabled: function() {
+        var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
+        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
+        return abcOrNasEnabled;
     },
 
     /**
@@ -276,9 +292,14 @@ var ckoHelper = {
         var action = parts[2];
         var mode = parts[3];
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
-        var svcClass = require('~/cartridge/scripts/services/' + svcFile);
+        var svcClass;
+        if (svcFile === 'verifyCharges' || svcFile === 'networkToken') {
+            svcClass = require('*/cartridge/scripts/services/' + svcFile);
+        } else {
+            svcClass = require('*/cartridge/scripts/services/ckoPayments');
+        }
 
-        return svcClass[mode]();
+        return svcClass[mode](serviceId);
     },
 
     /**
@@ -445,7 +466,8 @@ var ckoHelper = {
      * @returns {boolean} Is redirection needed
      */
     redirectPaymentSuccess: function(gatewayResponse) {
-        if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions')) {
+        // eslint-disable-next-line no-undef
+        if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions') && !empty(gatewayResponse.actions)) {
             return gatewayResponse
           && (gatewayResponse.actions[0].response_code === '10000'
           || gatewayResponse.actions[0].response_code === '10100'
@@ -453,7 +475,7 @@ var ckoHelper = {
         }
 
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'sofort' || gatewayResponse.source.type === 'alipay')) {
+            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'sofort' || gatewayResponse.source.type === 'alipay' || gatewayResponse.source.type === 'oxxo' || gatewayResponse.source.type === 'boleto' || gatewayResponse.source.type === 'bancontact')) {
                 return true;
             }
         }
@@ -496,8 +518,8 @@ var ckoHelper = {
      */
     getBillingDescriptor: function() {
         var billingDescriptor = {
-            name: this.getValue('ckoBillingDescriptor1'),
-            city: this.getValue('ckoBillingDescriptor2'),
+            name: this.getValue(constants.CKO_BILLING_DESCRIPTOR1),
+            city: this.getValue(constants.CKO_BILLING_DESCRIPTOR2),
         };
 
         return billingDescriptor;
@@ -523,7 +545,7 @@ var ckoHelper = {
                 product_id: pli.productID,
                 quantity: pli.quantityValue,
                 price: this.getFormattedPrice(
-                    pli.adjustedNetPrice.value.toFixed(2),
+                    pli.basePrice.value.toFixed(2),
                     args.order.getCurrencyCode()
                 ),
                 description: pli.productName,
@@ -741,7 +763,7 @@ var ckoHelper = {
         var now = Date.now();
 
         // Get the capture time configured, or min time 0.5 minute if 0
-        var configCaptureTime = this.getValue('ckoAutoCaptureTime');
+        var configCaptureTime = this.getValue(constants.CKO_AUTO_CAPTURE_TIME);
         var captureOnMin = configCaptureTime < 2 ? 2 : configCaptureTime;
 
         // Convert the capture time from minutes to milliseconds
@@ -758,11 +780,23 @@ var ckoHelper = {
     get3Ds: function() {
         // 3ds object
         var treeDs = {
-            enabled: this.getValue('cko3ds'),
-            attempt_n3d: this.getValue('ckoN3ds'),
+            enabled: this.getValue(constants.CKO_3DS),
+            attempt_n3d: this.getValue(constants.CKO_N3DS),
         };
 
         return treeDs;
+    },
+
+    /**
+     * Build a Google Pay 3ds object.
+     * @returns {Object} The 3ds data
+     */
+    getGooglePay3Ds: function() {
+        var googlePay3ds = {
+            enabled: this.getValue(constants.CKO_GOOGLE_PAY_3DS),
+        };
+
+        return googlePay3ds;
     },
 
     /**
@@ -775,12 +809,12 @@ var ckoHelper = {
         // Prepare the base metadata
         var meta = {
             integration_data: this.getCartridgeMeta(),
-            platform_data: this.getValue('ckoSfraPlatformData'),
+            platform_data: this.getValue(constants.CKO_SFRA_PLATFORM_DATA),
         };
 
         // Add the data info if needed
         if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-            meta.udf1 = (data.madaCard == true) ? 'mada' : data.type;
+            meta.udf1 = data.type;
         }
 
         // Add the payment processor to the metadata
@@ -792,12 +826,47 @@ var ckoHelper = {
         return meta;
     },
 
+    getMetadataString: function(data, processorId) {
+        // Prepare the base metadata
+        var meta = 'integration_data' + this.getCartridgeMeta() + 'platform_data' + this.getValue(constants.CKO_SFRA_PLATFORM_DATA);
+
+        // Add the data info if needed
+        if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+            meta += 'udf1' + data.type;
+        }
+
+        if (typeof (processorId) === 'object') { // eslint-disable-next-line
+            processorId = processorId.getID();
+        }
+        // Add the payment processor to the metadata
+        meta += 'payment_processor' + processorId;
+
+        return meta;
+    },
+
     /**
      * Returns true if card is a mada card
      * @param {string} card number
+     * @param {Object} config - MADA Config
      * @returns {boolean} card type
      */
-    isMadaCard: function(card) {
+    isMadaCard: function(card, config) {
+        // If MADA is disabled then return fales to process MADA Payments
+        // eslint-disable-next-line no-undef
+        var currentLocale = request.getLocale();
+        var locale = Locale.getLocale(currentLocale);
+        var countryCode = locale.getCountry();
+
+        if (!this.isMADAPaymentsEnabled() || countryCode !== 'SA') {
+            return false;
+        }
+
+        if (!config || !config.type) {
+            return false;
+        }
+
+        var madaBinsConfig = require('*/cartridge/config/ckoMadaConfig');
+        var madaBins = madaBinsConfig[config.type] || {};
         // First 6 card number
         var cardNumber = card.slice(0, 6);
         // First card number
@@ -893,10 +962,10 @@ var ckoHelper = {
         var shipping = {
             name: basket.defaultShipment.shippingMethod.displayName + ' Shipping',
             quantity: '1',
-            unit_price: this.getFormattedPrice(basket.shippingTotalGrossPrice.value, currency),
+            unit_price: this.getFormattedPrice(basket.adjustedShippingTotalGrossPrice.value, currency),
             tax_rate: shippingTaxRate.toString(),
-            total_amount: this.getFormattedPrice(basket.shippingTotalGrossPrice.value, currency),
-            total_tax_amount: this.getFormattedPrice(basket.shippingTotalTax.value, currency),
+            total_amount: this.getFormattedPrice(basket.adjustedShippingTotalGrossPrice.value, currency),
+            total_tax_amount: this.getFormattedPrice(basket.adjustedShippingTotalTax.value, currency),
         };
 
         if (basket.shippingTotalPrice.value > 0) {
@@ -941,10 +1010,10 @@ var ckoHelper = {
         var shipping = {
             name: args.order.defaultShipment.shippingMethod.displayName + ' Shipping',
             quantity: '1',
-            unit_price: this.getFormattedPrice(args.order.shippingTotalGrossPrice.value, currency),
+            unit_price: this.getFormattedPrice(args.order.adjustedShippingTotalGrossPrice.value, currency),
             tax_rate: shippingTaxRate.toString(),
-            total_amount: this.getFormattedPrice(args.order.shippingTotalGrossPrice.value, currency),
-            total_tax_amount: this.getFormattedPrice(args.order.shippingTotalTax.value, currency),
+            total_amount: this.getFormattedPrice(args.order.adjustedShippingTotalGrossPrice.value, currency),
+            total_tax_amount: this.getFormattedPrice(args.order.adjustedShippingTotalTax.value, currency),
         };
 
         if (args.order.shippingTotalPrice.value > 0) {
@@ -1092,6 +1161,14 @@ var ckoHelper = {
 
             Transaction.commit();
         }
+    },
+    /**
+     * Check MADA Payments Enabled or not
+     * @param {Object} tokenData The token data
+     * @returns {Object} The gateway source
+     */
+    isMADAPaymentsEnabled: function() {
+        return !!this.getValue(constants.CKO_MADA_PAYMENTS_ENABLED);
     },
 };
 

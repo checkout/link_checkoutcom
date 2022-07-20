@@ -7,11 +7,16 @@ var server = require('server');
 var URLUtils = require('dw/web/URLUtils');
 var OrderMgr = require('dw/order/OrderMgr');
 var Resource = require('dw/web/Resource');
+var Transaction = require('dw/system/Transaction');
 
 /** Utility **/
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
-var apmHelper = require('~/cartridge/scripts/helpers/apmHelper');
-var paymentHelper = require('~/cartridge/scripts/helpers/paymentHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var apmHelper = require('*/cartridge/scripts/helpers/apmHelper');
+var paymentHelper = require('*/cartridge/scripts/helpers/paymentHelper');
+var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
+
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Initiate the SEPA mandate session.
@@ -19,8 +24,9 @@ var paymentHelper = require('~/cartridge/scripts/helpers/paymentHelper');
  */
 server.get('Mandate', server.middleware.https, function(req, res, next) {
     // Prepare the variables
-    var sepaResponseId = req.querystring.sepaResponseId;
-    var orderId = req.querystring.orderNumber;
+    var request = req;
+    var sepaResponseId = request.querystring.sepaResponseId;
+    var orderId = request.querystring.orderNumber;
     var order = OrderMgr.getOrder(orderId);
 
     // Process the URL
@@ -41,11 +47,11 @@ server.get('Mandate', server.middleware.https, function(req, res, next) {
             debtorCountryCode: order.billingAddress.countryCode,
 
             // Prepare the creditor information
-            creditor: ckoHelper.getValue('ckoBusinessName'),
-            creditorAddress1: ckoHelper.getValue('ckoBusinessAddressLine1'),
-            creditorAddress2: ckoHelper.getValue('ckoBusinessAddressLine2'),
-            creditorCity: ckoHelper.getValue('ckoBusinessCity'),
-            creditorCountry: ckoHelper.getValue('ckoBusinessCountry'),
+            creditor: ckoHelper.getValue(constants.CKO_BUSINESS_NAME),
+            creditorAddress1: ckoHelper.getValue(constants.CKO_BUSINESS_ADDRESS_LINE1),
+            creditorAddress2: ckoHelper.getValue(constants.CKO_BUSINESS_ADDRESS_LINE2),
+            creditorCity: ckoHelper.getValue(constants.CKO_BUSINESS_CITY),
+            creditorCountry: ckoHelper.getValue(constants.CKO_BUSINESS_COUNTRY),
             orderNumber: orderId,
             sepaResponseId: sepaResponseId,
             ContinueURL: URLUtils.https('CKOSepa-HandleMandate'),
@@ -71,14 +77,16 @@ server.get('Mandate', server.middleware.https, function(req, res, next) {
  */
 server.post('HandleMandate', server.middleware.https, function(req, res, next) {
     // Get the form
-    var sepaForm = req.form;
+    var request = req;
+    var sepaForm = request.form;
 
     // Get the order id from mandate form
     var orderId = sepaForm.orderNumber;
     var sepaResponseId = sepaForm.sepaResponseId;
+    var placeOrderResult;
 
     // Validation
-    if (sepaForm) {
+    if (sepaForm.submit) {
         var mandate = sepaForm.mandate;
         this.on('route:BeforeComplete', function() {
             // Mandate is true
@@ -109,10 +117,23 @@ server.post('HandleMandate', server.middleware.https, function(req, res, next) {
                         };
 
                         // Handle the SEPA request
-                        apmHelper.handleSepaRequest(payObject, order);
+                        var handleSepaResult = apmHelper.handleSepaRequest(payObject, order);
 
-                        // Show the confirmation screen
-                        paymentHelper.getConfirmationPageRedirect(res, order);
+                        if (handleSepaResult) {
+                            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
+
+                            if (placeOrderResult.error) {
+                                Transaction.wrap(function() {
+                                    OrderMgr.failOrder(order, true);
+                                });
+
+                                paymentHelper.getFailurePageRedirect(res);
+                            }
+                            // Show the confirmation screen
+                            paymentHelper.getConfirmationPageRedirect(res, order);
+                        } else {
+                            paymentHelper.getFailurePageRedirect(res);
+                        }
                     } else {
                         paymentHelper.getFailurePageRedirect(res);
                     }
@@ -141,6 +162,19 @@ server.post('HandleMandate', server.middleware.https, function(req, res, next) {
 
             return next();
         });
+    } else if (sepaForm.cancel) {
+        if (orderId) {
+            // Load the order
+            var sepaDebitForm = server.forms.getForm('sepaForm');
+            sepaDebitForm.clear();
+
+            var order = OrderMgr.getOrder(orderId);
+            Transaction.wrap(function() {
+                OrderMgr.failOrder(order, true);
+            });
+
+            paymentHelper.getPaymentPageRedirect(res);
+        }
     } else {
         return next(
             new Error(

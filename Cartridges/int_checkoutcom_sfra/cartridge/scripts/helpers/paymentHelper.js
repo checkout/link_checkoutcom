@@ -40,6 +40,18 @@ var paymentHelper = {
             )
         );
     },
+
+    getPaymentPageRedirect: function(res) {
+        res.redirect(
+            URLUtils.url(
+                'Checkout-Begin',
+                'stage',
+                'payment',
+                'paymentError',
+                ''
+            )
+        );
+    },
 };
 
 /**

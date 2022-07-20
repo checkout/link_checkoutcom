@@ -1,17 +1,18 @@
 'use strict';
 
 var Status = require('dw/system/Status');
-var applePayHelper = require('~/cartridge/scripts/helpers/applePayHelper');
+var applePayHelper = require('*/cartridge/scripts/helpers/applePayHelper');
 var OrderMgr = require('dw/order/OrderMgr');
 var Order = require('dw/order/Order');
 var Transaction = require('dw/system/Transaction');
+var PaymentMgr = require('dw/order/PaymentMgr');
 
 exports.authorizeOrderPayment = function(order, event) {
-    var condition = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
+    var isEventTrusted = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
     && event.isTrusted === true
     && order;
 
-    if (condition) {
+    if (isEventTrusted) {
         // Payment request
         var result = applePayHelper.handleRequest(
             event.payment.token.paymentData,
@@ -21,10 +22,14 @@ exports.authorizeOrderPayment = function(order, event) {
 
         Transaction.wrap(function() {
             order.removeAllPaymentInstruments();
-            order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
+            var paymentInstrument = order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
+
+            var paymentProcessor = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod()).getPaymentProcessor();
+            paymentInstrument.paymentTransaction.setTransactionID(result.gatewayResponse.id);
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
         });
 
-        if (!result) {
+        if (result.error) {
             return new Status(Status.ERROR);
         }
 
@@ -35,12 +40,6 @@ exports.authorizeOrderPayment = function(order, event) {
 };
 
 exports.placeOrder = function(order) {
-    var paymentInstruments = order.getPaymentInstruments('CHECKOUTCOM_APPLE_PAY').toArray();
-
-    var paymentInstrument = paymentInstruments[0];
-    var paymentTransaction = paymentInstrument.getPaymentTransaction();
-    paymentTransaction.setTransactionID('#');
-
     // Get Previews Notes and Remove them
     var orderNotes = order.getNotes();
 

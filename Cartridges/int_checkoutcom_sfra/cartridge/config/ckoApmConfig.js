@@ -1,11 +1,14 @@
 'use strict';
 
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
+
 /* Business Name */
 var Site = require('dw/system/Site');
-var businessName = Site.getCurrent().getCustomPreferenceValue('ckoBusinessName');
+var businessName = Site.getCurrent().getCustomPreferenceValue(constants.CKO_BUSINESS_NAME);
 
 /* Utility */
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
 /**
  * Module ckoApmConfig.
@@ -84,7 +87,7 @@ var ckoApmConfig = {
         var params = {
             source: {
                 type: 'benefitpay',
-                integration_type: 'web',
+                integration_type: 'mobile',
             },
             purpose: businessName,
             currency: args.order.getCurrencyCode(),

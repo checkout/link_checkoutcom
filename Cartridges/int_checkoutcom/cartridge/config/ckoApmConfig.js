@@ -6,14 +6,17 @@ var Site = require('dw/system/Site');
 var OrderMgr = require('dw/order/OrderMgr');
 var app = require('*/cartridge/scripts/app');
 
+/** Checkout Data Configuration File **/
+var constants = require('*/cartridge/config/constants');
+
 // Business Name
-var businessName = Site.getCurrent().getCustomPreferenceValue('ckoBusinessName');
+var businessName = Site.getCurrent().getCustomPreferenceValue(constants.CKO_BUSINESS_NAME);
 
 // Get apms form
 var paymentForm = app.getForm('alternativePaymentForm');
 
 // Utility
-var ckoHelper = require('~/cartridge/scripts/helpers/ckoHelper');
+var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
 /**
  * All APM configurations.
@@ -96,7 +99,7 @@ var ckoApmConfig = {
         var payObject = {
             source: {
                 type: 'benefitpay',
-                integration_type: 'web',
+                integration_type: 'mobile',
             },
             purpose: businessName,
             currency: ckoHelper.getCurrency(args),
