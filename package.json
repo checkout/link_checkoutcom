@@ -31,7 +31,7 @@
   },
   "homepage": "https://github.com/checkout/link_checkoutcom#readme",
   "dependencies": {
-    "lint": "^0.7.0"
+    "lint": "^0.8.8"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
