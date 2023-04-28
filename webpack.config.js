@@ -1,61 +1,41 @@
 'use strict';
 
-var path = require('path');
-var ExtractTextPlugin = require('sgmf-scripts')['extract-text-webpack-plugin'];
-var sgmfScripts = require('sgmf-scripts');
+const path = require('path');
+const sgmfScripts = require('sgmf-scripts');
+const glob = require('glob');
 
-module.exports = [{
-    mode: 'production',
-    name: 'js',
-    entry: sgmfScripts.createJsPath(),
-    output: {
-        path: path.resolve('./Cartridges/int_checkoutcom_sfra/cartridge/static'),
-        filename: '[name].js'
-    }
-}, {
-    mode: 'none',
-    name: 'scss',
-    entry: sgmfScripts.createScssPath(),
-    output: {
-        path: path.resolve('./Cartridges/int_checkoutcom_sfra/cartridge/static'),
-        filename: '[name].css'
-    },
-    module: {
-        rules: [{
-            test: /\.scss$/,
-            use: ExtractTextPlugin.extract({
-                use: [{
-                    loader: 'css-loader',
-                    options: {
-                        url: false,
-                        minimize: true
-                    }
-                }, {
-                    loader: 'postcss-loader',
-                    options: {
-                        plugins: [
-                            require('autoprefixer')()
-                        ]
-                    }
-                }, {
-                    loader: 'sass-loader',
-                    options: {
-                        includePaths: [
-                            path.resolve(
-                                process.cwd(),
-                                '../link_checkoutcom/node_modules/'
-                            ),
-                            path.resolve(
-                                process.cwd(), // eslint-disable-next-line max-len
-                                '../link_checkoutcom/node_modules/flag-icon-css/sass'
-                            )
-                        ]
-                    }
-                }]
-            })
-        }]
-    },
-    plugins: [
-        new ExtractTextPlugin({ filename: '[name].css' })
+const entryArray = glob.sync('./Cartridges/int_checkoutcom_sfra/cartridge/client/**/*.js');
+const entryObject = entryArray.reduce((acc, item) => {
+  const name = item.replace('./Cartridges/int_checkoutcom_sfra/cartridge/client/', '').replace('.js', '');
+  acc[name] = item;
+  return acc;
+}, {});
+
+module.exports = {
+  mode: 'production',
+  name: 'js',
+  entry: entryObject,
+  output: {
+    path: path.resolve(__dirname, 'Cartridges/int_checkoutcom_sfra/cartridge/static'),
+    filename: '[name].js'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
+        }
+      }
     ]
-}];
+  },
+  resolve: {
+    alias: {
+      base: path.resolve(__dirname, '../../storefront-reference-architecture-6.0.0/cartridges/app_storefront_base/cartridge/client/default/js'),
+    },
+  },
+};
