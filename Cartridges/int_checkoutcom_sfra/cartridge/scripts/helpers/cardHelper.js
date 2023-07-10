@@ -129,6 +129,14 @@ var cardHelper = {
         if (ckoHelper.getValue(constants.CKO_AUTO_CAPTURE) === true) {
             chargeData.capture_on = ckoHelper.getCaptureTime();
         }
+
+        if (paymentData.type === 'Cartes Bancaires') {
+            var processing = {
+                "preferred_scheme": "cartes_bancaires"
+            };
+            chargeData.processing = processing;
+        }
+        
         // Handle the save card request
         if (paymentData.saveCard) {
             // Update the metadata

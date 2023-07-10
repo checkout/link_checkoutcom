@@ -4,6 +4,7 @@
     assets.addJs('/js/apm.js');
     assets.addJs('/js/checkoutcom.js');
     assets.addCss('/css/checkoutcom.css');
+    assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
     var translationStrings = JSON.stringify({
         googlePayDataInvalid: dw.web.Resource.msg('cko.googlepaydata.invalid', 'cko', null), 
         applePayDataInvalid: dw.web.Resource.msg('cko.applepaydata.invalid', 'cko', null), 
@@ -27,3 +28,8 @@
         <isinclude template="checkout/billing/paymentOptions/paymentOptionsContent" />
     </div>
 </div>
+
+<input type="hidden" id="ckoVerifyCartesBinUrl" value="${URLUtils.https('CKOMain-VerifyCartesBancaireBin')}">
+<input type="hidden" id="ckoSiteCountry" value="${require('*/cartridge/scripts/helpers/ckoHelper').getSiteCurrentCountryCode()}"/>
+<input type="hidden" id="ckoABCorNASEnabled" value="${require('*/cartridge/scripts/helpers/ckoHelper').getAbcOrNasEnabled()}"/>
+<input type="hidden" id="ckoCartesBancaireBin">

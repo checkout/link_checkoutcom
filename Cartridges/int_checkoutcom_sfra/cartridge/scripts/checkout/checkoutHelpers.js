@@ -107,17 +107,28 @@ function savePaymentInstrumentToWallet(billingData, currentBasket, customer) {
         );
 
         var processor = PaymentMgr.getPaymentMethod(PaymentInstrument.METHOD_CREDIT_CARD).getPaymentProcessor();
-        var token = HookMgr.callHook(
-            'app.payment.processor.' + processor.ID.toLowerCase(),
-            'createToken',
-            {
-                cardNumber: billingData.paymentInformation.cardNumber.value,
-                expirationMonth: billingData.paymentInformation.expirationMonth.value,
-                expirationYear: billingData.paymentInformation.expirationYear.value,
-                name: currentBasket.billingAddress.fullName,
-                email: currentBasket.getCustomerEmail(),
-            }
-        );
+        var token;
+        var currentPaymentInstrument = currentBasket.getPaymentInstruments(PaymentInstrument.METHOD_CREDIT_CARD)[0];
+        var creditCardToken = currentPaymentInstrument.getCreditCardToken();
+        var creditCardBin = (currentPaymentInstrument.custom && currentPaymentInstrument.custom.ckoPaymentData) ? JSON.parse(currentPaymentInstrument.custom.ckoPaymentData).cardBin : null;
+        if(creditCardToken && creditCardBin) {
+            token = {
+                sourceId: creditCardToken,
+                bin: creditCardBin
+            };
+        } else {
+            token = HookMgr.callHook(
+                'app.payment.processor.' + processor.ID.toLowerCase(),
+                'createToken',
+                {
+                    cardNumber: billingData.paymentInformation.cardNumber.value,
+                    expirationMonth: billingData.paymentInformation.expirationMonth.value,
+                    expirationYear: billingData.paymentInformation.expirationYear.value,
+                    name: currentBasket.billingAddress.fullName,
+                    email: currentBasket.getCustomerEmail(),
+                }
+            );
+        }
 
 
         storedPaymentInstrument.setCreditCardToken(token.sourceId);

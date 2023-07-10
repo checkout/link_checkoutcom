@@ -80,6 +80,14 @@ var apmHelper = {
 
             // Update customer data
             ckoHelper.updateCustomerData(gatewayResponse);
+            if (gatewayResponse && Object.prototype.hasOwnProperty.call(gatewayResponse, 'response_code')) {
+                var response = gatewayResponse.response_code === '10000' || gatewayResponse.response_code === '10100' || gatewayResponse.response_code === '10200';
+                if (response === true) {
+                    result.error = false;
+                } else {
+                    result.error = true;
+                }
+            }
 
             // Test the SEPA redirection
             var isResContainSepaType = Object.prototype.hasOwnProperty.call(gatewayResponse, 'type')

@@ -5,12 +5,27 @@
        name="${creditFields.cardType.htmlName}"
        value="">
 
+<!-- MADA BIN filter URL -->
+<input type="hidden" id="ckoMadaBinUrl" value="${URLUtils.https('CKOMain-MadaBin', 'type', 'creditCard')}" />
+
 <div class="row">
     <div class="col-12">
         <div class="form-group
             <isif condition=${creditFields.cardNumber.mandatory === true}>required</isif>
             ${creditFields.cardNumber.htmlName}">
-            <label class="form-control-label" for="cardNumber">${Resource.msg('field.credit.card.number','creditCard',null)}</label>
+            <span class="d-flex tooltip-wrapper">
+                <label class="form-control-label" for="cardNumber">${Resource.msg('field.credit.card.number','creditCard',null)}</label>
+                <div class="tooltip-info-wrapper">
+                    <span>${Resource.msg('cko.cartes.bancaires.tooltip.label','cko',null)}</span>
+                    <button type="button" class="info-icon">
+                        <span class="icon" aria-hidden="true">i</span>
+                        <span class="sr-only">Help</span>
+                        <span class="tooltip d-none">
+                            ${Resource.msg('cko.cartes.bancaires.tooltip','cko',null)}
+                        </span>
+                    </button>
+                </div>
+            </span>
             <div class="card-number-wrapper">
                 <input type="text" class="form-control cardNumber" id="cardNumber"
                     value="${pdict.order.billing.payment.selectedPaymentInstruments
@@ -22,6 +37,7 @@
                     aria-describedby="cardNumberInvalidMessage"
                 >
                 <div class="invalid-feedback" id="cardNumberInvalidMessage"></div>
+                <div class="cartes-bancaires-options"></div>
             </div>
         </div>
     </div>

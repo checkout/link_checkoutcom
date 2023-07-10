@@ -1,1 +1,143 @@
-.invalid-field-message{color:red;font-size:.8em;margin-top:.8em}.is-invalid{border:solid .01em red}.summary-details .payment-info-label{display:none}
+.invalid-field-message {
+    color: red;
+    font-size: 0.8em;
+    margin-top: 0.8em;
+  }
+  .is-invalid {
+    border: solid 0.01em red;
+  }
+  .summary-details .payment-info-label {
+    display: none;
+  }
+
+  .card-number-wrapper[data-type=mada]::after {
+    background-image: url('../images/card-icons/mada.svg');
+    top: 20%;
+    right: 2%;
+  }
+  
+  .select-dropdown {
+    display: none;
+}
+
+.card-select {
+  width: 100%;
+  line-height:1.5rem;
+  height:38px;
+}
+.card-number-wrapper[data-type="Cartes Bancaires"]:after {
+  background-image: url("../../images/cartesbancaires-dark.svg");
+  background-size: contain;
+}
+
+.card-cartes-bancaires-wrapper.card-number-wrapper::after {
+  display : none;
+}
+
+.cartes-bancaires-icon {
+  background-image: url(../../images/cartesbancaires-dark.svg);
+  background-size: contain;
+  display: block;
+  height: 24px;
+  width: 36px;
+  border-radius: 2px;
+}
+
+.cartes-visa-icon {
+  background-image: url(../../images/card-icons/visa.svg);
+  display: block;
+  width: 36px;
+  border-radius: 2px;
+  height: 23px;
+  background-size: cover;
+}
+
+.cartes-mastercard-icon {
+  background-image: url(../../images/card-icons/mastercard.svg);
+  display: block;
+  width: 36px;
+  border-radius: 2px;
+  height: 23px;
+  background-size: cover;
+}
+
+.cartes-bancaires-options {
+  display: none;
+  position: absolute;
+  top: 3%;
+  right: 5%;
+}
+
+.invalid-card {
+  top: 30%;
+}
+
+.cartes-bancaires-wrapper {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 3px;
+  margin-top: 1px;
+}
+
+.cartes-bancaires-wrapper.selected, .cartes-mastercard-wrapper.selected, .cartes-visa-wrapper.selected {
+  border-color: #00D26A;
+}
+
+.cartes-visa-wrapper, .cartes-mastercard-wrapper  {
+  margin-top: 1px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+}
+
+.bancaires-check {
+  color: white;
+  background-color: #00D26A;
+  font-size: 10px !important;
+  border-radius: 2px;
+  position: absolute;
+  left: 38%;
+  top: 3%;
+}
+
+.visa-check, .mastercard-check {
+  display: none !important;
+  color: white;
+  background-color: #00D26A;
+  font-size: 10px !important;
+  border-radius: 2px;
+  position: absolute;
+  right: 1%;
+  top: 3%;
+}
+
+.tooltip-info-wrapper {
+  display: none;
+  margin-left: 1rem;
+  padding-top: 0.5px;
+}
+.tooltip-info-wrapper .info-icon {
+  padding-bottom: 6px;
+}
+
+.tooltip-info-wrapper .info-icon .icon {
+  margin-left: 5px;
+}
+
+@media only screen and (max-width: 480px) {
+  .info-icon .tooltip {
+    min-width: 18rem !important;
+    left: -7rem !important;
+  }
+}
+
+@media only screen and (max-width: 992px) {
+  .tooltip-wrapper.cb-tooltip-wrapper {
+    flex-direction: column;
+  }
+  .tooltip-info-wrapper {
+    margin-left: 0;
+  }
+}

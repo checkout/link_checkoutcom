@@ -1,0 +1,14 @@
+<isscript>
+    var assets = require('*/cartridge/scripts/assets');
+    assets.addCss('/css/applepay.css');
+</isscript>
+<div class="btn1">
+	<isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoApplePayEnabled')}">
+        <isapplepay class="apple-pay-button-pdp btn apple-pay-cart" sku="${product.id}"></isapplepay>
+    </isif>
+    <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnabled')}">
+        <div class="btn apple-pay-cart">
+            <isinclude template="checkout/billing/paymentOptions/contents/pdpExpressGooglePayContent" />
+        </div>
+    </isif>
+</div>

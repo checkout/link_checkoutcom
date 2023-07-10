@@ -1,7 +1,7 @@
 {
   "name": "int_checkoutcom_sfra",
   "packageName": "int_checkoutcom_sfra",
-  "version": "22.2.0",
+  "version": "23.1.0",
   "description": "Checkout.com payment integrations for SFCC",
   "main": "index.js",
   "scripts": {
@@ -63,6 +63,6 @@
     "ie >= 10"
   ],
   "paths": {
-    "base": "../../storefront-reference-architecture-6.0.0/cartridges/app_storefront_base/"
+    "base": "../../storefront-reference-architecture-6.3.0/cartridges/app_storefront_base/"
   }
 }

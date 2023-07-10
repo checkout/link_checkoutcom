@@ -1,0 +1,82 @@
+<iscontent type="text/html" charset="UTF-8" compact="true"/>
+<isinclude template="util/modules"/>
+<style>
+	@import url("${URLUtils.staticURL('/css/cartesBancairesSavedCard.css')}");
+</style>
+<isset name="DecoratorTemplate" value="account/pt_account" scope="page"/>
+
+<isif condition="${pdict.CurrentHttpParameterMap.format.stringValue == 'ajax' || pdict.CurrentHttpParameterMap.ajax.stringValue == 'true' }">
+	<isset name="DecoratorTemplate" value="util/pt_empty" scope="page"/>
+</isif>
+
+<isdecorate template="${DecoratorTemplate}">
+
+	<h1>${Resource.msg('account.paymentinstrumentlist.addcard', 'account', null)}</h1>
+	<div class="dialog-required"> <span class="required-indicator">&#8226;</span> <em>${Resource.msg('global.requiredfield', 'locale', null)}</em></div>
+
+	<form id="CreditCardForm" name="CreditCardForm" action="${URLUtils.httpsContinue()}" class="form-horizontal" method="post" id="newcreditcard">
+		<fieldset>
+			<isscript>
+				var ownerAttributes = {
+					maxlength: 40,
+					size: 40
+				};
+			</isscript>
+			<isinputfield formfield="${pdict.CurrentForms.paymentinstruments.creditcards.newcreditcard.owner}" type="input" attributes="${ownerAttributes}" />
+			<isinputfield formfield="${pdict.CurrentForms.paymentinstruments.creditcards.newcreditcard.type}" type="select"/>
+			<isinputfield formfield="${pdict.CurrentForms.paymentinstruments.creditcards.newcreditcard.number}" dynamicname="true" type="input" attributes="${numberAttributes}"/>
+			<span class="d-flex tooltip-wrapper">
+				<div class="tooltip-info-wrapper">
+					<span>${Resource.msg('cko.cartes.bancaires.tooltip.label','cko',null)}</span>
+					<span class="fa fa-info-circle cb-info-icon" aria-hidden="true"></span>
+					<div class="cb-tooltip tooltip">
+						${Resource.msg('cko.cartes.bancaires.tooltip','cko',null)}
+					</div>
+				</div>
+			</span>
+			<div id="dw_cardTypeDone"> 
+				<img id="visacard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/visa.svg')}"/>
+				<img id="mastercard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/mastercard.svg')}">
+				<img id="discovercard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/discover.svg')}">
+				<img id="amexcard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/american_express.svg')}">
+				<img id="jcbcard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/jcb.svg')}">
+				<img id="dinersclub_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/diners_club.svg')}">
+				<img id="madacard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/mada.svg')}">
+				<img id="cartesbancaires_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/cartesbancaires-dark.svg')}"/>
+			</div>
+			<div class="cartes-bancaires-options"></div>
+			<div class="form-label-text">
+				<span class="required-indicator">&#8226; </span>
+				${Resource.msg('account.paymentinstrumentdetails.expires','account',null)}
+			</div>
+			<isscript>
+					var currentCountry = require('*/cartridge/scripts/util/Countries').getCurrent(pdict);
+			</isscript>
+				
+			<isdynamicform formobject="${pdict.CurrentForms.paymentinstruments.creditcards.newcreditcard.expiration}" formdata="${currentCountry.dynamicForms.expirationInfo}" />
+			
+			<div class="form-row form-row-button">
+				<button id="applyBtn" type="submit" name="${pdict.CurrentForms.paymentinstruments.creditcards.create.htmlName}" value="${Resource.msg('global.apply','locale',null)}">
+					${Resource.msg('global.apply', 'locale', null)}
+				</button>
+				<button class="cancel cancel-button simple" type="submit" name="${pdict.CurrentForms.paymentinstruments.creditcards.cancel.htmlName}" value="${Resource.msg('global.cancel','locale',null)}">
+					${Resource.msg('global.cancel', 'locale', null)}
+				</button>
+			</div>
+			<input type="hidden" name="${dw.web.CSRFProtection.getTokenName()}" value="${dw.web.CSRFProtection.generateToken()}"/>
+		</fieldset>
+	</form>
+
+	<div class="confirmation-container dialog-content" id="confirmation-container" style="display:none;">
+		<div class="error-form">${Resource.msg('account.paymentinstruments.forbidden', 'account', null)}</div>
+		<button type="button">${Resource.msg('global.close', 'locale', null)}</button>
+	</div>
+
+	<input type="hidden" id="ckoVerifyCartesBinUrl" value="${URLUtils.https('CKOMain-VerifyCartesBancaireBin')}">
+	<input type="hidden" id="ckoABCorNASEnabled" value="${require('*/cartridge/scripts/helpers/ckoHelper').getAbcOrNasEnabled()}"/>
+	<input type="hidden" id="ckoSiteCountry" value="${require('*/cartridge/scripts/helpers/ckoHelper').getSiteCurrentCountryCode()}"/>
+	<input type="hidden" id="ckoCartesBancaireBin">
+</isdecorate>
+
+<script src="${URLUtils.staticURL('js/cartesBancairesSavedCard.js')}"></script>
+<script src="${URLUtils.staticURL('js/saveCard.js')}"></script>

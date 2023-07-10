@@ -271,6 +271,48 @@ function getMadaBin() {
     }
 }
 
+/**
+ * Verifies Cartes Bancaires Bin
+ * @return {Object} The response object
+ */
+function verifyCartesBancaireBin() {
+    var res = require('*/cartridge/scripts/util/Response');
+    try {
+        var mode = ckoHelper.getValue(constants.CKO_MODE);
+        var serviceName = 'cko.cartes.bancaires.' + mode + '.service';
+        var cardBin = request.httpParameterMap.cardBin.stringValue;
+        if (cardBin) {
+            var responseObj = ckoHelper.gatewayClientRequest(
+                serviceName,
+                {
+                    "source": {
+                        "type": "bin",
+                        "bin": cardBin
+                    },
+                    "format": "basic"
+                }
+            );
+            if (responseObj) {
+                res.renderJSON({
+                    error: false,
+                    res: responseObj
+                });
+                return;
+            }
+            res.renderJSON({
+                error: true
+            });
+            return;
+        }
+    } catch (error) {
+        res.renderJSON({
+            error: true,
+            errorObject: error
+        });
+        return;
+    }
+}
+
 // Module exports
 exports.HandleReturn = guard.ensure(['get', 'https'], handleReturn);
 exports.HandleFail = guard.ensure(['get', 'https'], handleFail);
@@ -278,3 +320,4 @@ exports.HandleWebhook = guard.ensure(['post', 'https'], handleWebhook);
 exports.GetCardsList = guard.ensure(['post', 'https'], getCardsList);
 exports.GetApmFilter = guard.ensure(['get', 'https'], getApmFilter);
 exports.GetMadaBin = guard.ensure(['get', 'https'], getMadaBin);
+exports.VerifyCartesBancaireBin = guard.ensure(['post','https'], verifyCartesBancaireBin);
