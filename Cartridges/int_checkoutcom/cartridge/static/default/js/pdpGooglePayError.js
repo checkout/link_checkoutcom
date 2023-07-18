@@ -1,0 +1,1 @@
+$(document).ready((function(){sessionStorage.getItem("reloading")&&(sessionStorage.removeItem("reloading"),new URL(location.href).searchParams.get("hasError")&&$(".pdp-error").show())}));

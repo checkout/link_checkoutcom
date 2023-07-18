@@ -1,0 +1,17 @@
+<script type="text/javascript" src="https://pay.google.com/gp/p/js/pay.js"></script>
+
+<div class="tab-pane google-pay-content" id="mini-cart-google-pay-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+		<input type="hidden" class="form-control"
+				name="${pdict.forms.billingForm.paymentMethod.htmlName}"
+				value=""
+		>
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}"/>
+        <isset name="googlePayFields" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
+
+        <isinclude template="checkout/billing/forms/expressMiniCartGooglePayForm" />
+    </fieldset>
+</div>
+
+<input type="hidden" id="ckoMiniCartGetShippingMethods" value="${URLUtils.https('CKOMain-GetShippingMethods')}" />
+<input type="hidden" id="ckoMiniCartGooglePayExpressCheckout" value="${URLUtils.https('GooglePay-ExpressCheckout')}" />

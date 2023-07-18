@@ -116,6 +116,19 @@ var ckoHelper = {
     },
 
     /**
+     * Get the site country code from locale.
+     * @returns {string} The site  country code
+     */
+    getSiteCurrentCountryCode: function() {
+        // return Site.getCurrent().defaultLocale.split('_')[1];
+        var currentLocale = request.getLocale();
+        var locale = Locale.getLocale(currentLocale);
+        var countryCode = locale.getCountry();
+
+        return countryCode;
+    },
+
+    /**
      * Handles string translation with language resource files.
      * @param {string} strValue The string value
      * @param {string} strFile The file name
@@ -293,7 +306,7 @@ var ckoHelper = {
         var mode = parts[3];
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
         var svcClass;
-        if (svcFile === 'verifyCharges' || svcFile === 'networkToken') {
+        if (svcFile === 'verifyCharges' || svcFile === 'networkToken' || svcFile === 'cartesBancaires') {
             svcClass = require('*/cartridge/scripts/services/' + svcFile);
         } else {
             svcClass = require('*/cartridge/scripts/services/ckoPayments');

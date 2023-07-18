@@ -166,6 +166,13 @@ var cardHelper = {
             chargeData.capture_on = ckoHelper.getCaptureTime();
         }
 
+        if (cardData.type === 'Cartes Bancaires') {
+            var processing = {
+                "preferred_scheme": "cartes_bancaires"
+            };
+            chargeData.processing = processing;
+        }
+
         // Handle the save card request
         if (paymentData.get('saveCard').value()) {
             var customer = CustomerMgr.getCustomerByCustomerNumber(order.getCustomerNo());

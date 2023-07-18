@@ -15,15 +15,16 @@ server.append('SubmitPayment', server.middleware.https, csrfProtection.validateA
         var Transaction = require('dw/system/Transaction');
         var currentBasket = BasketMgr.getCurrentBasket();
         var billingData = res.getViewData();
-        var billingAddress = currentBasket.billingAddress;
-
-        Transaction.wrap(function() {
-            if (billingData.storedPaymentUUID) {
-                billingAddress.setPhone(req.currentCustomer.profile.phone);
-            } else {
-                billingAddress.setPhone(billingData.phone.value);
-            }
-        });
+        if(currentBasket && currentBasket.billingAddress) {
+            var billingAddress = currentBasket.billingAddress;
+            Transaction.wrap(function() {
+                if (billingData.storedPaymentUUID) {
+                    billingAddress.setPhone(req.currentCustomer.profile.phone);
+                } else {
+                    billingAddress.setPhone(billingData.phone.value);
+                }
+            });
+        }
     });
 
     next();

@@ -844,6 +844,19 @@ var ckoHelper = {
     },
 
     /**
+     * Get the site country code from locale.
+     * @returns {string} The site  country code
+     */
+    getSiteCurrentCountryCode: function() {
+        // return Site.getCurrent().defaultLocale.split('_')[1];
+        var currentLocale = request.getLocale();
+        var locale = Locale.getLocale(currentLocale);
+        var countryCode = locale.getCountry();
+
+        return countryCode;
+    },
+
+    /**
      * Build the metadata string.
      * @param {Object} data The request data
      * @param {string} args The method arguments

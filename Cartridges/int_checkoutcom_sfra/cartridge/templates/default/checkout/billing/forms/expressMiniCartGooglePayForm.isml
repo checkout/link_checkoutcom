@@ -1,0 +1,12 @@
+<fieldset>
+    <button id="ckoMinicartGooglePayButton" type="button" class="minicart-google-pay-button ${'google-pay-button-' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayButton')}"></button>
+	<div class="invalid-field-message"></div>
+
+    <input type="hidden" id="ckoMiniCartGooglePayEnvironment" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnvironment').value}">
+    <input type="hidden" id="ckoMiniCartGooglePayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayMerchantId')}">
+    <input type="hidden" id="ckoMiniCartGooglePayCurrency" value="${session.getCurrency().getCurrencyCode()}">
+    <input type="hidden" id="ckoMiniCartGatewayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('cko' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + dw.system.Site.getCurrent().getCustomPreferenceValue('cko'+ dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + 'ABCorNASEnabled').value + 'PublicKey')}">
+    <input type="hidden" id="ckoMiniCartGooglePayData" <isprint value=${googlePayFields.ckoGooglePayData.attributes} encoding="htmlsinglequote"/> value="">
+    <input type="hidden" id="ckoMiniCartProductPrice" value="${pdict.totals.subTotal.replace(/[^\d\.\,\s]+/g, '')}">
+    <input type="hidden" id="ckoMiniCartSalesTax" value="${pdict.totals.totalTax.replace(/[^\d\.\,\s]+/g, '')}">
+</fieldset>

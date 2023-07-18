@@ -132,6 +132,18 @@
         <password/>
     </service-credential>
 
+    <service-credential service-credential-id="cko.cartes.bancaires.live.credential">
+        <url>https://api.checkout.com/metadata/card</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.cartes.bancaires.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/metadata/card</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
     <service-profile service-profile-id="CheckoutCom">
         <timeout-millis>10000</timeout-millis>
         <rate-limit-enabled>false</rate-limit-enabled>
@@ -338,5 +350,23 @@
         <comm-log-enabled>false</comm-log-enabled>
         <profile-id>CheckoutCom</profile-id>
         <credential-id>cko.verify.charges.live.credential</credential-id>
+    </service>
+
+    <service service-id="cko.cartes.bancaires.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.cartes.bancaires.live.credential</credential-id>
+    </service>
+
+    <service service-id="cko.cartes.bancaires.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-cartes-bancaire</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.cartes.bancaires.sandbox.credential</credential-id>
     </service>
 </services>

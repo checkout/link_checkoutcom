@@ -1,0 +1,213 @@
+#dw_cardTypeDone .schemes_thumb {
+    width: 100%;
+    display: none;
+}
+#dw_cardTypeDone {
+    position: absolute;
+    width: 31px;
+    height: 20px;
+    border: solid 1px none;
+}
+#dw_cardTypeDone .selected{
+        display: block !important;
+}
+.cb-toolip {
+    display: none !important;
+}
+
+.cartes-bancaires-cartTypeDone {
+    display: none;
+}
+.cartes-bancaires-icon {
+    background-image: url(../../images/cartesbancaires-dark.svg);
+    background-size: contain;
+    display: block;
+    height: 19px;
+    width: 29px;
+    border-radius: 2px;
+}
+
+.cartes-visa-icon {
+    background-image: url(../../images/card-icons/visa.svg);
+    display: block;
+    width: 31px;
+    border-radius: 2px;
+    height: 19px;
+    background-size: cover;
+}
+
+.cartes-mastercard-icon {
+    background-image: url(../../images/card-icons/mastercard.svg);
+    display: block;
+    width: 31px;
+    border-radius: 2px;
+    height: 19px;
+    background-size: cover;
+}
+
+.cartes-bancaires-options {
+    display: none;
+    position: absolute;
+    top: 28%;
+    right: 26.5%;
+}
+
+.cartes-bancaires-wrapper {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 3px;
+    margin-top: 1px;
+}
+
+.cartes-bancaires-wrapper.selected, .cartes-visa-wrapper.selected, .cartes-mastercard-wrapper.selected {
+    border-color: #00D26A;
+}
+
+.cartes-visa-wrapper, .cartes-mastercard-wrapper {
+    margin-top: 1px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
+}
+
+.bancaires-check {
+    left: 29px;
+    top: 1px;
+    font-size: xx-small !important;
+    position: absolute;
+    background: #00D26A !important;
+    color: white;
+    border-radius: 2px;
+}
+
+.visa-check, .mastercard-check {
+    display: none !important;
+    left: 70px;
+    top: 1px;
+    font-size: xx-small !important;
+    position: absolute;
+    background: #00D26A !important;
+    color: white;
+    border-radius: 2px;
+}
+
+.cartes-bancaires-options.cb-options-error {
+    top: 0rem !important;
+}
+.form-caption.error-message {
+    margin-bottom: 1rem;
+}
+
+.tooltip-info-wrapper {
+    display: none;
+    font-weight: 100;
+    position: absolute;
+    top: 21%;
+    left: 27%;
+}
+
+.tooltip-wrapper-error .tooltip-info-wrapper {
+    color: black;
+    top: -1rem;
+}
+
+.cb-tooltip {
+    display: none !important;
+    position: absolute !important;
+    bottom: 100%;
+    border-radius: 0.1875rem;
+    background-color: #444;
+    color: #fff;
+    font-size: 12px;
+    min-width: 20rem;
+    max-width: 15rem;
+    -webkit-transform: translate(-50%, -0.625em);
+    transform: translate(-50%, -0.625em);
+    left: 50%;
+    margin-left: 4px;
+    -webkit-animation: fade-in 0.5s linear forwards;
+    animation: fade-in 0.5s linear forwards;
+    text-align: left;
+    padding: 7px;
+}
+
+.save-card-dialog.card-number-static-position {
+    position: static !important;
+}
+
+@media only screen and (max-width: 768px) {
+    .CartesBancairesAddDialog {
+        top: 11.2rem;
+        right: 26%;
+        padding-top: 4px;
+    }
+    .ui-dialog h1 {
+        margin-right: 0;
+    }
+    .cartes-bancaires-options {
+        top: 7.4rem;
+    }
+    .tooltip-info-wrapper {
+        top: 6.35rem;
+        left: 4rem;
+    }
+    .CartesBancairesAdd {
+        top: 2rem;
+        right: 27%;
+    }
+    .cartes-bancaires-options.cb-options-error {
+        top: 1.75rem !important;
+    }
+    .tooltip-wrapper-error .tooltip-info-wrapper {
+        top: 0.75rem;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .cb-tooltip {
+        min-width: 15rem;
+        left: 60%;
+    }
+    label[for^="dwfrm_paymentinstruments_creditcards_newcreditcard_number_"] {
+        margin-bottom: 1.25rem !important;
+    }
+    .cartes-bancaires-options {
+        top: 8.6rem;
+    }
+    .tooltip-info-wrapper {
+        top: 7.35rem;
+        left: 0.5rem;
+    }
+    .CartesBancairesAddDialog {
+        top: 12.5rem;
+    }
+    .tooltip-wrapper.tooltip-wrapper-error .tooltip-info-wrapper {
+        top: 2rem;
+    }
+    .cartes-bancaires-options.cb-options-error {
+        top: 3rem !important;
+    }
+    .CartesBancairesAdd {
+        top: 3.5rem;
+    }
+}
+
+@media only screen and (min-width: 768px) {
+    .CartesBancairesAddDialog {
+        top: 8.1rem;
+        left: 68%;
+    }
+    .cartes-bancaires-options {
+        top: 4.1rem;
+    }
+    .tooltip-info-wrapper {
+        top: 3rem;
+        left: 27%;
+    }
+    .CartesBancairesAdd {
+        right: 27%;
+        top: 0.4rem;
+    }
+}

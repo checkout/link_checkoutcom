@@ -30,6 +30,15 @@
 	
 	<!-- Card number and icon -->
 	<div class="form-row">
+		<span class="d-flex tooltip-wrapper">
+			<div class="tooltip-info-wrapper">
+				<span>${Resource.msg('cko.cartes.bancaires.tooltip.label','cko',null)}</span>
+				<span class="fa fa-info-circle cb-info-icon" aria-hidden="true"></span>
+				<div class="cb-tooltip tooltip">
+					${Resource.msg('cko.cartes.bancaires.tooltip','cko',null)}
+				</div>
+			</div>
+		</span>
 		<div id="dw_cardTypeDone"> 
 			<img id="default_thumb" src="${URLUtils.staticURL('/images/card-icons/card.svg')}"/>
 			<img id="visacard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/visa.svg')}"/>
@@ -39,8 +48,11 @@
 			<img id="jcbcard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/jcb.svg')}">
 			<img id="dinersclub_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/diners_club.svg')}">
 			<img id="madacard_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/card-icons/mada.svg')}">
+			<img id="cartesbancaires_thumb" class="schemes_thumb" src="${URLUtils.staticURL('/images/cartesbancaires-dark.svg')}"/>
 		</div>
 		<isinputfield formfield="${pdict.CurrentForms.cardPaymentForm.number}" id="creditCardNumber" type="input"/>
+
+		<div class="cartes-bancaires-options"></div>
 	</div>
 	
 	<!-- Card expiration -->
@@ -75,10 +87,15 @@
 
 	<!-- MADA BIN filter URL -->
   	<input type="hidden" id="ckoMadaBinUrl" value="${URLUtils.https('CKOMain-GetMadaBin', 'type', 'creditCard')}" />
+	<input type="hidden" id="ckoVerifyCartesBinUrl" value="${URLUtils.https('CKOMain-VerifyCartesBancaireBin')}">
 
   	<isinputfield type="hidden" id="cardToken" formfield="${pdict.CurrentForms.cardPaymentForm.cardToken}"/>
 	
 </div>
+
+<input type="hidden" id="ckoABCorNASEnabled" value="${require('*/cartridge/scripts/helpers/ckoHelper').getAbcOrNasEnabled()}"/>
+<input type="hidden" id="ckoSiteCountry" value="${require('*/cartridge/scripts/helpers/ckoHelper').getSiteCurrentCountryCode()}"/>
+<input type="hidden" id="ckoCartesBancaireBin">
 
 <!-- Import card formatting scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
