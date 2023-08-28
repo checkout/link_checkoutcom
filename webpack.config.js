@@ -35,7 +35,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      base: path.resolve(__dirname, '../../storefront-reference-architecture-6.0.0/cartridges/app_storefront_base/cartridge/client/default/js'),
+      base: path.resolve(__dirname, '../../storefront-reference-architecture-6.3.0/cartridges/app_storefront_base/cartridge/client/default/js'),
     },
   },
 };

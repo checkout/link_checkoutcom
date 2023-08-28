@@ -92,6 +92,10 @@
     margin-top: 1px;
 }
 
+label[for^="dwfrm_cardPaymentForm_number"]~.error-message {
+    margin-bottom: -20px;
+}
+
 .cartes-bancaires-wrapper.selected, .cartes-visa-wrapper.selected, .cartes-mastercard-wrapper.selected {
     border-color: #00D26A;
 }
@@ -157,6 +161,10 @@
     animation: fade-in 0.5s linear forwards;
     text-align: left;
     padding: 7px;
+}
+
+.no-click {
+    pointer-events: none;
 }
 
 @media only screen and (max-width: 768px) {

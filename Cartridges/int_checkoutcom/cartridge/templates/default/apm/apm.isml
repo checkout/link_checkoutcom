@@ -15,11 +15,16 @@
 		
 	
 	<!-- This to include the boleto pay apm form -->
+	<iscomment>
+	Boleto has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+	To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+	Ticket no. CHECBLD-149
 	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoBoletoEnabled'))}">
 		<div id="boleto" class="hideApm apmBox">	
 			<isinclude template="apm/includes/boleto.isml"/>
 		</div>
 	</isif>
+	</iscomment>
 	
 	
 	<!-- This to include the bancontact pay apm form -->
@@ -31,11 +36,16 @@
 	
 	
 	<!-- This to include the benefit pay apm form -->
+	<iscomment>
+	BenefitPay has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+	To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+	Ticket no. CHECBLD-149
 	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoBenefitEnabled'))}">
 		<div id="benefit" class="hideApm apmBox">	
 			<isinclude template="apm/includes/benefitPay.isml"/>
 		</div>
 	</isif>
+	</iscomment>
 	
 	
 	<!-- This to include the giro pay apm form -->
@@ -103,11 +113,16 @@
 	
 	
 	<!-- This to include the poli apm form -->
+	<iscomment>
+	Poli has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+	To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+	Ticket no. CHECBLD-149
 	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPoliEnabled'))}">
 		<div id="poli" class="hideApm apmBox">	
 			<isinclude template="apm/includes/poli.isml"/>
 		</div>
 	</isif>
+	</iscomment>
 	
 	
 	<!-- This to include the p24 apm form -->
@@ -118,19 +133,29 @@
 	</isif>
 	
 	<!-- This to include the Oxxo apm form -->
+	<iscomment> 
+	OXXO has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+	To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+	Ticket no. CHECBLD-149
 	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoOxxoEnabled'))}">
 		<div id="oxxo" class="hideApm apmBox">	
 			<isinclude template="apm/includes/oxxo.isml"/>
 		</div>
 	</isif>
+	</iscomment>
 	
 	
 	<!-- This to include the Alipay apm form -->
+	<iscomment>
+	Alipay has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+	To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+	Ticket no. CHECBLD-149
 	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAlipayEnabled'))}">
 		<div id="alipay" class="hideApm apmBox">	
 			<isinclude template="apm/includes/alipay.isml"/>
 		</div>
 	</isif>
+	</iscomment>
 	
 	
 	<!-- This to include the klarna apm form -->

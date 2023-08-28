@@ -449,25 +449,9 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoBoletoEnabled">
-                <display-name xml:lang="x-default">Enable Boleto Bancario</display-name>
-                <description xml:lang="x-default">Enable Boleto Bancario payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoBancontactEnabled">
                 <display-name xml:lang="x-default">Enable Bancontact</display-name>
                 <description xml:lang="x-default">Enable Bancontact Payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
-            <attribute-definition attribute-id="ckoBenefitEnabled">
-                <display-name xml:lang="x-default">Enable BenefitPay</display-name>
-                <description xml:lang="x-default">Enable BenefitPay payments.</description>
                 <type>boolean</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
@@ -484,14 +468,6 @@
             <attribute-definition attribute-id="ckoEpsEnabled">
                 <display-name xml:lang="x-default">Enable EPS</display-name>
                 <description xml:lang="x-default">Enable EPS payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
-            <attribute-definition attribute-id="ckoAlipayEnabled">
-                <display-name xml:lang="x-default">Enable Alipay</display-name>
-                <description xml:lang="x-default">Enable Alipay payments.</description>
                 <type>boolean</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
@@ -545,14 +521,6 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoPoliEnabled">
-                <display-name xml:lang="x-default">Enable Poli</display-name>
-                <description xml:lang="x-default">Enable Poli payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoP24Enabled">
                 <display-name xml:lang="x-default">Enable P24</display-name>
                 <description xml:lang="x-default">Enable Przelewy24 payments.</description>
@@ -570,14 +538,6 @@
                 <default-value>false</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoPaypalEnabled">
-                <display-name xml:lang="x-default">Enable PayPal</display-name>
-                <description xml:lang="x-default">Enable PayPal payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
-            <attribute-definition attribute-id="ckoOxxoEnabled">
                 <display-name xml:lang="x-default">Enable PayPal</display-name>
                 <description xml:lang="x-default">Enable PayPal payments.</description>
                 <type>boolean</type>
@@ -887,23 +847,18 @@
             <attribute-group group-id="CKO [5] APM Settings">
                 <display-name xml:lang="x-default">Checkout.com Alternative Payment Methods Settings</display-name>
                 <attribute attribute-id="ckoIdealEnabled"/>
-                <attribute attribute-id="ckoBoletoEnabled"/>
                 <attribute attribute-id="ckoBancontactEnabled"/>
-                <attribute attribute-id="ckoBenefitEnabled"/>
                 <attribute attribute-id="ckoGiroEnabled"/>
                 <attribute attribute-id="ckoEpsEnabled"/>
-                <attribute attribute-id="ckoAlipayEnabled"/>
                 <attribute attribute-id="ckoSofortEnabled"/>
                 <attribute attribute-id="ckoKnetEnabled"/>
                 <attribute attribute-id="ckoQpayEnabled"/>
                 <attribute attribute-id="ckoFawryEnabled"/>
                 <attribute attribute-id="ckoSepaEnabled"/>
                 <attribute attribute-id="ckoMultibancoEnabled"/>
-                <attribute attribute-id="ckoPoliEnabled"/>
                 <attribute attribute-id="ckoP24Enabled"/>
                 <attribute attribute-id="ckoKlarnaEnabled"/>
                 <attribute attribute-id="ckoPaypalEnabled"/>
-                <attribute attribute-id="ckoOxxoEnabled"/>
             </attribute-group>
             <attribute-group group-id="CKO [6] Google Pay Settings">
                 <display-name xml:lang="x-default">Checkout.com Google Pay Settings</display-name>
