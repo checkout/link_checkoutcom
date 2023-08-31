@@ -54,15 +54,13 @@ function launchGooglePay() {
               signedMessage: JSON.parse(e.paymentMethodToken.token)
                 .signedMessage,
             };
-            jQuery('[id="dwfrm_googlePayForm_data"]').val(JSON.stringify(o)),
-            "" ===
-              $(
-                'input[name="dwfrm_billing_googlePayForm_ckoGooglePayData"]'
-              ).val() 
-                ? $(".ckoGooglePayButton-invalid-field-message").text(
-                    window.ckoLang.googlePayDataInvalid
-                )
-                : $("#dwfrm_billing").submit();
+            jQuery('[id="dwfrm_googlePayForm_data"]').val(JSON.stringify(o));
+            if ('' === $('input[name="dwfrm_billing_googlePayForm_ckoGooglePayData"]').val()) {
+              $('.ckoGooglePayButton-invalid-field-message').text(window.ckoLang.googlePayDataInvalid);
+            } else {
+              $('.button-fancy-large').removeClass('no-click disabled');
+              $('#dwfrm_billing').submit();
+            }
           })(e);
         })
         .catch(function(e) {
@@ -73,6 +71,13 @@ function launchGooglePay() {
 document.addEventListener(
   "DOMContentLoaded",
   function() {
+    $('.input-radio').click(function() {
+      if ($(this).val() === 'CHECKOUTCOM_GOOGLE_PAY') {
+        $('.button-fancy-large').addClass('no-click disabled');
+      } else {
+        $('.button-fancy-large').removeClass('no-click disabled');
+      }
+    });
     launchGooglePay();
   },
   !1

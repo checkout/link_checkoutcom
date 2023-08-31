@@ -36,6 +36,10 @@ exports.authorizeOrderPayment = function(order, event) {
 };
 
 exports.getRequest = function(basket, req) {
+    var currentLocale = ckoHelper.getSiteCurrentCountryCode();
+    if(currentLocale === 'SA') {
+        req.supportedNetworks.push('mada');
+    }
     session.custom.applepaysession = 'yes';  // eslint-disable-line
 };
 

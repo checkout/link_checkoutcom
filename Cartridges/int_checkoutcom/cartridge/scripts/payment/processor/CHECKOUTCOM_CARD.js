@@ -5,6 +5,7 @@
 
 // API Includes
 var Transaction = require('dw/system/Transaction');
+var PaymentMgr = require('dw/order/PaymentMgr');
 
 // Site controller
 var Site = require('dw/system/Site');
@@ -78,6 +79,16 @@ function Handle(args) {
         cvn: paymentForm.get('cvn').value(),
         cardType: paymentForm.get('type').value(),
     };
+
+    var paymentCard = PaymentMgr.getPaymentCard(cardData.cardType);
+
+    var creditCardStatus = paymentCard.verify(cardData.month, cardData.year, cardData.number, cardData.cvn);
+    if (creditCardStatus.error) {
+        var invalidatePaymentCardFormElements = require('*/cartridge/scripts/checkout/InvalidatePaymentCardFormElements');
+        invalidatePaymentCardFormElements.invalidatePaymentCardForm(creditCardStatus, session.forms.cardPaymentForm);
+
+        return { error: true };
+    }
 
     // Validate expiration date
     if (cardData.year === new Date().getFullYear() && cardData.month < new Date().getMonth() + 1) {
