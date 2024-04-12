@@ -295,6 +295,32 @@ var ckoHelper = {
     },
 
     /**
+     * Create an HTTP client to get paypal order id.
+     * @param {string} serviceId The service id
+     * @param {Object} data The request data
+     * @param {string} method The HTTP request method
+     * @returns {Object} The HTTP response object
+     */
+    createContext: function(serviceId, data, method) {
+    // eslint-disable-next-line
+        method = method || 'POST';
+        var serv = this.getService(serviceId);
+        var requestData = data;
+
+        // Prepare the request URL and data
+        var requestUrl = serv.getURL();
+        serv.setURL(requestUrl);
+
+        // Set the request method
+        serv.setRequestMethod(method);
+
+        // Call the service
+        var resp = serv.call(requestData);
+
+        return resp;
+    },
+
+    /**
      * Get an HTTP service.
      * @param {string} serviceId The service id
      * @returns {Object} The HTTP service instance
@@ -306,7 +332,7 @@ var ckoHelper = {
         var mode = parts[3];
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
         var svcClass;
-        if (svcFile === 'verifyCharges' || svcFile === 'networkToken' || svcFile === 'cartesBancaires') {
+        if (svcFile === 'verifyCharges' || svcFile === 'networkToken' || svcFile === 'cartesBancaires' || svcFile === 'paymentContexts') {
             svcClass = require('*/cartridge/scripts/services/' + svcFile);
         } else {
             svcClass = require('*/cartridge/scripts/services/ckoPayments');
@@ -472,6 +498,19 @@ var ckoHelper = {
 
         return false;
     },
+
+    /**
+     * Confirm is a payment is valid from API response code.
+     * @param {Object} gatewayResponse The gateway response
+     * @returns {boolean} The payment success or failure
+     */
+    paypalPaymentSuccess: function(gatewayResponse) {
+        if (gatewayResponse && Object.prototype.hasOwnProperty.call(gatewayResponse, 'reference')) {
+            return true;
+        }
+        return false;
+    },
+
 
     /**
      * Confirm is a payment is valid from API redirect response code.
@@ -1182,6 +1221,42 @@ var ckoHelper = {
      */
     isMADAPaymentsEnabled: function() {
         return !!this.getValue(constants.CKO_MADA_PAYMENTS_ENABLED);
+    },
+
+    /**
+     * Function will restore basket from session data. Used to restore records deleted in express payment scenario
+     */
+    restoreBasket: function() {
+        var cartHelper = require('*/cartridge/scripts/cart/cartHelpers');
+        var oldBasketPliRecords = session.privacy.temporaryBasketPlis;
+        var productLineItem;
+        if (oldBasketPliRecords) {
+            oldBasketPliRecords = JSON.parse(oldBasketPliRecords);
+            var currentBasket = BasketMgr.getCurrentOrNewBasket();
+            try {
+                Transaction.wrap(function() {
+                    var productLineItems = currentBasket.getAllProductLineItems().iterator();
+                    while (productLineItems.hasNext()) {
+                        productLineItem = productLineItems.next();
+                        currentBasket.removeProductLineItem(productLineItem);
+                    }
+                    Object.keys(oldBasketPliRecords).forEach(function(key) {
+                        productLineItem = oldBasketPliRecords[key];
+                        var options = productLineItem.options ? JSON.parse(productLineItem.options) : [];
+                        cartHelper.addProductToCart(
+                            currentBasket,
+                            productLineItem.productID,
+                            productLineItem.quantityValue,
+                            [],
+                            options
+                        );
+                    });
+                });
+            } catch (error) {
+                Logger.error('Error While Restoring the Basket' + error);
+            }
+        }
+        session.privacy.temporaryBasketPlis = null;
     },
 };
 

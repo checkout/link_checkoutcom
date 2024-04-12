@@ -10,6 +10,11 @@
         <isinclude template="checkout/billing/paymentOptions/tabs/googlePayTab"/>
     </isif>
 
+    <iscomment> PayPal </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_PAYPAL' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/payPalTab"/>
+    </isif>
+
     <iscomment> Apple Pay </iscomment>
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_APPLE_PAY' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoApplePayEnabled')}">
         <isinclude template="checkout/billing/paymentOptions/tabs/applePayTab"/>

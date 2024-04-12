@@ -6,10 +6,11 @@
 var customerHelpers = require('base/checkout/customer');
 var addressHelpers = require('base/checkout/address');
 var shippingHelpers = require('base/checkout/shipping');
-var billingHelpers = require('base/checkout/billing');
+var billingHelpers = require('./billing');
 var summaryHelpers = require('base/checkout/summary');
 var formHelpers = require('base/checkout/formErrors');
 var scrollAnimate = require('base/components/scrollAnimate');
+var initiPaypalbutton = require('../initPayPalButton');
 
 
 /**
@@ -191,6 +192,9 @@ var scrollAnimate = require('base/components/scrollAnimate');
                                  // enable the next:Payment button here
                                 $('body').trigger('checkout:enableButton', '.next-step-button button');
                                 shippingHelpers.methods.shippingFormResponse(defer, data);
+                                if (($('.paypal-buttons').length === 0) && ($('.payPal-tab').length > 0)) {
+                                    initiPaypalbutton.initPayPalButton();
+                                }
                             },
                             error: function(err) {
                                 // enable the next:Payment button here

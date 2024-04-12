@@ -154,3 +154,11 @@ exports.shippingContactSelected = function(basket, event, response) {
 
     return;
 };
+
+exports.getRequest = function(basket, req) {
+    var currentLocale = ckoHelper.getSiteCurrentCountryCode();
+    if(currentLocale === 'SA') {
+        req.supportedNetworks.push('mada');
+    }
+    session.custom.applepaysession = 'yes'; 
+};

@@ -29,6 +29,14 @@
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         },
         {
+            "name": "app.payment.processor.checkoutcom_paypal",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_PAYPAL"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_paypal",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_PAYPAL_form_processor"
+        },
+        {
             "name": "dw.extensions.applepay.getRequest",
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         },

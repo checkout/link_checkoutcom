@@ -1,7 +1,7 @@
 {
   "name": "int_checkoutcom_sfra",
   "packageName": "int_checkoutcom_sfra",
-  "version": "23.1.0",
+  "version": "24.1.0",
   "description": "Checkout.com payment integrations for SFCC",
   "main": "index.js",
   "scripts": {
@@ -29,6 +29,8 @@
   },
   "homepage": "https://github.com/checkout/link_checkoutcom#readme",
   "dependencies": {
+    "bootstrap": "^4.6.1",
+    "jquery": "^3.5.1",
     "lint": "^0.7.0"
   },
   "devDependencies": {

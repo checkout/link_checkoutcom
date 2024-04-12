@@ -23,6 +23,10 @@
 		{
             "name": "dw.extensions.applepay.shippingContactSelected",
             "script": "./payment/processor/CHECKOUTCOM_APPLE_PAY"
+        },
+		{
+            "name": "dw.extensions.applepay.getRequest",
+            "script": "./payment/processor/CHECKOUTCOM_APPLE_PAY"
         }
 	]
 }

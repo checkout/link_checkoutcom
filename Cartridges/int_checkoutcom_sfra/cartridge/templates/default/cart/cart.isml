@@ -94,6 +94,12 @@
                             <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnabled')}">
                                 <isinclude template="checkout/billing/paymentOptions/contents/expressGooglePayContent" />
                             </isif>
+                            <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalEnabledOnCart')}">
+                                <div class="btn paypal-payment-express w-100 w-100 pl-0 pr-0">
+                                    <isset name="cart" value="true" scope="page" />
+                                    <isinclude template="checkout/billing/paymentOptions/contents/expressPaypalContent" />
+                                </div>
+                            </isif>
                         </div>
                     </div>
                 </div>

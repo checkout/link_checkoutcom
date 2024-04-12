@@ -10,6 +10,11 @@
         <isinclude template="checkout/billing/paymentOptions/contents/googlePayContent" />
     </isif>
 
+    <iscomment> PayPal </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_PAYPAL'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/payPalContent" />
+    </isif>
+
     <iscomment> Apple Pay </iscomment>
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_APPLE_PAY'}">
         <isinclude template="checkout/billing/paymentOptions/contents/applePayContent" />

@@ -1,0 +1,27 @@
+<isset name="paypalConfig" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalButton')}" scope="page" />
+
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/initPayPalButton.js');
+    assets.addCss('/css/paypal.css');
+</isscript>
+
+<div class="tab-pane paypal-content" id="paypal-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+		<input type="hidden" class="form-control"
+				name="${pdict.forms.billingForm.paymentMethod.htmlName}"
+				value=""
+		>
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}"/>
+        <isset name="payPalFields" value="${pdict.forms.billingForm.payPalForm}" scope="page"/>
+
+        <isinclude template="checkout/billing/forms/payPalForm" />
+    </fieldset>
+    <isif condition="${cart}">
+        <div id="paypal-button-container-cart" class="paypal-dynamic-button-block" data-paypal-button-config="${paypalConfig}"></div>
+    <iselseif condition="${minicart}" />
+        <div id="paypal-button-container-minicart" class="paypal-dynamic-button-block" data-paypal-button-config="${paypalConfig}"></div>
+    <iselse/>
+        <div id="paypal-button-container" class="paypal-checkout-button paypal-dynamic-button-block js_paypal_button_on_billing_form" data-paypal-button-config="${paypalConfig}"></div>
+    </isif>
+</div>

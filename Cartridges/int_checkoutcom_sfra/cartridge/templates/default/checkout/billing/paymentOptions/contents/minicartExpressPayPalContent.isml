@@ -1,0 +1,11 @@
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/paypal/minicartExpressPaypal.js');
+</isscript>
+
+<isinclude template="checkout/billing/paymentOptions/contents/payPalContent" />
+
+
+<input type="hidden" id="ckoPayPalExpressCheckout" value="${URLUtils.https('PayPal-ExpressCheckout')}" />
+
+<isset name="minicart" value="true" scope="page" />

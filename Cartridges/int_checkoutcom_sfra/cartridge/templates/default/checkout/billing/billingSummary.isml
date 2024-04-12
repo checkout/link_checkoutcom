@@ -11,7 +11,7 @@
         <span class="order-summary-email">${pdict.order.orderEmail}</span>
 	</isif>
     <br/>
-    <isif condition="${pdict.order.billing.billingAddress.address !== null}">
+    <isif condition="${pdict.order.billing.billingAddress.address !== null && pdict.order.billing.billingAddress.address.phone && pdict.order.billing.billingAddress.address.phone !== 'undefined'}">
         <span class="order-summary-phone">${pdict.order.billing.billingAddress.address.phone}</span>
         <iselse>
         <span class="order-summary-phone"></span>

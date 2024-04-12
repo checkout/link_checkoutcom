@@ -1,0 +1,20 @@
+<isset name="PaymentMgr" value="${require('dw/order/PaymentMgr')}" scope="page" />
+
+<div class="payment-details">
+    <isloop items="${pdict.order.billing.payment.selectedPaymentInstruments}" var="payment" status="loopstate">
+
+        <isif condition="${payment.paymentMethod === 'CREDIT_CARD'}">
+            <isinclude template="checkout/billing/paymentOptions/creditCardSummary" />
+        <iselse/>
+
+            <div class="summary-details payment">
+                <div class="payment-method-name">
+                    ${PaymentMgr.getPaymentMethod(payment.paymentMethod).getName()}
+                </div>
+                <div class="payment-amount">
+                    ${pdict.order.priceTotal}
+                </div>
+            </div>
+        </isif>
+    </isloop>
+</div>
