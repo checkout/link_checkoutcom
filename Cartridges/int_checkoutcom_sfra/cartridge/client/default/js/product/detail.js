@@ -4,10 +4,16 @@ var base = require('./base');
 /**
  * Enable/disable UI elements
  * @param {boolean} enableOrDisable - true or false
+ * @param {Object} response - response Obj
  */
-function updateAddToCartEnableDisableOtherElements(enableOrDisable) {
+function updateAddToCartEnableDisableOtherElements(enableOrDisable, response) {
     $('button.add-to-cart-global').attr('disabled', enableOrDisable);
-    if ($('.add-to-cart').is(':disabled') === false) {
+    var selectedValues = response && response.product && response.product.quantities ? parseInt(response.product.quantities.filter(function(item) {
+        return item.selected;
+    }).map(function(item) {
+        return item.value;
+    })) : 1;
+    if ($('.add-to-cart').is(':disabled') === false && selectedValues === 1) {
         $('.btn1').show();
     } else {
         $('.btn1').hide();
@@ -64,7 +70,7 @@ module.exports = {
         $('body').on('product:afterAttributeSelect', function(e, response) {
             $('.apple-pay-button-pdp').attr('sku', response.data.product.id);
             $('#ckoProductID').val(response.data.product.id);
-            $('#ckoProductPrice').val(response.data.product.price.sales.decimalPrice);
+            $('#ckoProductPrice').val(response.data.product.price.sales && response.data.product.price.sales.decimalPrice);
             if ($('.product-detail>.bundle-items').length) {
                 response.container.data('pid', response.data.product.id);
                 response.container.find('.product-id').text(response.data.product.id);
@@ -86,7 +92,7 @@ module.exports = {
             var enable = $('.product-availability').toArray().every(function(item) {
                 return $(item).data('available') && $(item).data('ready-to-order');
             });
-            module.exports.methods.updateAddToCartEnableDisableOtherElements(!enable);
+            module.exports.methods.updateAddToCartEnableDisableOtherElements(!enable, response);
         });
     },
     updateAvailability: function() {

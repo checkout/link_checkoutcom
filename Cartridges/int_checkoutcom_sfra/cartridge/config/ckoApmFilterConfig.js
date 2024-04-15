@@ -14,21 +14,33 @@ var ckoApmFilterConfig = {
         currencies: ['EUR'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_IDEAL_ENABLED),
     },
+    /* Boleto has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+    *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+    *  Ticket no. CHECBLD-149
+    */
+    /*
     boleto: {
         countries: ['BR'],
         currencies: ['BRL', 'USD'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_BOLETO_ENABLED),
     },
+    */
     bancontact: {
         countries: ['BE'],
         currencies: ['EUR'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_BANCONTACT_ENABLED),
     },
+    /* Benefitpay has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+    *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+    *  Ticket no. CHECBLD-149
+    */
+    /*
     benefitpay: {
         countries: ['BH'],
         currencies: ['BHD'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_BENEFIT_ENABLED),
     },
+    */
     giropay: {
         countries: ['DE'],
         currencies: ['EUR'],
@@ -64,11 +76,17 @@ var ckoApmFilterConfig = {
         currencies: ['EUR'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_MULTIBANCO_ENABLED),
     },
+    /* Poli has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+    *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+    *  Ticket no. CHECBLD-149
+    */
+    /*
     poli: {
         countries: ['AU', 'NZ'],
         currencies: ['AUD', 'NZD'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_POLI_ENABLED),
     },
+    */
     sepa: {
         countries: ['AT', 'BE', 'CY', 'DE', 'EE', 'ES', 'FI', 'FR', 'GR', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PT', 'SI', 'SK', 'AD', 'BG', 'CH', 'CZ', 'DK', 'GB', 'HR', 'HU', 'IS', 'LI', 'MC', 'NO', 'PL', 'RO', 'SM', 'SE', 'VA'],
         currencies: ['EUR'],
@@ -84,21 +102,33 @@ var ckoApmFilterConfig = {
         currencies: ['EUR', 'DKK', 'GBP', 'NOK', 'SEK'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_KLARNA_ENABLED),
     },
+    /* Alipay has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+    *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+    *  Ticket no. CHECBLD-149
+    */
+    /*
     alipay: {
         countries: ['CN', 'US'],
         currencies: ['USD', 'CNY'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_ALIPAY_ENABLED),
     },
+    */
     paypal: {
         countries: ['*'],
         currencies: ['AUD', 'BRL', 'CAD', 'CZK', 'DKK', 'EUR', 'HKD', 'HUF', 'INR', 'ILS', 'JPY', 'MYR', 'MXN', 'TWD', 'NZD', 'NOK', 'PHP', 'PLN', 'GBP', 'RUB', 'SGD', 'SEK', 'CHF', 'THB', 'USD'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_PAYPAL_ENABLED),
     },
+    /* OXXO has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
+    *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
+    *  Ticket no. CHECBLD-149
+    */
+    /*
     oxxo: {
         countries: ['MX'],
         currencies: ['MXN'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_OXXO_ENABLED),
     },
+    */
 };
 
 /*

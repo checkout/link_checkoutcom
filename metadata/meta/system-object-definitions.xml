@@ -274,6 +274,65 @@
 
     <type-extension type-id="SitePreferences">
         <custom-attribute-definitions>
+        <attribute-definition attribute-id="ckoPayPalButton">
+                <display-name xml:lang="x-default">Button Style</display-name>
+                <description xml:lang="x-default">Paypal button style</description>
+                <type>text</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalChannelId">
+                <display-name xml:lang="x-default">PayPal channel ID</display-name>
+                <description xml:lang="x-default">Holds processing channel ID</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalClientId">
+                <display-name xml:lang="x-default">PayPal Client ID</display-name>
+                <description xml:lang="x-default">Holds PayPal client ID</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalEnabled">
+                <display-name xml:lang="x-default">Enable PayPal on Checkout Page</display-name>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalEnabledOnCart">
+                <display-name xml:lang="x-default">Enable PayPal on Cart</display-name>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalEnabledOnMinCart">
+                <display-name xml:lang="x-default">Enable PayPal on Mini cart</display-name>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalEnabledOnPDP">
+                <display-name xml:lang="x-default">Enable PayPal on PDP</display-name>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPayPalMerchantId">
+                <display-name xml:lang="x-default">PayPal merchant ID</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+                <default-value>12345678</default-value>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoSgPlatformData">
                 <type>string</type>
                 <default-value>Checkout.com Site Genesis Cartridge - Version: 21.1.0</default-value>
@@ -449,25 +508,9 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoBoletoEnabled">
-                <display-name xml:lang="x-default">Enable Boleto Bancario</display-name>
-                <description xml:lang="x-default">Enable Boleto Bancario payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoBancontactEnabled">
                 <display-name xml:lang="x-default">Enable Bancontact</display-name>
                 <description xml:lang="x-default">Enable Bancontact Payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
-            <attribute-definition attribute-id="ckoBenefitEnabled">
-                <display-name xml:lang="x-default">Enable BenefitPay</display-name>
-                <description xml:lang="x-default">Enable BenefitPay payments.</description>
                 <type>boolean</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
@@ -484,14 +527,6 @@
             <attribute-definition attribute-id="ckoEpsEnabled">
                 <display-name xml:lang="x-default">Enable EPS</display-name>
                 <description xml:lang="x-default">Enable EPS payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
-            <attribute-definition attribute-id="ckoAlipayEnabled">
-                <display-name xml:lang="x-default">Enable Alipay</display-name>
-                <description xml:lang="x-default">Enable Alipay payments.</description>
                 <type>boolean</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
@@ -545,14 +580,6 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoPoliEnabled">
-                <display-name xml:lang="x-default">Enable Poli</display-name>
-                <description xml:lang="x-default">Enable Poli payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoP24Enabled">
                 <display-name xml:lang="x-default">Enable P24</display-name>
                 <description xml:lang="x-default">Enable Przelewy24 payments.</description>
@@ -570,14 +597,6 @@
                 <default-value>false</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoPaypalEnabled">
-                <display-name xml:lang="x-default">Enable PayPal</display-name>
-                <description xml:lang="x-default">Enable PayPal payments.</description>
-                <type>boolean</type>
-                <mandatory-flag>true</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
-            <attribute-definition attribute-id="ckoOxxoEnabled">
                 <display-name xml:lang="x-default">Enable PayPal</display-name>
                 <description xml:lang="x-default">Enable PayPal payments.</description>
                 <type>boolean</type>
@@ -887,23 +906,18 @@
             <attribute-group group-id="CKO [5] APM Settings">
                 <display-name xml:lang="x-default">Checkout.com Alternative Payment Methods Settings</display-name>
                 <attribute attribute-id="ckoIdealEnabled"/>
-                <attribute attribute-id="ckoBoletoEnabled"/>
                 <attribute attribute-id="ckoBancontactEnabled"/>
-                <attribute attribute-id="ckoBenefitEnabled"/>
                 <attribute attribute-id="ckoGiroEnabled"/>
                 <attribute attribute-id="ckoEpsEnabled"/>
-                <attribute attribute-id="ckoAlipayEnabled"/>
                 <attribute attribute-id="ckoSofortEnabled"/>
                 <attribute attribute-id="ckoKnetEnabled"/>
                 <attribute attribute-id="ckoQpayEnabled"/>
                 <attribute attribute-id="ckoFawryEnabled"/>
                 <attribute attribute-id="ckoSepaEnabled"/>
                 <attribute attribute-id="ckoMultibancoEnabled"/>
-                <attribute attribute-id="ckoPoliEnabled"/>
                 <attribute attribute-id="ckoP24Enabled"/>
                 <attribute attribute-id="ckoKlarnaEnabled"/>
                 <attribute attribute-id="ckoPaypalEnabled"/>
-                <attribute attribute-id="ckoOxxoEnabled"/>
             </attribute-group>
             <attribute-group group-id="CKO [6] Google Pay Settings">
                 <display-name xml:lang="x-default">Checkout.com Google Pay Settings</display-name>
@@ -919,6 +933,17 @@
                 <attribute attribute-id="ckoApplePayEnvironment"/>
                 <attribute attribute-id="ckoApplePayMerchantId"/>
                 <attribute attribute-id="ckoApplePayButton"/>
+            </attribute-group>
+            <attribute-group group-id="CKO [8] PayPal Settings">
+                <display-name xml:lang="x-default">Checkout.com PayPal Settings</display-name>
+                <attribute attribute-id="ckoPayPalEnabled"/>
+                <attribute attribute-id="ckoPayPalEnabledOnCart"/>
+                <attribute attribute-id="ckoPayPalEnabledOnMinCart"/>
+                <attribute attribute-id="ckoPayPalEnabledOnPDP"/>
+                <attribute attribute-id="ckoPayPalMerchantId"/>
+                <attribute attribute-id="ckoPayPalClientId"/>
+                <attribute attribute-id="ckoPayPalChannelId"/>
+                <attribute attribute-id="ckoPayPalButton"/>
             </attribute-group>
        </group-definitions>
        

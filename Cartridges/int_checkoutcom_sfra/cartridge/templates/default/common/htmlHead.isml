@@ -53,8 +53,19 @@ ${dw.system.HookMgr.callHook('app.template.htmlHead', 'htmlHead', pdict) || ''}
         do not include shopper specific information.
         This hook will be executed with encoding disabled. Please sanitize output in the hook.
 </iscomment>
-<isprint value="${require('*/cartridge/scripts/theming/skin.js').renderSkin()}" encoding="off">
+<isprint value="${require('*/cartridge/scripts/theming/skin.js').renderSkin()}" encoding="off" />
 <link rel="stylesheet" href="${URLUtils.staticURL('/css/skin/skin.css')}" />
 <link rel="stylesheet" href="${URLUtils.staticURL('/css/minicartExpressGooglePay.css')}" />
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="${URLUtils.staticURL('/js/minicartExpressGooglePay.js')}" type="text/javascript"></script>
+<isset name="ckoPayPalEnabled" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalEnabled')}" scope="page" />
+<isset name="ckoPayPalEnabledOnCart" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalEnabledOnCart')}" scope="page" />
+<isset name="ckoPayPalEnabledOnPDP" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalEnabledOnPDP')}" scope="page" />
+<isset name="ckoPayPalEnabledOnMinCart" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalEnabledOnMinCart')}" scope="page" />
+
+<isif condition="${ckoPayPalEnabled || ckoPayPalEnabledOnPDP || ckoPayPalEnabledOnMinCart || ckoPayPalEnabledOnCart}">
+    <isset name="ckoPayPalClientId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalClientId')}" scope="page" />
+    <isset name="ckoPayPalMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalMerchantId')}" scope="page" />
+    <isset name="payPalCurrency" value="${(session.getCurrency().getCurrencyCode()) ? '&currency=' + (session.getCurrency().getCurrencyCode()) : ''}" scope="page" />
+    <script src="https://www.paypal.com/sdk/js?client-id=${ckoPayPalClientId}&merchant-id=${ckoPayPalMerchantId}${payPalCurrency}&disable-funding=credit,card,sepa&intent=capture" data-partner-attribution-id="CheckoutLtd_PSP" data-namespace="paypal_sdk"></script>
+</isif>

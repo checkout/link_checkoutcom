@@ -14,5 +14,7 @@
     <include formid="qpayForm" name="qpayForm"/>
     <include formid="sepaForm" name="sepaForm"/>
     <include formid="oxxoForm" name="oxxoForm"/>
+    <include formid="payPalForm" name="payPalForm"/>
+
     <field formid="subscribe" type="boolean" checked="false" default-value="false" mandatory="false" />
 </form>

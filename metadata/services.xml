@@ -6,6 +6,18 @@
         <password/>
     </service-credential>
 
+    <service-credential service-credential-id="cko.payment.contexts.live.credential">
+        <url>https://api.checkout.com/payment-contexts</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.payment.contexts.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payment-contexts</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
     <service-credential service-credential-id="cko.card.sources.sandbox.credential">
         <url>https://api.sandbox.checkout.com/sources</url>
         <user-id/>
@@ -162,6 +174,29 @@
         <profile-id>CheckoutCom</profile-id>
         <credential-id>cko.card.charge.sandbox.credential</credential-id>
     </service>
+
+    <service service-id="cko.payment.contexts.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.payment.contexts.live.credential</credential-id>
+    </service>
+
+    <service service-id="cko.payment.contexts.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.payment.contexts.sandbox.credential</credential-id>
+    </service>
+
 
     <service service-id="cko.payment.actions.sandbox.service">
         <service-type>HTTP</service-type>

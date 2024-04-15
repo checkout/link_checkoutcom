@@ -15,12 +15,12 @@ server.append('SubmitPayment', server.middleware.https, csrfProtection.validateA
         var Transaction = require('dw/system/Transaction');
         var currentBasket = BasketMgr.getCurrentBasket();
         var billingData = res.getViewData();
-        if(currentBasket && currentBasket.billingAddress) {
+        if (currentBasket && currentBasket.billingAddress) {
             var billingAddress = currentBasket.billingAddress;
             Transaction.wrap(function() {
                 if (billingData.storedPaymentUUID) {
                     billingAddress.setPhone(req.currentCustomer.profile.phone);
-                } else {
+                } else if (billingData && billingData.phone) {
                     billingAddress.setPhone(billingData.phone.value);
                 }
             });

@@ -36,4 +36,13 @@
             <production/>
         </preferences>
     </payment-processor>
+    <payment-processor processor-id="CHECKOUTCOM_PAYPAL">
+        <description>Checkout.com PayPal payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
 </payment-processors>

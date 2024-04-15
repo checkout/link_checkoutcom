@@ -11,6 +11,11 @@ var Transaction = require('dw/system/Transaction');
 var Locale = require('dw/util/Locale');
 var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 
+var cartHelper = require('*/cartridge/scripts/cart/cartHelpers');
+var basketCalculationHelpers = require('*/cartridge/scripts/helpers/basketCalculationHelpers');
+var CartModel = require('*/cartridge/models/cart');
+var URLUtils = require('dw/web/URLUtils');
+
 /* Checkout.com Event functions */
 var eventsHelper = require('*/cartridge/scripts/helpers/eventsHelper');
 
@@ -397,6 +402,109 @@ server.post('VerifyCartesBancaireBin', function(req, res, next) {
         return next();
     }
     return next();
+});
+
+/**
+ * Handles Basket Creation when the user clicks on Google pay and Paypal Express in PDP Page
+ * @returns {string} The controller response
+ */
+server.post('CreateBasketForPDP', function(req, res, next) {
+    var existingBasket = BasketMgr.getCurrentBasket();
+    var tempPliRecords = {};
+    if (existingBasket) {
+        Transaction.wrap(function() {
+            var productLineItems = existingBasket.getAllProductLineItems().iterator();
+            while (productLineItems.hasNext()) {
+                var productLineItem = productLineItems.next();
+                if (!productLineItem.optionProductLineItem) {
+                    var options = '';
+                    if (productLineItem.optionProductLineItems && productLineItem.optionProductLineItems.length > 0) {
+                        var optionProductLineItemRecord = productLineItem.optionProductLineItems[0];
+                        options = [{
+                            optionId: optionProductLineItemRecord.optionID,
+                            selectedValueId: optionProductLineItemRecord.optionValueID,
+                        }];
+                        options = JSON.stringify(options);
+                    }
+                    tempPliRecords[productLineItem.productID] = {
+                        productID: productLineItem.productID,
+                        quantityValue: productLineItem.quantityValue,
+                        options: options,
+                    };
+                }
+                existingBasket.removeProductLineItem(productLineItem);
+            }
+        });
+        session.privacy.temporaryBasketPlis = JSON.stringify(tempPliRecords);
+    }
+
+    var currentBasket = BasketMgr.getCurrentOrNewBasket();
+
+    var previousBonusDiscountLineItems = currentBasket.getBonusDiscountLineItems();
+    var productId = req.form.pid;
+    var childProducts = [];
+    var options = req.form.options ? JSON.parse(req.form.options) : [];
+    var quantity;
+    var cartResult;
+
+    if (productId !== 'null') {
+        if (currentBasket) {
+            Transaction.wrap(function() {
+                quantity = 1;
+                cartResult = cartHelper.addProductToCart(
+                    currentBasket,
+                    productId,
+                    quantity,
+                    childProducts,
+                    options
+                );
+                if (!cartResult.error) {
+                    cartHelper.ensureAllShipmentsHaveMethods(currentBasket);
+                    basketCalculationHelpers.calculateTotals(currentBasket);
+                }
+            });
+        }
+
+        var cartModel = new CartModel(currentBasket);
+
+        var urlObject = {
+            url: URLUtils.url('Cart-ChooseBonusProducts').toString(),
+            configureProductstUrl: URLUtils.url('Product-ShowBonusProducts').toString(),
+            addToCartUrl: URLUtils.url('Cart-AddBonusProducts').toString(),
+        };
+
+        var newBonusDiscountLineItem = cartHelper.getNewBonusDiscountLineItem(
+            currentBasket,
+            previousBonusDiscountLineItems,
+            urlObject,
+            cartResult.uuid
+        );
+        if (newBonusDiscountLineItem) {
+            var allLineItems = currentBasket.allProductLineItems;
+            var collections = require('*/cartridge/scripts/util/collections');
+            collections.forEach(allLineItems, function(pli) {
+                if (pli.UUID === cartResult.uuid) {
+                    Transaction.wrap(function() {
+                        pli.custom.bonusProductLineItemUUID = 'bonus'; // eslint-disable-line no-param-reassign
+                        pli.custom.preOrderUUID = pli.UUID; // eslint-disable-line no-param-reassign
+                    });
+                }
+            });
+        }
+
+        cartHelper.getReportingUrlAddToCart(currentBasket, cartResult.error);
+    }
+
+    res.json({
+        success: !cartResult.error,
+        error: cartResult.error,
+    });
+
+    return next();
+});
+
+server.post('restoreTemporaryBasket', function(req, res, next) {
+    ckoHelper.restoreBasket();
 });
 
 /*

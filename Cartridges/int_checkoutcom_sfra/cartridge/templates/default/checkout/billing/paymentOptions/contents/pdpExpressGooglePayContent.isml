@@ -20,4 +20,4 @@
 
 <input type="hidden" id="ckoGetShippingMethods" value="${URLUtils.https('CKOMain-GetShippingMethods')}" />
 <input type="hidden" id="ckoGooglePayExpressCheckout" value="${URLUtils.https('GooglePay-ExpressCheckout')}" />
-<input type="hidden" id="ckoCreateBasketForPDP" value="${URLUtils.https('GooglePay-CreateBasketForPDP')}" />
+<input type="hidden" id="ckoCreateBasketForPDP" value="${URLUtils.https('CKOMain-CreateBasketForPDP')}" />

@@ -6,7 +6,8 @@
     assets.addCss('/css/checkoutcom.css');
     assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
     var translationStrings = JSON.stringify({
-        googlePayDataInvalid: dw.web.Resource.msg('cko.googlepaydata.invalid', 'cko', null), 
+        googlePayDataInvalid: dw.web.Resource.msg('cko.googlepaydata.invalid', 'cko', null),
+        payPalDataInvalid: dw.web.Resource.msg('cko.paypaldata.invalid', 'cko', null),
         applePayDataInvalid: dw.web.Resource.msg('cko.applepaydata.invalid', 'cko', null), 
         apmFieldInvalid: dw.web.Resource.msg('cko.apmfield.invalid', 'cko', null),
         apmEmailInvalid: dw.web.Resource.msg('cko.apmEmail.invalid', 'cko', null),
