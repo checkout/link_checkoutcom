@@ -9,10 +9,8 @@
     <include formid="applePayForm" name="applePayForm"/>
     <include formid="apmForm" name="apmForm"/>
     <include formid="boletoForm" name="boletoForm"/>
-    <include formid="idealForm" name="idealForm"/>
     <include formid="klarnaForm" name="klarnaForm"/>
     <include formid="qpayForm" name="qpayForm"/>
-    <include formid="sepaForm" name="sepaForm"/>
     <include formid="oxxoForm" name="oxxoForm"/>
     <include formid="payPalForm" name="payPalForm"/>
 

@@ -98,7 +98,7 @@ var CKOHelper = {
                     refundable_amount: this.getRefundableAmount(paymentInstruments),
                     captured_amount: this.getCapturedAmount(paymentInstruments),
                     data_type: paymentTransaction.type.toString(),
-                    abcOrNasEnabled: result[j].custom.orderProcessedByABCorNAS,
+                    nasEnabled: result[j].custom.orderProcessedByABCorNAS,
                 };
 
                 // Add the transaction
@@ -329,6 +329,11 @@ var CKOHelper = {
         // Prepare the request URL and data
         if (Object.prototype.hasOwnProperty.call(requestData, 'chargeId')) {
             var requestUrl = serv.getURL().replace('chargeId', requestData.chargeId);
+            var regionEndPoint = this.getValue(constants.CKO_REGION_END_POINT);
+            var region = this.getValue(constants.CKO_REGION);
+            if (region && regionEndPoint && region.value !== 'Others') {
+                requestUrl = requestUrl.replace(constants.CKO_END_POINTS, regionEndPoint);
+            }
             serv.setURL(requestUrl);
             delete requestData.chargeId; // eslint-disable-line no-param-reassign
         }
@@ -414,30 +419,32 @@ var CKOHelper = {
 
     /**
      * Get live or sandbox account keys.
+     * @param {string} service order processed by ABC or NAS
      * @returns {Object} The configuration account keys
      */
-    getAccountKeys: function() {
+    getAccountKeys: function(service) {
         var keys = {};
-        var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
-        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
-        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
+        var ckoMode = this.getValue(constants.CKO_MODE);
+        var str = ckoMode && ckoMode.value === 'live' ? 'Live' : 'Sandbox';
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_NAS_ENABLED : constants.CKO_SANDBOX_NAS_ENABLED;
+        var nasEnabled = service || this.getValue(liveOrSandboxPreference);
 
-        keys.publicKey = this.getValue('cko' + str + abcOrNasEnabled + 'PublicKey');
-        keys.secretKey = this.getValue('cko' + str + abcOrNasEnabled + 'SecretKey');
-        keys.privateKey = this.getValue('cko' + str + abcOrNasEnabled + 'PrivateKey');
+        keys.publicKey = this.getValue('cko' + str + nasEnabled + 'PublicKey');
+        keys.secretKey = this.getValue('cko' + str + nasEnabled + 'SecretKey');
+        keys.privateKey = this.getValue('cko' + str + nasEnabled + 'PrivateKey');
 
         return keys;
     },
 
     /**
-     * Get live or sandbox abc or nas enabled value.
-     * @returns {Object} The ABC or NAS value
+     * Get live or sandbox nas enabled value.
+     * @returns {Object} The NAS value
      */
-    getAbcOrNasEnabled: function() {
+    getNasEnabled: function() {
         var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
-        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
-        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
-        return abcOrNasEnabled;
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_NAS_ENABLED : constants.CKO_SANDBOX_NAS_ENABLED;
+        var nasEnabled = this.getValue(liveOrSandboxPreference);
+        return nasEnabled;
     },
 };
 

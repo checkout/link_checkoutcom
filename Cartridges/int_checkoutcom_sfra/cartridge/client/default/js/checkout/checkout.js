@@ -9,7 +9,10 @@ var shippingHelpers = require('base/checkout/shipping');
 var billingHelpers = require('./billing');
 var summaryHelpers = require('base/checkout/summary');
 var formHelpers = require('base/checkout/formErrors');
+var klarna = require('../klarna');
 var scrollAnimate = require('base/components/scrollAnimate');
+var location = window.location;
+var history = window.history;
 var initiPaypalbutton = require('../initPayPalButton');
 
 
@@ -122,7 +125,7 @@ var initiPaypalbutton = require('../initPayPalButton');
                         },
                     });
                     return defer;
-                } else if (stage === 'shipping') {
+                } if (stage === 'shipping') {
                     //
                     // Clear Previous Errors
                     //
@@ -192,6 +195,7 @@ var initiPaypalbutton = require('../initPayPalButton');
                                  // enable the next:Payment button here
                                 $('body').trigger('checkout:enableButton', '.next-step-button button');
                                 shippingHelpers.methods.shippingFormResponse(defer, data);
+                                klarna.initializeKlarna();
                                 if (($('.paypal-buttons').length === 0) && ($('.payPal-tab').length > 0)) {
                                     initiPaypalbutton.initPayPalButton();
                                 }
@@ -208,7 +212,7 @@ var initiPaypalbutton = require('../initPayPalButton');
                         });
                     }
                     return defer;
-                } else if (stage === 'payment') {
+                } if (stage === 'payment') {
                     //
                     // Submit the Billing Address Form
                     //
@@ -402,6 +406,8 @@ var initiPaypalbutton = require('../initPayPalButton');
 
                                     redirect.submit();
                                     defer.resolve(data);
+                                } else if (data.order && data.action && data.order.orderNo) {
+                                    klarna.authorizeKlarna(data.order);
                                 } else {
                                     var redirect = $('<form>')
                                     .appendTo(document.body)
@@ -496,6 +502,10 @@ var initiPaypalbutton = require('../initPayPalButton');
 
                 $('.payment-summary .edit-button', plugin).on('click', function() {
                     members.gotoStage('payment');
+                });
+
+                $('#billingCountry').on('change', function() {
+                    klarna.initializeKlarna($('#billingCountry').val());
                 });
 
                 //

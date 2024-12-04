@@ -4,6 +4,7 @@ var formValidation = require('base/components/formValidation');
 var cleave = require('base/components/cleave');
 
 var url;
+var location = window.location;
 
 module.exports = {
     removePayment: function () {
@@ -80,7 +81,7 @@ module.exports = {
     },
 
     getCartesBancaireOptions: function () {
-        if ($("#ckoSiteCountry").val() === 'FR' && $("#ckoABCorNASEnabled").val() === 'NAS') {
+        if ($("#ckoSiteCountry").val() === 'FR' && $("#ckoNASEnabled").val() === 'NAS') {
             $("#cardNumber").siblings(".invalid-feedback").on("DOMSubtreeModified", function(){
                 if ($(this).html().length > 0) {
                     $(".cartes-bancaires-options").addClass("invalid-card");

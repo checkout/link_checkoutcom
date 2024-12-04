@@ -308,40 +308,6 @@ var ckoApmConfig = {
     },
 
     /**
-     * Klarna Pay Authorization.
-     * @param {Object} args The payment arguments
-     * @returns {Object} The payment parameters
-     */
-    klarnaPayAuthorization: function(args) {
-        // Gdt the order
-        var order = OrderMgr.getOrder(args.OrderNo);
-
-        // Klarna form fields
-        var klarnaApproved = paymentForm.get('klarna_approved').value();
-        if (klarnaApproved) {
-            // Build the payment object
-            var payObject = {
-                amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), ckoHelper.getCurrency(args)),
-                currency: ckoHelper.getCurrency(args),
-                capture: false,
-                source: {
-                    type: 'klarna',
-                    authorization_token: paymentForm.get('klarna_token').value(), // eslint-disable-line
-                    locale: ckoHelper.getLanguage(),
-                    purchase_country: ckoHelper.getBillingObject(args).country,
-                    tax_amount: ckoHelper.getFormattedPrice(order.totalTax.value, ckoHelper.getCurrency(args)),
-                    billing_address: ckoHelper.getOrderBasketAddress(args),
-                    products: ckoHelper.getOrderBasketObject(args),
-                },
-            };
-
-            return payObject;
-        }
-
-        return { success: false };
-    },
-
-    /**
      * Paypal Pay Authorization.
      * @param {Object} args The payment arguments
      * @returns {Object} The payment parameters

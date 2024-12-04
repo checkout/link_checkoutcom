@@ -1,0 +1,6 @@
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link klarna-tab" data-toggle="tab" href="#klarna-content" role="tab">
+	    <img alt="${Resource.msg('cko.klarna.name','cko',null)}" height="22" id="klarnapay_thumb" src="${URLUtils.staticURL('/images/thumbs/klarna.png')}"/>
+        ${paymentOption.name}
+    </a>
+</li>

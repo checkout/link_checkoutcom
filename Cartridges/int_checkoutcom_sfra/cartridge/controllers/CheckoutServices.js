@@ -163,6 +163,45 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
 
     // Handles payment authorization
     var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo);
+
+    if (handlePaymentResult.action) {
+        try {
+            res.json({
+                action: true,
+                error: false,
+                order: {
+                    orderNo: order.orderNo,
+                    shippingAddress: {
+                        firstName: order.defaultShipment.shippingAddress.firstName,
+                        lastName: order.defaultShipment.shippingAddress.lastName,
+                        city: order.defaultShipment.shippingAddress.city,
+                        phone: order.defaultShipment.shippingAddress.phone,
+                        countryCode: order.defaultShipment.shippingAddress.countryCode.value,
+                        postalCode: order.defaultShipment.shippingAddress.postalCode,
+                        address1: order.defaultShipment.shippingAddress.address1,
+                    },
+                    billingAddress: {
+                        firstName: order.billingAddress.firstName,
+                        lastName: order.billingAddress.lastName,
+                        city: order.billingAddress.city,
+                        phone: order.billingAddress.phone,
+                        countryCode: order.billingAddress.countryCode.value,
+                        postalCode: order.billingAddress.postalCode,
+                        address1: order.billingAddress.address1,
+                    },
+                    customerEmail: order.customerEmail,
+                    totalGrossPrice: order.totalGrossPrice.value,
+                },
+            });
+            this.emit('route:Complete', req, res);
+            return;
+        } catch (error) {
+            var Logger = require('dw/system/Logger').getLogger('ckoPayments');
+            handlePaymentResult.error = true;
+            Logger.error('Error While handling payments of the order: ' + order.orderNo + '. Error Details: ' + error.message);
+        }
+    }
+
     if (handlePaymentResult.error) {
         res.json({
             error: true,

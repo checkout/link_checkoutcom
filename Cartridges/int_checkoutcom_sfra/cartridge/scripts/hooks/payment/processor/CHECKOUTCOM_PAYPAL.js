@@ -18,9 +18,9 @@ function Handle(basket, billingData, processorId, req) {
     var serverErrors = [];
 
     Transaction.wrap(function() {
-        var paymentInstrument = basket.createPaymentInstrument(
-            'CHECKOUTCOM_PAYPAL', basket.getTotalGrossPrice()
-        );
+        basket.removeAllPaymentInstruments();
+
+        var paymentInstrument = basket.createPaymentInstrument('CHECKOUTCOM_PAYPAL', basket.getTotalGrossPrice());
 
         paymentInstrument.custom.ckoPaymentData = billingData.ckoPayPalData.value;
     });

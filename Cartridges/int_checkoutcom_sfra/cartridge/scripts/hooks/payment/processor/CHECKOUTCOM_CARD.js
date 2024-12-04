@@ -145,13 +145,8 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
     }
 
     Transaction.wrap(function() {
-        var paymentInstruments = currentBasket.getPaymentInstruments(
-            PaymentInstrument.METHOD_CREDIT_CARD
-        );
+        currentBasket.removeAllPaymentInstruments();
 
-        collections.forEach(paymentInstruments, function(item) {
-            currentBasket.removePaymentInstrument(item);
-        });
 
         var paymentInstrument = currentBasket.createPaymentInstrument(
             PaymentInstrument.METHOD_CREDIT_CARD, currentBasket.totalGrossPrice

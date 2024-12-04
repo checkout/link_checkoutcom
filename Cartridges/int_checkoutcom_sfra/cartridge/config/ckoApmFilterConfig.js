@@ -41,20 +41,10 @@ var ckoApmFilterConfig = {
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_BENEFIT_ENABLED),
     },
     */
-    giropay: {
-        countries: ['DE'],
-        currencies: ['EUR'],
-        enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_GIRO_ENABLED),
-    },
     eps: {
         countries: ['AT'],
         currencies: ['EUR'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_EPS_ENABLED),
-    },
-    sofort: {
-        countries: ['AT', 'BE', 'DE', 'ES', 'IT', 'NL'],
-        currencies: ['EUR'],
-        enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_SOFORT_ENABLED),
     },
     knet: {
         countries: ['KW'],
@@ -97,11 +87,6 @@ var ckoApmFilterConfig = {
         currencies: ['EUR', 'PLN'],
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_P24_ENABLED),
     },
-    klarna: {
-        countries: ['AT', 'DK', 'FI', 'DE', 'NL', 'NO', 'SE', 'UK', 'GB'],
-        currencies: ['EUR', 'DKK', 'GBP', 'NOK', 'SEK'],
-        enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_KLARNA_ENABLED),
-    },
     /* Alipay has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
     *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
     *  Ticket no. CHECBLD-149
@@ -113,11 +98,6 @@ var ckoApmFilterConfig = {
         enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_ALIPAY_ENABLED),
     },
     */
-    paypal: {
-        countries: ['*'],
-        currencies: ['AUD', 'BRL', 'CAD', 'CZK', 'DKK', 'EUR', 'HKD', 'HUF', 'INR', 'ILS', 'JPY', 'MYR', 'MXN', 'TWD', 'NZD', 'NOK', 'PHP', 'PLN', 'GBP', 'RUB', 'SGD', 'SEK', 'CHF', 'THB', 'USD'],
-        enabled: currentSite.getCurrent().getCustomPreferenceValue(constants.CKO_PAYPAL_ENABLED),
-    },
     /* OXXO has been temporarily removed from the business manager configuration, rendering this payment method currently inactive.
     *  To activate it, include the metadata in the business manager for 'CKO [5] APM Settings' custom preference.
     *  Ticket no. CHECBLD-149

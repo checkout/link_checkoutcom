@@ -15,10 +15,14 @@ var wrapper = {
         return LocalServiceRegistry.createService('cko.transaction.refund.sandbox.service', {
             createRequest: function(svc, args) {
                 // Prepare the http service
-                svc.addHeader('Authorization', util.getAccountKeys().secretKey);
+                // The args.service will hold the value of order.custom.orderProcessedByABCorNAS
+                // to handle Capture, Refund, or Void actions on historical orders based on the order's custom attribute.
+                svc.addHeader('Authorization', util.getAccountKeys(args ? args.service : '').secretKey);
                 svc.addHeader('User-Agent', util.getCartridgeMeta());
                 svc.addHeader('Content-Type', 'application/json;charset=UTF-8');
 
+                // eslint-disable-next-line no-param-reassign
+                delete args.service;
                 return (args) ? JSON.stringify(args) : null;
             },
 
@@ -44,10 +48,14 @@ var wrapper = {
         return LocalServiceRegistry.createService('cko.transaction.refund.live.service', {
             createRequest: function(svc, args) {
                 // Prepare the http service
-                svc.addHeader('Authorization', util.getAccountKeys().secretKey);
+                // The args.service will hold the value of order.custom.orderProcessedByABCorNAS
+                // to handle Capture, Refund, or Void actions on historical orders based on the order's custom attribute.
+                svc.addHeader('Authorization', util.getAccountKeys(args ? args.service : '').secretKey);
                 svc.addHeader('User-Agent', util.getCartridgeMeta());
                 svc.addHeader('Content-Type', 'application/json;charset=UTF-8');
 
+                // eslint-disable-next-line no-param-reassign
+                delete args.service;
                 return (args) ? JSON.stringify(args) : null;
             },
 

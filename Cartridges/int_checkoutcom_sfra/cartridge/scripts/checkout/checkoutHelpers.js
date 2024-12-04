@@ -8,6 +8,7 @@ var PaymentInstrument = require('dw/order/PaymentInstrument');
 var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var constants = require('*/cartridge/config/constants');
 
 // static functions needed for Checkout Controller logic
 
@@ -16,9 +17,10 @@ var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
  * handles the payment authorization for each payment instrument
  * @param {dw.order.Order} order - the order object
  * @param {string} orderNumber - The order number for the order
+ * @param {boolean} authorizeKlarna - The order number for the order
  * @returns {Object} an error object
  */
-function handlePayments(order, orderNumber) {
+function handlePayments(order, orderNumber, authorizeKlarna) {
     var result = {};
 
     if (order.totalNetPrice !== 0.00) {
@@ -40,12 +42,15 @@ function handlePayments(order, orderNumber) {
                     Transaction.begin();
                     paymentInstrument.paymentTransaction.setTransactionID(orderNumber);
                     Transaction.commit();
+                } else if (paymentProcessor.ID.toLowerCase() === constants.CKO_KLARNA_PAYMENTINSTRUMENT.toLowerCase() && !authorizeKlarna) {
+                    result.action = true;
+                    break;
                 } else {
                     if (HookMgr.hasHook('app.payment.processor.' +
                             paymentProcessor.ID.toLowerCase())) {
                         Transaction.wrap(function() {
                             /* eslint-disable no-param-reassign */
-                            order.custom.orderProcessedByABCorNAS = ckoHelper.getAbcOrNasEnabled();
+                            order.custom.orderProcessedByABCorNAS = ckoHelper.getNasEnabled();
                         });
 
                         authorizationResult = HookMgr.callHook(

@@ -23,7 +23,6 @@ var ckoApmConfig = {
         var params = {
             source: {
                 type: 'ideal',
-                bic: args.paymentData.ideal_bic.value.toString(),
                 description: args.order.orderNo,
                 language: ckoHelper.getLanguage(),
             },
@@ -97,24 +96,6 @@ var ckoApmConfig = {
     },
 
     /**
-     * Giro Pay authorization.
-     * @param {Object} args The payment method parameters
-     * @returns {Object} The payment method config
-     */
-    giropayAuthorization: function(args) {
-        var params = {
-            source: {
-                type: 'giropay',
-                purpose: businessName,
-            },
-            purpose: businessName,
-            currency: args.order.getCurrencyCode(),
-        };
-
-        return params;
-    },
-
-    /**
      * EPS authorization.
      * @param {Object} args The payment method parameters
      * @returns {Object} The payment method config
@@ -124,23 +105,6 @@ var ckoApmConfig = {
             source: {
                 type: 'eps',
                 purpose: businessName,
-            },
-            purpose: businessName,
-            currency: args.order.getCurrencyCode(),
-        };
-
-        return params;
-    },
-
-    /**
-     * Sofort authorization.
-     * @param {Object} args The payment method parameters
-     * @returns {Object} The payment method config
-     */
-    sofortAuthorization: function(args) {
-        var params = {
-            source: {
-                type: 'sofort',
             },
             purpose: businessName,
             currency: args.order.getCurrencyCode(),
@@ -304,62 +268,6 @@ var ckoApmConfig = {
                 account_holder_name: ckoHelper.getCustomerName(args),
                 account_holder_email: ckoHelper.getCustomer(args.order).email,
                 billing_descriptor: businessName,
-            },
-        };
-
-        return params;
-    },
-
-    /**
-     * Klarna authorization.
-     * @param {Object} args The payment method parameters
-     * @returns {Object} The payment method config
-     */
-    klarnaAuthorization: function(args) {
-        // Klarna Form Inputs
-        var klarnaApproved = args.paymentData.klarna_approved.value.toString();
-
-        // Process the payment
-        if (klarnaApproved) {
-            // Build the payment object
-            var params = {
-                amount: ckoHelper.getFormattedPrice(
-                    args.order.totalGrossPrice.value.toFixed(2),
-                    args.order.getCurrencyCode()
-                ),
-                currency: args.order.getCurrencyCode(),
-                capture: false,
-                source: {
-                    type: 'klarna',
-                    authorization_token: args.paymentData.klarna_token.value.toString(),
-                    locale: ckoHelper.getLanguage(),
-                    purchase_country: ckoHelper.getBilling(args).country,
-                    tax_amount: ckoHelper.getFormattedPrice(
-                        args.order.totalTax.value,
-                        args.order.getCurrencyCode()
-                    ),
-                    billing_address: { email: args.order.customerEmail },
-                    products: ckoHelper.getOrderBasketObject(args),
-                },
-            };
-
-            return params;
-        }
-
-        return { success: false };
-    },
-
-    /**
-     * Paypal authorization.
-     * @param {Object} args The payment method parameters
-     * @returns {Object} The payment method config
-     */
-    paypalAuthorization: function(args) {
-        var params = {
-            currency: args.order.getCurrencyCode(),
-            source: {
-                type: 'paypal',
-                invoice_number: args.order.orderNo,
             },
         };
 

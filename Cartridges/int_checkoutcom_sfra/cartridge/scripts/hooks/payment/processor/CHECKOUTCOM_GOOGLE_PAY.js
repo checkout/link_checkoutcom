@@ -18,6 +18,7 @@ function Handle(basket, billingData, processorId, req) {
     var serverErrors = [];
 
     Transaction.wrap(function() {
+        basket.removeAllPaymentInstruments();
         var paymentInstrument = basket.createPaymentInstrument(
             'CHECKOUTCOM_GOOGLE_PAY', basket.getTotalGrossPrice()
         );

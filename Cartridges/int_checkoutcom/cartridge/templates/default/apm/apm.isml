@@ -95,15 +95,6 @@
 		</div>
 	</isif>
 	
-	
-	<!-- This to include the sepa apm form -->
-	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSepaEnabled'))}">
-		<div id="sepa" class="hideApm apmBox">	
-			<isinclude template="apm/includes/sepa.isml"/>
-		</div>
-	</isif>
-	
-	
 	<!-- This to include the multibanco apm form -->
 	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMultibancoEnabled'))}">
 		<div id="multibanco" class="hideApm apmBox">	
@@ -156,14 +147,6 @@
 		</div>
 	</isif>
 	</iscomment>
-	
-	
-	<!-- This to include the klarna apm form -->
-	<isif condition="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoKlarnaEnabled'))}">
-		<div id="klarna" class="hideApm apmBox">	
-			<isinclude template="apm/includes/klarna.isml"/>	
-		</div>
-	</isif>
 	
 	
 	<!-- This to include the Paypal apm form -->

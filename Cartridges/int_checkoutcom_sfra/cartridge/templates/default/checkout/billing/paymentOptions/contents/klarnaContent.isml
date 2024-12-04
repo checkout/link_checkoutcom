@@ -1,0 +1,25 @@
+<script src="https://x.klarnacdn.net/kp/lib/v1/api.js" async></script>
+
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/klarna.js');
+</isscript>
+
+<isset name="klarnaFields" value="${pdict.forms.billingForm.klarnaForm}" scope="page" />
+
+
+<div class="tab-pane klarna-content" id="klarna-content" role="tabpanel">
+
+    <fieldset class="payment-form-fields">
+        <div class="invalid-field-message"></div>
+        <input type="hidden" id="klarnaCreateContextUrl" class="klarnaCreateContextUrl"
+            value="${URLUtils.https('CKOKlarna-CreateContext')}" />
+        <input type="hidden" id="ckoKlarnaData" <isprint value=${klarnaFields.ckoKlarnaData.attributes}
+            encoding="htmlsinglequote" /> value="" />
+        <input type="hidden" id="klarnaonApproveUrl" class="klarnaonApproveUrl"
+            value="${URLUtils.https('CKOKlarna-OnApprove')}" />
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+    </fieldset>
+    <div id="klarna-payments-container" class="klarna-payments-container"></div>
+</div>

@@ -4,6 +4,7 @@ var cart = require('base/cart/cart');
 var miniCartExpressPaypal = require('../paypal/minicartExpressPaypal');
 
 var updateMiniCart = true;
+var location = window.location;
 
 module.exports = function () {
     cart();

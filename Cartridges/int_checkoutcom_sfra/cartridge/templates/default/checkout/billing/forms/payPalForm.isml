@@ -2,7 +2,7 @@
  	<div class="invalid-field-message"></div>
 
     <input type="hidden" id="ckoPayPalData" <isprint value=${payPalFields.ckoPayPalData.attributes} encoding="htmlsinglequote"/> value="">
-    <input type="hidden" id="ckoPayPalChannelId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalChannelId')}">
+    <input type="hidden" id="ckoProcessingChannelId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoProcessingChannelId')}">
     <input type="hidden" id="ckoPayPalCapture" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoPayPalCapture').value}">
     <input type="hidden" id="ckoPayPalPaymentContextId" <isprint value=${payPalFields.ckoPayPalPaymentContextId.attributes} encoding="htmlsinglequote"/> value="">
     <input type="hidden" id="payPalCreateOrderUrl" value="${URLUtils.https('PayPal-CreateOrder')}">

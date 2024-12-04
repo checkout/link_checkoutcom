@@ -45,4 +45,13 @@
             <production/>
         </preferences>
     </payment-processor>
+    <payment-processor processor-id="CHECKOUTCOM_KLARNA">
+        <description>Checkout.com Klarna payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
 </payment-processors>

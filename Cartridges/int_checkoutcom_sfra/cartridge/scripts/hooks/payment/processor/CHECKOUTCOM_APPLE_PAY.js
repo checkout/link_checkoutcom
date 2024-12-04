@@ -12,7 +12,7 @@ exports.authorizeOrderPayment = function(order, event) {
     && event.isTrusted === true
     && order;
     /* eslint-disable no-param-reassign */
-    order.custom.orderProcessedByABCorNAS = ckoHelper.getAbcOrNasEnabled();
+    order.custom.orderProcessedByABCorNAS = ckoHelper.getNasEnabled();
 
     if (isEventTrusted) {
         // Payment request

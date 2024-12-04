@@ -32,5 +32,5 @@
 
 <input type="hidden" id="ckoVerifyCartesBinUrl" value="${URLUtils.https('CKOMain-VerifyCartesBancaireBin')}">
 <input type="hidden" id="ckoSiteCountry" value="${require('*/cartridge/scripts/helpers/ckoHelper').getSiteCurrentCountryCode()}"/>
-<input type="hidden" id="ckoABCorNASEnabled" value="${require('*/cartridge/scripts/helpers/ckoHelper').getAbcOrNasEnabled()}"/>
+<input type="hidden" id="ckoNASEnabled" value="${require('*/cartridge/scripts/helpers/ckoHelper').getNasEnabled()}"/>
 <input type="hidden" id="ckoCartesBancaireBin">

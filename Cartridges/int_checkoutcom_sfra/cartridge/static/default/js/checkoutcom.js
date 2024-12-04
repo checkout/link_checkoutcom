@@ -1,6 +1,11 @@
 "use strict";
 function initTabs() {
   $(".payment-options a.nav-link").on("click touch", function () {
+    if ($(this).hasClass('klarna-tab') && $(this).hasClass('disable-klarna-checkout')) {
+      $('button.submit-payment').prop('disabled', true).addClass('disabled');
+    } else {
+      $('button.submit-payment').prop('disabled', false).removeClass('disabled');
+    }
     $(".tab-pane").removeClass("active"),
       $("a.nav-link").removeClass("active"),
       handleSavedCardsDisplay();
