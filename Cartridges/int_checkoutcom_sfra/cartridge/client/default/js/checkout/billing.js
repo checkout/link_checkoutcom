@@ -1,6 +1,7 @@
 'use strict';
 
 var base = require('base/checkout/billing');
+var klarna = require('../klarna');
 
 /**
  * returns the payment method name
@@ -46,6 +47,47 @@ base.methods.updatePaymentInformation = function(order) {
     }
 
     $paymentSummary.empty().append(htmlToAppend);
+};
+
+base.selectBillingAddress = function() {
+    $('.payment-form .addressSelector').on('change', function() {
+        var form = $(this).parents('form')[0];
+        var selectedOption = $('option:selected', this);
+        var optionID = selectedOption[0].value;
+
+        if (optionID === 'new') {
+            // Show Address
+            $(form).attr('data-address-mode', 'new');
+        } else {
+            // Hide Address
+            $(form).attr('data-address-mode', 'shipment');
+        }
+
+        // Copy fields
+        var attrs = selectedOption.data();
+        var element;
+
+        // Customize Klarna to reload the widget
+        // whenever the billing country changes through the address selector dropdown.
+
+        var initKlarna = false;
+        if (attrs.countryCode !== $('#billingCountry').val()) {
+            initKlarna = true;
+        }
+
+        Object.keys(attrs).forEach(function(attr) {
+            element = attr === 'countryCode' ? 'country' : attr;
+            if (element === 'cardNumber') {
+                $('.cardNumber').data('cleave').setRawValue(attrs[attr]);
+            } else {
+                $('[name$=' + element + ']', form).val(attrs[attr]);
+            }
+        });
+
+        if (initKlarna) {
+            klarna.initializeKlarna($('#billingCountry').val());
+        }
+    });
 };
 
 module.exports = base;

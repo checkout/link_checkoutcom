@@ -54,15 +54,18 @@ function remoteCall() {
     // eslint-disable-next-line
     var orderNumber = request.httpParameterMap.get('orderNo');
 
+    var OrderMgr = require('dw/order/OrderMgr');
+    var order = OrderMgr.getOrder(orderNumber);
     // Prepare the payload
     var gRequest = {
         // eslint-disable-next-line
         amount: formatedAmount, // eslint-disable-next-line
         reference: orderNumber.value, // eslint-disable-next-line
         chargeId: request.httpParameterMap.get('pid').stringValue,
+        service: order ? order.custom.orderProcessedByABCorNAS : '',
     };
 
-    if (CKOHelper.getAbcOrNasEnabled().value === 'NAS' && task.value === 'capture') {
+    if (CKOHelper.getNasEnabled().value === 'NAS' && task.value === 'capture') {
         gRequest.capture_type = 'NonFinal';
     }
 
@@ -90,6 +93,7 @@ function remoteCall() {
             amount: formatedAmount, // eslint-disable-next-line
             reference: orderNumber.value, // eslint-disable-next-line
             chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
+            service: order ? order.custom.orderProcessedByABCorNAS : '',
         };
 
         // eslint-disable-next-line
@@ -99,6 +103,7 @@ function remoteCall() {
                 chargeId: request.httpParameterMap.get('pid').stringValue, // eslint-disable-next-line
                 reference: orderNumber.value,
                 type: 'klarna',
+                service: order ? order.custom.orderProcessedByABCorNAS : '',
                 klarna: {
                     description: CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== '' && CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== 'undefined' // eslint-disable-next-line
                         ? CKOHelper.getValue(constants.CKO_BUSINESS_NAME) : Site.getCurrent().httpHostName,

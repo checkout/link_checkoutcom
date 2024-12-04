@@ -53,23 +53,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
     }
 
     Transaction.wrap(function() {
-        var paymentInstruments = currentBasket.getPaymentInstruments(
-            'CHECKOUTCOM_APM'
-        );
-
-        // Remove any apm payment instruments
-        collections.forEach(paymentInstruments, function(item) {
-            currentBasket.removePaymentInstrument(item);
-        });
-
-        paymentInstruments = currentBasket.getPaymentInstruments(
-            PaymentInstrument.METHOD_CREDIT_CARD
-        );
-
-        // Remove any credit card payment instuments
-        collections.forEach(paymentInstruments, function(item) {
-            currentBasket.removePaymentInstrument(item);
-        });
+        currentBasket.removeAllPaymentInstruments();
 
         var paymentInstrument = currentBasket.createPaymentInstrument(
             'CHECKOUTCOM_APM', currentBasket.totalGrossPrice

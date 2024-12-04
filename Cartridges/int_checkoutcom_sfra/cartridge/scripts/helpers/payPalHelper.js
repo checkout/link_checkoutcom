@@ -64,7 +64,7 @@ var payPalHelper = {
     handleResponse: function(gatewayResponse) {
         // Prepare the result
         var result = {
-            error: !ckoHelper.paypalPaymentSuccess(gatewayResponse),
+            error: !ckoHelper.paymentResponseValidation(gatewayResponse),
             redirectUrl: false,
         };
 

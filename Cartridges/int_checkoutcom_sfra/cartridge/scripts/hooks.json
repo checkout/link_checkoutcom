@@ -41,6 +41,14 @@
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         },
         {
+            "name": "app.payment.processor.checkoutcom_klarna",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_KLARNA"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_klarna",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_KLARNA_form_processor"
+        },
+        {
             "name": "dw.extensions.applepay.paymentAuthorized.authorizeOrderPayment",
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         },

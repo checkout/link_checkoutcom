@@ -15,6 +15,11 @@
         <isinclude template="checkout/billing/paymentOptions/contents/payPalContent" />
     </isif>
 
+    <iscomment> Klarna </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_KLARNA'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/klarnaContent" />
+    </isif>
+
     <iscomment> Apple Pay </iscomment>
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_APPLE_PAY'}">
         <isinclude template="checkout/billing/paymentOptions/contents/applePayContent" />

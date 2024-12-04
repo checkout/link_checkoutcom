@@ -64,7 +64,7 @@ function handlePayments(order) {
             } else {
                 Transaction.wrap(function() {
                     /* eslint-disable no-param-reassign */
-                    order.custom.orderProcessedByABCorNAS = ckoHelper.getAbcOrNasEnabled();
+                    order.custom.orderProcessedByABCorNAS = ckoHelper.getNasEnabled();
                 });
 
                 var authorizationResult = PaymentProcessor.authorize(order, paymentInstrument);

@@ -210,25 +210,25 @@ var ckoHelper = {
     getAccountKeys: function() {
         var keys = {};
         var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
-        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
-        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_NAS_ENABLED : constants.CKO_SANDBOX_NAS_ENABLED;
+        var nasEnabled = this.getValue(liveOrSandboxPreference);
 
-        keys.publicKey = this.getValue('cko' + str + abcOrNasEnabled + 'PublicKey');
-        keys.secretKey = this.getValue('cko' + str + abcOrNasEnabled + 'SecretKey');
-        keys.privateSharedKey = this.getValue('cko' + str + abcOrNasEnabled + 'PrivateSharedKey');
+        keys.publicKey = this.getValue('cko' + str + nasEnabled + 'PublicKey');
+        keys.secretKey = this.getValue('cko' + str + nasEnabled + 'SecretKey');
+        keys.privateSharedKey = this.getValue('cko' + str + nasEnabled + 'PrivateSharedKey');
 
         return keys;
     },
 
     /**
-     * Get live or sandbox abc or nas enabled value.
-     * @returns {Object} The ABC or NAS value
+     * Get live or sandbox nas enabled value.
+     * @returns {Object} The NAS value
      */
-    getAbcOrNasEnabled: function() {
+    getNasEnabled: function() {
         var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
-        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_ABC_OR_NAS_ENABLED : constants.CKO_SANDBOX_ABC_OR_NAS_ENABLED;
-        var abcOrNasEnabled = this.getValue(liveOrSandboxPreference);
-        return abcOrNasEnabled;
+        var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_NAS_ENABLED : constants.CKO_SANDBOX_NAS_ENABLED;
+        var nasEnabled = this.getValue(liveOrSandboxPreference);
+        return nasEnabled;
     },
 
     /**

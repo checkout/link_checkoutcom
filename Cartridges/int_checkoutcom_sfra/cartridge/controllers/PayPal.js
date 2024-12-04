@@ -24,7 +24,7 @@ function setRequestData(basket, shippingPreference) {
     var shippingAddress = basket.shipments[0].shippingAddress;
     var shippingCost = basket.adjustedShippingTotalGrossPrice.value;
     var items = (basket.allProductLineItems).toArray();
-    var processingChannelId = Site.getCurrent().getCustomPreferenceValue('ckoPayPalChannelId');
+    var processingChannelId = Site.getCurrent().getCustomPreferenceValue('ckoProcessingChannelId');
 
     var requestData = {
         source: {

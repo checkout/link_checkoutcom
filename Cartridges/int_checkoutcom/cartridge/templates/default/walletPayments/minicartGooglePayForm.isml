@@ -8,7 +8,7 @@
 <input type="hidden" id="ckoGooglePayEnvironment" value="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnvironment').value)}">
 <input type="hidden" id="ckoGooglePayMerchantId" value="${(dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayMerchantId'))}">
 <input type="hidden" id="ckoGooglePayCurrency" value="${(session.getCurrency().getCurrencyCode())}">
-<input type="hidden" id="ckoGatewayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('cko' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + dw.system.Site.getCurrent().getCustomPreferenceValue('cko'+ dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + 'ABCorNASEnabled').value + 'PublicKey')}">
+<input type="hidden" id="ckoGatewayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('cko' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + dw.system.Site.getCurrent().getCustomPreferenceValue('cko'+ dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + 'NASEnabled').value + 'PublicKey')}">
 
 <isinputfield formfield="${pdict.CurrentForms.googlePayForm.data}" id="googlePayData" type="hidden"/>
 

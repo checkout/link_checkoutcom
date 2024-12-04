@@ -5,6 +5,11 @@
         <isinclude template="checkout/billing/paymentOptions/creditCardTab" />
     </isif>
 
+        <iscomment> Klarna </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_KLARNA' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoKlarnaEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/klarnaTab"/>
+    </isif>
+
     <iscomment> Google Pay </iscomment>
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_GOOGLE_PAY' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnabled')}">
         <isinclude template="checkout/billing/paymentOptions/tabs/googlePayTab"/>

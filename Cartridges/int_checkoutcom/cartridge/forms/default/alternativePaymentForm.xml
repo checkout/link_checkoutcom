@@ -40,12 +40,7 @@
     <!-- Field for Sepa pay -->
     <field formid="sepa_iban" label="sepa.iban" type="string" mandatory="true" max-length="40" binding="sepa_iban"/>
     <field formid="sepa_bic" label="sepa.bic" type="string" mandatory="true" max-length="40" binding="sepa_bic"/>
-    
-    <!-- Field for Klarna pay -->
-    <field formid="klarna_token" type="string" max-length="40" binding="klarna_token"/>
-    <field formid="klarna_approved" type="string" max-length="40" binding="klarna_approved"/>
-    <field formid="klarna_finalize_required" type="string" max-length="40" binding="klarna_finalize_required"/>
-    
+
     <!-- Field for Oxxo pay -->
     <field formid="oxxo_identification" type="string" label="oxxo.label.id" max-length="40" binding="oxxo_identification"/>
     

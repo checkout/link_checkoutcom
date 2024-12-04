@@ -20,4 +20,14 @@
         <enabled-flag>false</enabled-flag>
         <processor-id>CHECKOUTCOM_APPLE_PAY</processor-id>
     </payment-method>
+	<payment-method method-id="CHECKOUTCOM_PAYPAL">
+        <name xml:lang="x-default">Checkout.com Paypal</name>
+        <enabled-flag>true</enabled-flag>
+        <processor-id>CHECKOUTCOM_PAYPAL</processor-id>
+    </payment-method>
+    <payment-method method-id="CHECKOUTCOM_KLARNA">
+        <name xml:lang="x-default">Checkout.com Klarna</name>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_KLARNA</processor-id>
+    </payment-method>
 </payment-settings>
