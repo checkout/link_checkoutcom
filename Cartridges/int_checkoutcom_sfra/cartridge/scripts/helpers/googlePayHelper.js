@@ -26,6 +26,8 @@ var googlePayHelper = {
         var order = OrderMgr.getOrder(orderNumber);
         var gatewayResponse = null;
         var gatewayRequest = null;
+        var rawIP = ckoHelper.getHost();
+        var formattedIP = ckoHelper.formatCustomerIP(rawIP);
 
         // Prepare the parameters
         var tokenRequest = {
@@ -44,17 +46,37 @@ var googlePayHelper = {
 
         // If the request is valid, process the response
         if (tokenResponse && Object.prototype.hasOwnProperty.call(tokenResponse, 'token')) {
+            var customer = ckoHelper.getCustomer(order);
+            var source = {
+                type: 'token',
+                token: tokenResponse.token,
+            };
+            if (order.billingAddress && order.billingAddress.getPhone()) {
+                var phone = {
+                    number: order.billingAddress.getPhone()
+                };
+                source.phone = phone;
+                customer.phone = phone;
+            }
+
+            var billingAddress = order.getBillingAddress();
+            if (billingAddress) {
+                source.billing_address = ckoHelper.getFormattedBillingAddress(billingAddress);
+            }
+
             gatewayRequest = {
-                source: {
-                    type: 'token',
-                    token: tokenResponse.token,
-                },
+                source: source,
                 amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
                 capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
-                customer: ckoHelper.getCustomer(order),
-                risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
+                customer: customer,
+                risk: {
+                    enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG),
+                    device: {
+                        network: formattedIP
+                    }
+                },
                 '3ds': (tokenResponse.token_format === 'pan_only') ? ckoHelper.getGooglePay3Ds() : { enabled: false },
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
                 shipping: ckoHelper.getShipping(order),

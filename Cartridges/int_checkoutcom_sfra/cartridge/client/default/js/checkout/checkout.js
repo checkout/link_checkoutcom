@@ -15,6 +15,21 @@ var location = window.location;
 var history = window.history;
 var initiPaypalbutton = require('../initPayPalButton');
 
+/**
+ * Initialize Checkout.com Risk.js.
+ *
+ * Loads Risk.js if enabled, retrieves NAS public key, 
+ * and generates deviceSessionId for fraud assessment.
+ */
+var deviceSessionId;
+const script = document.getElementById('risk-js');
+if(script) {
+    const publicKey = $('input[name="servicePublicKey"]').val();
+    script.addEventListener('load', async () => {
+    const risk = await window.Risk.create(publicKey);
+    deviceSessionId = await risk.publishRiskData()
+});
+}
 
 /**
  * Create the jQuery Checkout Plugin.
@@ -359,6 +374,7 @@ var initiPaypalbutton = require('../initPayPalButton');
                     $.ajax({
                         url: $('.place-order').data('action'),
                         method: 'POST',
+                        data: {deviceSessionId: deviceSessionId},
                         success: function(data) {
                             // enable the placeOrder button here
                             $('body').trigger('checkout:enableButton', '.next-step-button button');

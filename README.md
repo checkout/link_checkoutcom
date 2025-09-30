@@ -30,4 +30,4 @@ Upload the configuration using the Prophet Debugger and VS Code.
 
 ## Documentation
 
-- [Link](https://github.com/checkout/link_checkoutcom/blob/master/Documentation/SFRA/SFRA_Integration_Guide_v24.2.0.docx)
+- [Link](https://github.com/checkout/link_checkoutcom/blob/master/Documentation/SFRA/SFRA_Integration_Guide_v25.1.0.docx)

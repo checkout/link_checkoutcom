@@ -122,6 +122,8 @@ var apmHelper = {
         var chargeData;
         var paymentInstruments = order.getPaymentInstruments();
         var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
+        var rawIP = ckoHelper.getHost();
+        var formattedIP = ckoHelper.formatCustomerIP(rawIP);
 
         // Get the order amount
         var amount = ckoHelper.getFormattedPrice(
@@ -162,6 +164,12 @@ var apmHelper = {
                 chargeData.capture = false;
             }
         }
+
+        chargeData.risk = {
+            device: {
+                network: formattedIP
+            }
+        };
 
         return chargeData;
     },

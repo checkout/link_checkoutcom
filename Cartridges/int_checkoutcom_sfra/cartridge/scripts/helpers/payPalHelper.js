@@ -29,6 +29,8 @@ var payPalHelper = {
      */
     handleRequest: function(paymentData, processorId, orderNumber) {
         var order = OrderMgr.getOrder(orderNumber);
+        var rawIP = ckoHelper.getHost();
+        var formattedIP = ckoHelper.formatCustomerIP(rawIP);
         // Load the order information
         var gatewayResponse = null;
         var gatewayRequest = null;
@@ -41,7 +43,12 @@ var payPalHelper = {
                 processing_channel_id: requestData.payment_request.processing_channel_id,
                 reference: order.orderNo,
                 customer: ckoHelper.getCustomer(order),
-                risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
+                risk: {
+                    enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG),
+                    device: {
+                        network: formattedIP
+                    }
+                },
                 metadata: ckoHelper.getMetadata({}, processorId),
             };
 

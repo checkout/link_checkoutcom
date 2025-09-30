@@ -1,1 +1,0 @@
-"use strict";function sepaFormValidation(){var a=[];""===$("#sepa_iban").val()&&a.push("#sepa_iban");return""===$("#sepa_bic").val()&&a.push("#sepa_bic"),a}

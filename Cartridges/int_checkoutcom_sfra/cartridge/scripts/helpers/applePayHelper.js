@@ -27,6 +27,8 @@ var applePayHelper = {
         var gatewayRequest = null;
         var paymentInstruments = order.getPaymentInstruments();
         var paymentInstrumentAmount = paymentInstruments[paymentInstruments.length - 1].getPaymentTransaction().getAmount().getValue().toFixed(2);
+        var rawIP = ckoHelper.getHost();
+        var formattedIP = ckoHelper.formatCustomerIP(rawIP);
 
         // Prepare the parameters
         var tokenRequest = {
@@ -59,16 +61,36 @@ var applePayHelper = {
                 }
             }
 
+            var customer = ckoHelper.getCustomer(order);
+            var source = {
+                type: 'token',
+                token: tokenResponse.token,
+            };
+            if (order.billingAddress && order.billingAddress.getPhone()) {
+                var phone = {
+                    number: order.billingAddress.getPhone()
+                };
+                source.phone = phone;
+                customer.phone = phone;
+            }
+
+            var billingAddress = order.getBillingAddress();
+            if (billingAddress) {
+                source.billing_address = ckoHelper.getFormattedBillingAddress(billingAddress);
+            }
+
             gatewayRequest = {
-                source: {
-                    type: 'token',
-                    token: tokenResponse.token,
-                },
+                source: source,
                 amount: ckoHelper.getFormattedPrice(paymentInstrumentAmount, order.getCurrencyCode()),
                 currency: order.getCurrencyCode(),
                 reference: order.orderNo,
                 capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
-                customer: ckoHelper.getCustomer(order),
+                customer: customer,
+                risk: {
+                    device: {
+                        network: formattedIP
+                    }
+                },
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
                 shipping: ckoHelper.getShipping(order),
                 metadata: metadata,

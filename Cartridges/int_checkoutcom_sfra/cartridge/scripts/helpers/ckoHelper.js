@@ -68,6 +68,69 @@ var ckoHelper = {
     },
 
     /**
+     * Extracts the client IP address from request headers.
+     * Checks common proxy headers (CF-Connecting-IP, X-Forwarded-For, True-Client-IP, Forwarded)
+     * and falls back to the remote address if none are present.
+     *
+     * @returns {string} The resolved client IP address, or an empty string if unavailable.
+     */
+    getHost: function () {
+        if (!request || !request.httpHeaders) {
+            return '';
+        }
+
+        var ip;
+
+        ip = request.httpHeaders.get('CF-Connecting-IP');
+        if (ip) return ip;
+
+        ip = request.httpHeaders.get('X-Forwarded-For');
+        if (ip) return ip.split(',')[0].trim();
+
+        ip = request.httpHeaders.get('True-Client-IP');
+        if (ip) return ip;
+
+        ip = request.httpHeaders.get('Forwarded');
+        if (ip) {
+            var match = /for=([^;]+)/.exec(ip);
+            if (match && match[1]) {
+                return match[1].replace(/"/g, '');
+            }
+        }
+
+        return request.getHttpRemoteAddress() || '';
+    },
+
+    /**
+    * Format IP address.
+    * @param {string} ip The IP address
+    * @returns {Object} Formatted IP object
+    */
+    formatCustomerIP: function (ip) {
+        var isIPv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
+        if (isIPv4) {
+            return { ipv4: ip };
+        } else {
+            return { ipv6: ip };
+        }
+    },
+
+    /**
+     * Format billing address.
+     * @param {dw.order.OrderAddress} billingAddress The billing address
+     * @returns {Object} Formatted billing address object
+     */
+    getFormattedBillingAddress: function (billingAddress) {
+        return {
+            address_line1: billingAddress.getAddress1(),
+            address_line2: billingAddress.getAddress2(),
+            city: billingAddress.getCity(),
+            zip: billingAddress.getPostalCode(),
+            country: billingAddress.getCountryCode().value
+        };
+    },
+
+    /**
      * Check if the gateway response is valid.
      * @param {Object} req The HTTP response data
      * @returns {boolean} Is the private shared key valid

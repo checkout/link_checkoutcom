@@ -43,6 +43,8 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
     var addressHelpers = require('*/cartridge/scripts/helpers/addressHelpers');
 
     var currentBasket = BasketMgr.getCurrentBasket();
+    var deviceSessionId = req.form ? req.form.deviceSessionId : null;
+    session.privacy.deviceSessionId = deviceSessionId;
 
     if (!currentBasket) {
         res.json({
