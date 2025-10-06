@@ -29,9 +29,9 @@
   },
   "homepage": "https://github.com/checkout/link_checkoutcom#readme",
   "dependencies": {
-    "bootstrap": "^4.6.2",
+    "bootstrap": "^5.0.0",
     "jquery": "^3.5.1",
-    "lint": "^0.7.0"
+    "lint": "^0.8.19"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
