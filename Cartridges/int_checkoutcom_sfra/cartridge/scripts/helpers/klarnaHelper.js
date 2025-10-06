@@ -26,6 +26,8 @@ var klarnaHelper = {
         // Load the order information
         var gatewayResponse = null;
         var gatewayRequest = null;
+        var rawIP = ckoHelper.getHost();
+        var formattedIP = ckoHelper.formatCustomerIP(rawIP);
         var Site = require('dw/system/Site');
         var ckoProcessingChannelId = Site.getCurrent().getCustomPreferenceValue('ckoProcessingChannelId')
         // If the request is valid, process the response
@@ -39,7 +41,12 @@ var klarnaHelper = {
                     reference: order.orderNo,
                     customer: ckoHelper.getCustomer(order),
                     capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
-                    risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
+                    risk: {
+                        enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG),
+                        device: {
+                            network: formattedIP
+                        }
+                    },
                     metadata: ckoHelper.getMetadata({}, processorId),
                 };
 

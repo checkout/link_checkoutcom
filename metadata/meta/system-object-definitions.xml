@@ -274,6 +274,14 @@
 
     <type-extension type-id="SitePreferences">
         <custom-attribute-definitions>
+			<attribute-definition attribute-id="riskJsEnabled">
+                <display-name xml:lang="x-default">Enable Risk.js</display-name>
+                <description xml:lang="x-default">Enables Checkout.com Risk.js SDK integration for device fingerprinting.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
 		    <attribute-definition attribute-id="ckoPayPalButton">
                 <display-name xml:lang="x-default">Button Style</display-name>
                 <description xml:lang="x-default">Paypal button style</description>
@@ -335,15 +343,15 @@
             </attribute-definition>
             <attribute-definition attribute-id="ckoSgPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Site Genesis Cartridge - Version: 21.1.0</default-value>
+                <default-value>Checkout.com Site Genesis Cartridge - Version: 25.1.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSfraPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com SFRA Cartridge - Version: 24.2.0</default-value>
+                <default-value>Checkout.com SFRA Cartridge - Version: 25.1.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBmPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Business Manager Cartridge - Version: 21.1.0</default-value>
+                <default-value>Checkout.com Business Manager Cartridge - Version: 25.1.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBillingDescriptor1">
                 <display-name xml:lang="x-default">Billing Descriptor 1</display-name>
@@ -888,6 +896,7 @@
                 <attribute attribute-id="ckoProcessingChannelId"/>
                 <attribute attribute-id="ckoRegion"/>
                 <attribute attribute-id="ckoRegionEndPoint"/>
+				<attribute attribute-id="riskJsEnabled"/>
             </attribute-group>
             <attribute-group group-id="CKO [5] APM Settings">
                 <display-name xml:lang="x-default">Checkout.com Alternative Payment Methods Settings</display-name>

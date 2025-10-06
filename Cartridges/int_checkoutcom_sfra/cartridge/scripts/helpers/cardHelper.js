@@ -3,6 +3,7 @@
 /* API Includes */
 var OrderMgr = require('dw/order/OrderMgr');
 var URLUtils = require('dw/web/URLUtils');
+var Site = require('dw/system/Site');
 
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
@@ -39,6 +40,7 @@ var cardHelper = {
         );
 
         // Process the response
+        session.privacy.deviceSessionId = null;
         return this.handleResponse(gatewayResponse);
     },
 
@@ -84,8 +86,32 @@ var cardHelper = {
         // Load the order
         var order = OrderMgr.getOrder(orderNumber);
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+        var rawIP = ckoHelper.getHost();
+        var formattedIP = ckoHelper.formatCustomerIP(rawIP);
         var metadata;
         var udf5Metadata;
+        var device_session_id;
+
+        var riskJsEnabled = Site.getCurrent().getCustomPreferenceValue('riskJsEnabled');
+        if (riskJsEnabled && session.privacy.deviceSessionId) {
+            device_session_id = session.privacy.deviceSessionId;
+        }
+
+        var source = this.getCardSource(paymentInstrument);
+        var customer = ckoHelper.getCustomer(order);
+
+        if (order.billingAddress && order.billingAddress.getPhone()) {
+            var phone = {
+                number: order.billingAddress.getPhone()
+            };
+            source.phone = phone;
+            customer.phone = phone;
+        }
+
+        var billingAddress = order.getBillingAddress();
+        if (billingAddress) {
+            source.billing_address = ckoHelper.getFormattedBillingAddress(billingAddress);
+        }
 
         if (paymentData.saveCard === false) {
             if (paymentData.madaCard === true) {
@@ -110,16 +136,22 @@ var cardHelper = {
 
         // Prepare the charge data
         var chargeData = {
-            source: this.getCardSource(paymentInstrument),
+            source: source,
             amount: ckoHelper.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode()),
             currency: order.getCurrencyCode(),
             reference: orderNumber,
             capture: ckoHelper.getValue(constants.CKO_AUTO_CAPTURE),
-            customer: ckoHelper.getCustomer(order),
+            customer: customer,
             billing_descriptor: ckoHelper.getBillingDescriptor(),
             shipping: ckoHelper.getShipping(order),
             '3ds': (paymentData.madaCard === true) ? { enabled: true } : ckoHelper.get3Ds(),
-            risk: { enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG) },
+            risk: {
+                device_session_id : device_session_id,
+                enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG),
+                device: {
+                    network: formattedIP
+                }
+             },
             success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
             failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
             metadata: metadata,
@@ -162,6 +194,7 @@ var cardHelper = {
                 type: 'id',
                 id: paymentInstrument.creditCardToken,
                 cvv: paymentData.securityCode,
+                name: paymentInstrument.creditCardHolder,
             };
         } else {
             cardSource = {
@@ -170,6 +203,7 @@ var cardHelper = {
                 expiry_month: paymentInstrument.creditCardExpirationMonth,
                 expiry_year: paymentInstrument.creditCardExpirationYear,
                 cvv: paymentData.securityCode,
+                name: paymentInstrument.creditCardHolder,
             };
         }
 

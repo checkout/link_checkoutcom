@@ -69,3 +69,23 @@ ${dw.system.HookMgr.callHook('app.template.htmlHead', 'htmlHead', pdict) || ''}
     <isset name="payPalCurrency" value="${(session.getCurrency().getCurrencyCode()) ? '&currency=' + (session.getCurrency().getCurrencyCode()) : ''}" scope="page" />
     <script src="https://www.paypal.com/sdk/js?client-id=${ckoPayPalClientId}&merchant-id=${ckoPayPalMerchantId}${payPalCurrency}&disable-funding=credit,card,sepa&intent=capture" data-partner-attribution-id="CheckoutLtd_PSP" data-namespace="paypal_sdk"></script>
 </isif>
+
+<isset name="riskJsEnabled" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('riskJsEnabled')}" scope="page" />
+
+<isif condition="${riskJsEnabled}">
+    <input type="hidden" name="servicePublicKey" value="${pdict.servicePublicKey}">
+    <isif condition="${dw.system.System.getInstanceType() != dw.system.System.PRODUCTION_SYSTEM}">
+        <script id="risk-js" defer
+            src="https://risk.sandbox.checkout.com/cdn/risk/2.3/risk.js"
+            integrity="sha384-ZGdiIppkJzwran7Bjk0sUZy5z1mZGpR/MJx7LC0xCTyFE2sBpPFeLu4r15yGVei6"
+            crossorigin="anonymous">
+        </script>
+        <iselse>
+        <script id="risk-js" defer
+            src="https://risk.checkout.com/cdn/risk/2.3/risk.js"
+            integrity="sha384-5MxwBLDYNCSe1Hu+REgSSz12/VIydFkxhDdiodk/dc+QMD3hr1dmn+fbHOZ4g9cB"
+            crossorigin="anonymous">
+        </script>
+    </isif>
+</isif>
+
