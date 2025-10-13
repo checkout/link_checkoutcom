@@ -68,6 +68,7 @@
   },
   "overrides": {
     "exec-sh": "0.4.0",
-    "merge": "2.1.1"
+    "merge": "2.1.1",
+    "form-data": "3.0.4"
   }
 }
