@@ -1,6 +1,7 @@
 "use strict";
 function launchGooglePay() {
   jQuery(".google-pay-button").click(function() {
+    var csrfToken = $('input[name="csrf_token"]').val();
     var e = $.trim($(".tax-total")
         .text()
         .replace(/[^\d\.\,\s]+/g, "")
@@ -50,6 +51,7 @@ function launchGooglePay() {
     $.ajax({
       url: document.getElementById("ckoGetShippingMethods").value,
       method: "POST",
+      data: { csrf_token: csrfToken },
       success: function(e) {
         (h = e.shipMethods),
           (m = e.shipCosts),
@@ -157,6 +159,7 @@ function launchGooglePay() {
                 shippingMethod: JSON.stringify(o),
                 pid: jQuery('[id="ckoProductID"]').val(),
                 email: e.email,
+                csrf_token: csrfToken
               };
               "" ===
               $(
@@ -227,7 +230,7 @@ function launchGooglePay() {
             countryCode: n.countryCode,
             phone: "",
           },
-          s = { address: JSON.stringify(r) };
+          s = { address: JSON.stringify(r), csrf_token: csrfToken };
         if (
           ($.ajax({
             type: "POST",

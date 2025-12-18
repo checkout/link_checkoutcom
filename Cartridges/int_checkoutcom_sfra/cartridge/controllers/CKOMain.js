@@ -18,6 +18,7 @@ var URLUtils = require('dw/web/URLUtils');
 
 /* Checkout.com Event functions */
 var eventsHelper = require('*/cartridge/scripts/helpers/eventsHelper');
+var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
@@ -227,7 +228,7 @@ server.get('GetApmFilter', server.middleware.https, function(req, res, next) {
     return next();
 });
 
-server.post('GetShippingMethods', server.middleware.https, function(req, res, next) {
+server.post('GetShippingMethods', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
     var shippingHelper = require('*/cartridge/scripts/checkout/shippingHelpers');
     var CartModel = require('*/cartridge/models/cart');
     var basketCalculationHelpers = require('*/cartridge/scripts/helpers/basketCalculationHelpers');
@@ -368,7 +369,7 @@ server.get('MadaBin', function(req, res, next) {
  * Verifies Cartes Bancaires Bin
  * @return {Object} The response object
  */
-server.post('VerifyCartesBancaireBin', function(req, res, next) {
+server.post('VerifyCartesBancaireBin', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var mode = ckoHelper.getValue(constants.CKO_MODE);
     var serviceName = 'cko.cartes.bancaires.' + mode + '.service';
     var cardBin = req.form.cardBin;
@@ -408,7 +409,7 @@ server.post('VerifyCartesBancaireBin', function(req, res, next) {
  * Handles Basket Creation when the user clicks on Google pay and Paypal Express in PDP Page
  * @returns {string} The controller response
  */
-server.post('CreateBasketForPDP', function(req, res, next) {
+server.post('CreateBasketForPDP', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var existingBasket = BasketMgr.getCurrentBasket();
     var tempPliRecords = {};
     if (existingBasket) {
@@ -503,7 +504,7 @@ server.post('CreateBasketForPDP', function(req, res, next) {
     return next();
 });
 
-server.post('restoreTemporaryBasket', function(req, res, next) {
+server.post('restoreTemporaryBasket', csrfProtection.validateAjaxRequest, function(req, res, next) {
     ckoHelper.restoreBasket();
 });
 

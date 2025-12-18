@@ -4,7 +4,7 @@
     assets.addJs('/js/apm.js');
     assets.addJs('/js/checkoutcom.js');
     assets.addCss('/css/checkoutcom.css');
-    assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+    assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css', 'sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN');
     var translationStrings = JSON.stringify({
         googlePayDataInvalid: dw.web.Resource.msg('cko.googlepaydata.invalid', 'cko', null),
         payPalDataInvalid: dw.web.Resource.msg('cko.paypaldata.invalid', 'cko', null),

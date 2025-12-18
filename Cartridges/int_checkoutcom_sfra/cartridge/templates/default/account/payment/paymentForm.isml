@@ -1,6 +1,6 @@
 <isscript>
     var assets = require('*/cartridge/scripts/assets.js');
-    assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+    assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css', 'sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN');
 </isscript>
 <form
     action="${URLUtils.url('PaymentInstruments-SavePayment', 'UUID', pdict.UUID)}"

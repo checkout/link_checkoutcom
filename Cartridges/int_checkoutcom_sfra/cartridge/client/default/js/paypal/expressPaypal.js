@@ -34,6 +34,7 @@ function showError(message) {
  * @return {Object} - Payment Context records returned in API.
  */
 function createPayPalOrder() {
+    var csrfToken = $('input[name="csrf_token"]').val();
     var paymentContext;
     $.ajax({
         type: 'POST',
@@ -41,6 +42,7 @@ function createPayPalOrder() {
         async: false,
         data: {
             getFromFile: 'get_from_file',
+            csrf_token: csrfToken,
         },
         success: function(response) {
             paymentContext = response;
@@ -61,6 +63,7 @@ function createPayPalOrder() {
  * @param {string} paymentContextId - payment Context ID
  */
 function onApprovePayPalOrder(paymentContextId) {
+    var csrfToken = $('input[name="csrf_token"]').val();
     $.spinner().start();
     $.ajax({
         type: 'POST',
@@ -68,6 +71,7 @@ function onApprovePayPalOrder(paymentContextId) {
         dataType: 'text',
         data: {
             paymentContextId: paymentContextId,
+            csrf_token: csrfToken,
         },
         success: function(response) {
             if (response.error) {

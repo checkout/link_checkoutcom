@@ -13,6 +13,7 @@ var Resource = require('dw/web/Resource');
 
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 
 /** Checkout Data Configuration File **/
 var constants = require('*/cartridge/config/constants');
@@ -38,7 +39,7 @@ function getKlarnaErrorMessage(errorMessage) {
  * Handles Checkout.com Create Order Context API request
  * @returns {string} The controller response
  */
-server.post('CreateContext', function(req, res, next) {
+server.post('CreateContext', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
     var currentBasket = BasketMgr.getCurrentBasket();
     var Site = require('dw/system/Site');
     var errorMessage;
@@ -124,7 +125,7 @@ server.post('CreateContext', function(req, res, next) {
  * Handles Checkout.com Create Order Context API request
  * @returns {string} The controller response
  */
-server.post('OnApprove', function(req, res, next) {
+server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
     var addressHelpers = require('*/cartridge/scripts/helpers/addressHelpers');
     var Transaction = require('dw/system/Transaction');

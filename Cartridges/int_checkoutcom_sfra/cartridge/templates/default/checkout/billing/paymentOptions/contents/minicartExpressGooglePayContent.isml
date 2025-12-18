@@ -1,12 +1,18 @@
 <script type="text/javascript" src="https://pay.google.com/gp/p/js/pay.js"></script>
 
+<isscript>
+    var CSRFProtection = require('dw/web/CSRFProtection');
+    var csrfTokenValue = CSRFProtection.generateToken();
+    var csrfTokenName = CSRFProtection.getTokenName();
+</isscript>
+
 <div class="tab-pane google-pay-content" id="mini-cart-google-pay-content" role="tabpanel">
     <fieldset class="payment-form-fields">
 		<input type="hidden" class="form-control"
 				name="${pdict.forms.billingForm.paymentMethod.htmlName}"
 				value=""
 		>
-        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}"/>
+        <input type="hidden" name="${csrfTokenName}" value="${csrfTokenValue}"/>
         <isset name="googlePayFields" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
 
         <isinclude template="checkout/billing/forms/expressMiniCartGooglePayForm" />

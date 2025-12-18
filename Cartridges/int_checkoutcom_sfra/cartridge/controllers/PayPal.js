@@ -5,6 +5,7 @@
 var server = require('server');
 var BasketMgr = require('dw/order/BasketMgr');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var constants = require('*/cartridge/config/constants');
 var payPalHelper = require('*/cartridge/scripts/helpers/payPalHelper');
 var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
@@ -85,7 +86,7 @@ function setRequestData(basket, shippingPreference) {
  * Handles Checkout.com Create Order Context API request
  * @returns {string} The controller response
  */
-server.post('CreateOrder', function(req, res, next) {
+server.post('CreateOrder', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var shippingPreference = req.form.getFromFile || 'set_provided_address';
     var currentBasket = BasketMgr.getCurrentBasket();
 
@@ -156,7 +157,7 @@ server.get('OnApprove', function(req, res, next) {
     return next();
 });
 
-server.post('ExpressCheckout', function(req, res, next) {
+server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var currentBasket = BasketMgr.getCurrentBasket();
     var result = {};
     var response;

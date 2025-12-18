@@ -256,9 +256,39 @@ var ckoHelper = {
             if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) { // eslint-disable-next-line
                 data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
             }
+
+            if (Object.prototype.hasOwnProperty.call(data, '3ds') && data['3ds'] != null) { // eslint-disable-next-line
+                data['3ds'] = sensitiveDataHelper.clean3dsObject(data['3ds']);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'metadata') && data.metadata != null) { // eslint-disable-next-line
+                data.metadata = sensitiveDataHelper.cleanMetadataObject(data.metadata);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'actions') && data.actions != null) { // eslint-disable-next-line
+                data.actions = sensitiveDataHelper.cleanActionsArray(data.actions);
+            }
+
+            if (Object.prototype.hasOwnProperty.call(data, 'risk') && data.risk != null) { // eslint-disable-next-line
+                data.risk = sensitiveDataHelper.cleanRiskObject(data.risk);
+            }
+
+            data = sensitiveDataHelper.cleanPaymentFields(data);
         }
 
         return data;
+    },
+
+    /**
+     * Redact sensitive data from service logs
+     * @param {Object|string} data The service log data (object or JSON string)
+     * @returns {string} The redacted data as JSON string
+     */
+    redactServiceLog: function(data) {
+        var dataObj = (typeof data === 'string') ? JSON.parse(data) : data;
+        var cloneData = JSON.parse(JSON.stringify(dataObj));
+        var redactedData = this.removeSentisiveData(cloneData);
+        return JSON.stringify(redactedData);
     },
 
     /**

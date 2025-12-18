@@ -1,6 +1,6 @@
 <isset name="boletoForm" value="${pdict.forms.billingForm.boletoForm}" scope="page"/>
 <iscomment> Boleto APM option </iscomment>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js" integrity="sha384-0l/4N8UmdKZf4HDwajHdZopkL4bSX+rDJa13b96s1VetCeGSFv/G4YJl2Xmv2IDp" crossorigin="anonymous"></script>
 <isscript>
     var assets = require('*/cartridge/scripts/assets.js');
     assets.addJs('/js/apm/boleto.js');

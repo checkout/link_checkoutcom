@@ -31,11 +31,11 @@ var wrapper = {
             },
 
             getRequestLogMessage: function(request) {
-                return request;
+                return util.redactServiceLog(request);
             },
 
             getResponseLogMessage: function(response) {
-                return response.text;
+                return util.redactServiceLog(response.text);
             },
         });
     },
@@ -61,11 +61,11 @@ var wrapper = {
             },
 
             getRequestLogMessage: function(request) {
-                return request;
+                return util.redactServiceLog(request);
             },
 
             getResponseLogMessage: function(response) {
-                return response.text;
+                return util.redactServiceLog(response.text);
             },
         });
     },
