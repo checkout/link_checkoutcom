@@ -2,6 +2,7 @@
 'use strict';
 
 var server = require('server');
+var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 
 var OrderMgr = require('dw/order/OrderMgr');
 var Locale = require('dw/util/Locale');
@@ -130,7 +131,7 @@ function setPaymentData(req, ckoGooglePayData, shippingAddress, emailAddress) {
     return order;
 }
 
-server.post('ExpressCheckout', function(req, res, next) {
+server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var currentBasket = BasketMgr.getCurrentBasket();
     var result = {};
 

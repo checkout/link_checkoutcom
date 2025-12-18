@@ -3,18 +3,22 @@
 var paymentContextId;
 var orderID;
 async function fetchClientToken(billingCountry) {
+    var csrfToken = $('input[name="csrf_token"]').val();
     var klarnaContextUrl = $('.klarnaCreateContextUrl').val();
     if (!klarnaContextUrl) {
         return;
     };
     return new Promise(function (resolve, reject) {
+        var formData = $('#klarna-content .payment-form-fields').serialize();
+        var dataToSend = formData;
+        if (billingCountry) {
+            dataToSend = formData + '&billingCountry=' + encodeURIComponent(billingCountry);
+        }
         $.ajax({
             url: klarnaContextUrl,
             method: 'POST',
             dataType: 'json',
-            data: {
-                billingCountry: billingCountry,
-            },
+            data: dataToSend + '&csrf_token=' + csrfToken,
             success: function (response) {
                 return resolve(response);
             },
@@ -62,6 +66,7 @@ async function initializeKlarna(billingCountry) {
 }
 
 async function onPaymentContextApproved(res) {
+    var csrfToken = $('input[name="csrf_token"]').val();
     var klarnaOnApproveUrl = $('.klarnaonApproveUrl').val();
 
         if (!klarnaOnApproveUrl) {
@@ -76,6 +81,7 @@ async function onPaymentContextApproved(res) {
             data: {
                 paymentContextId: paymentContextId,
                 orderID: orderID,
+                csrf_token: csrfToken,
             },
             success: function(response) {
                 if (response.error) {

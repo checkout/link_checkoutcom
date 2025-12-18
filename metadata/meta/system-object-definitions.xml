@@ -343,15 +343,15 @@
             </attribute-definition>
             <attribute-definition attribute-id="ckoSgPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Site Genesis Cartridge - Version: 25.1.0</default-value>
+                <default-value>Checkout.com Site Genesis Cartridge - Version: 25.2.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSfraPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com SFRA Cartridge - Version: 25.1.0</default-value>
+                <default-value>Checkout.com SFRA Cartridge - Version: 25.2.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBmPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Business Manager Cartridge - Version: 25.1.0</default-value>
+                <default-value>Checkout.com Business Manager Cartridge - Version: 25.2.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBillingDescriptor1">
                 <display-name xml:lang="x-default">Billing Descriptor 1</display-name>
@@ -575,26 +575,23 @@
             <attribute-definition attribute-id="ckoSandboxABCPrivateSharedKey">
                 <display-name xml:lang="x-default">ABC Private Shared Key</display-name>
                 <description xml:lang="x-default">Deprecated, used only for legacy transactions</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxABCPublicKey">
                 <display-name xml:lang="x-default">ABC Public Key</display-name>
                 <description xml:lang="x-default">Deprecated, used only for legacy transactions</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxABCSecretKey">
                 <display-name xml:lang="x-default">ABC Secret Key</display-name>
                 <description xml:lang="x-default">Deprecated, used only for legacy transactions</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxNASEnabled">
                 <display-name xml:lang="x-default">NAS Enabled</display-name>
@@ -612,50 +609,44 @@
             <attribute-definition attribute-id="ckoSandboxNASPrivateSharedKey">
                 <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
                 <description xml:lang="x-default">NAS Sandbox private shared key provided by Checkout.com.</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxNASPublicKey">
                 <display-name xml:lang="x-default">NAS Public Key</display-name>
                 <description xml:lang="x-default">NAS Sandbox public key provided by Checkout.com.</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxNASSecretKey">
                 <display-name xml:lang="x-default">NAS Secret Key</display-name>
                 <description xml:lang="x-default">NAS Sandbox secret key provided by Checkout.com.</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoLiveABCPrivateSharedKey">
                 <display-name xml:lang="x-default">ABC Private Shared Key</display-name>
                 <description xml:lang="x-default">Deprecated, used only for legacy transactions</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoLiveABCPublicKey">
                 <display-name xml:lang="x-default">ABC Public Key</display-name>
                 <description xml:lang="x-default">Deprecated, used only for legacy transactions</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoLiveABCSecretKey">
                 <display-name xml:lang="x-default">ABC Secret Key</display-name>
                 <description xml:lang="x-default">Deprecated, used only for legacy transactions</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoLiveNASEnabled">
                 <display-name xml:lang="x-default">NAS Enabled</display-name>
@@ -673,26 +664,23 @@
             <attribute-definition attribute-id="ckoLiveNASPrivateSharedKey">
                 <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
                 <description xml:lang="x-default">NAS Live private shared key provided by Checkout.com.</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoLiveNASPublicKey">
                 <display-name xml:lang="x-default">NAS Public Key</display-name>
                 <description xml:lang="x-default">NAS Live public key provided by Checkout.com.</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoLiveNASSecretKey">
                 <display-name xml:lang="x-default">NAS Secret key</display-name>
                 <description xml:lang="x-default">NAS Live secret key provided by Checkout.com.</description>
-                <type>string</type>
+                <type>password</type>
                 <mandatory-flag>true</mandatory-flag>
                 <externally-managed-flag>false</externally-managed-flag>
-                <min-length>0</min-length>
             </attribute-definition>
             <attribute-definition attribute-id="ckoGooglePayEnabled">
                 <display-name xml:lang="x-default">Enable Google Pay</display-name>

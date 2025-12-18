@@ -6,6 +6,7 @@ document.addEventListener(
       -1 !==
         e.target.className.toString().indexOf("minicart-google-pay-button") &&
         (function() {
+          var csrfToken = $('input[name="csrf_token"]').val();
           var e = $.trim($(".sub-total")
               .text()
               .replace(/[^\d\.\,\s]+/g, "")
@@ -46,7 +47,7 @@ document.addEventListener(
             g,
             y,
             m,
-            h = { price: e };
+            h = { price: e, csrf_token: csrfToken };
           $.ajax({
             url: document.getElementById("ckoMiniCartGetShippingMethods").value,
             data: h,
@@ -168,6 +169,7 @@ document.addEventListener(
                       shippingMethod: JSON.stringify(o),
                       pid: "null",
                       email: e.email,
+                      csrf_token: csrfToken
                     };
                     "" ===
                     $(
@@ -239,7 +241,7 @@ document.addEventListener(
                   countryCode: n.countryCode,
                   phone: "",
                 },
-                s = { address: JSON.stringify(r) };
+                s = { address: JSON.stringify(r), csrf_token: csrfToken };
               if (
                 ($.ajax({
                   type: "POST",

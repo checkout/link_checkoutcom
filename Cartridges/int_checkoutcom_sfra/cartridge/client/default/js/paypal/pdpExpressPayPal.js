@@ -10,6 +10,7 @@ var base = require('../product/base');
  * @return {Object} - response
  */
 function createBasketFromPDP() {
+    var csrfToken = $('input[name="csrf_token"]').val();
     var $productContainer = $('[id="ckoProductID"]').closest('.product-detail');
     var options = base.getOptions($productContainer) || [];
     var response = {
@@ -22,6 +23,7 @@ function createBasketFromPDP() {
         data: {
             pid: jQuery('[id="ckoProductID"]').val(),
             options: options,
+            csrf_token: csrfToken,
         },
         method: 'POST',
         success: function(e) {
@@ -54,11 +56,14 @@ function createOrder() {
  * Calls PayPal express Restore basket function
  */
 function onCancel() {
+    var csrfToken = $('input[name="csrf_token"]').val();
     $.ajax({
         type: 'POST',
         url: $('#ckoRestoreBasket').val(),
         async: false,
-        data: '',
+        data: {
+            csrf_token: csrfToken,
+        },
         success: function(response) {
             console.log('basket restored successfully');
         },
