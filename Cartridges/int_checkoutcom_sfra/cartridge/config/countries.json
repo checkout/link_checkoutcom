@@ -1,0 +1,76 @@
+[{
+    "id": "en_US",
+    "currencyCode": "USD"
+}, {
+    "id": "en_GB",
+    "currencyCode": "GBP"
+}, {
+    "id": "ja_JP",
+    "currencyCode": "JPY"
+}, {
+    "id": "zh_CN",
+    "currencyCode": "CNY"
+}, {
+    "id": "fr_FR",
+    "currencyCode": "EUR"
+}, {
+    "id": "it_IT",
+    "currencyCode": "EUR"
+}, {
+    "id": "pt_PT",
+    "currencyCode": "EUR"
+}, {
+    "id": "es_ES",
+    "currencyCode": "EUR"
+},{
+    "id": "ar_AE",
+    "currencyCode": "AED"
+}, {
+    "id": "ar_SA",
+    "currencyCode": "SAR"
+}, {
+    "id": "ar_KW",
+    "currencyCode": "KWD"
+}, {
+    "id": "ar_QA",
+    "currencyCode": "QAR"
+}, {
+    "id": "ar_BH",
+    "currencyCode": "BHD"
+}, {
+    "id": "ar_OM",
+    "currencyCode": "OMR"
+}, {
+    "id": "ar_EG",
+    "currencyCode": "EGP"
+}, {
+    "id": "ar_JO",
+    "currencyCode": "JOD"
+}, {
+    "id": "ar_LB",
+    "currencyCode": "LBP"
+}, {
+    "id": "ar_IQ",
+    "currencyCode": "IQD"
+}, {
+    "id": "ar_LY",
+    "currencyCode": "LYD"
+}, {
+    "id": "ar_MA",
+    "currencyCode": "MAD"
+}, {
+    "id": "ar_DZ",
+    "currencyCode": "DZD"
+}, {
+    "id": "ar_SD",
+    "currencyCode": "SDG"
+}, {
+    "id": "ar_SY",
+    "currencyCode": "SYP"
+}, {
+    "id": "ar_TN",
+    "currencyCode": "TND"
+}, {
+    "id": "ar_YE",
+    "currencyCode": "YER"
+}]

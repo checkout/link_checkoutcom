@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<form xmlns="http://www.demandware.com/xml/form/2008-04-19">
+    <field formid="stateCode" label="label.input.state" type="string" mandatory="false" binding="stateCode">
+        <options>
+            <option optionid="" label="select.option.state.select" value=""/>
+            <option optionid="AN" label="select.option.state.AN" value="AN"/>
+            <option optionid="AR" label="select.option.state.AR" value="AR"/>
+            <option optionid="AS" label="select.option.state.AS" value="AS"/>
+            <option optionid="IB" label="select.option.state.IB" value="IB"/>
+            <option optionid="CN" label="select.option.state.CN" value="CN"/>
+            <option optionid="CB" label="select.option.state.CB" value="CB"/>
+            <option optionid="CL" label="select.option.state.CL" value="CL"/>
+            <option optionid="CM" label="select.option.state.CM" value="CM"/>
+            <option optionid="CT" label="select.option.state.CT" value="CT"/>
+            <option optionid="EX" label="select.option.state.EX" value="EX"/>
+            <option optionid="GA" label="select.option.state.GA" value="GA"/>
+            <option optionid="RI" label="select.option.state.RI" value="RI"/>
+            <option optionid="MD" label="select.option.state.MD" value="MD"/>
+            <option optionid="MC" label="select.option.state.MC" value="MC"/>
+            <option optionid="NC" label="select.option.state.NC" value="NC"/>
+            <option optionid="PV" label="select.option.state.PV" value="PV"/>
+            <option optionid="VC" label="select.option.state.VC" value="VC"/>
+            <option optionid="CE" label="select.option.state.CE" value="CE"/>
+            <option optionid="ML" label="select.option.state.ML" value="ML"/>
+        </options>
+    </field>
+</form>

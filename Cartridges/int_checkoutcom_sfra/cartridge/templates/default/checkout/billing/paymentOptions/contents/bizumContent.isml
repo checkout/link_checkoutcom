@@ -1,0 +1,18 @@
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/bizum.js');
+    assets.addCss('/css/bizum.css');
+</isscript>
+
+<div class="tab-pane bizum-content" id="bizum-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+        <input type="hidden" id="bizumCheckUrl" value="${URLUtils.https('CKOMain-CheckBizumWebhook')}" />
+        <input type="hidden" id="bizumWaitingMessage" value="${Resource.msg('cko.bizum.waiting','cko',null)}" />
+        <div class="bizum-info">
+            <p class="bizum-info-message">${Resource.msg('cko.bizum.info','cko',null)}</p>
+        </div>
+        <div id="bizum-error-message" class="alert alert-danger d-none" role="alert"></div>
+    </fieldset>
+</div>

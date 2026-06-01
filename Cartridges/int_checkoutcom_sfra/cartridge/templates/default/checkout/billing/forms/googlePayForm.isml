@@ -5,11 +5,16 @@
     <input type="hidden" id="ckoGooglePayEnvironment" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayEnvironment').value}">
     <input type="hidden" id="ckoGooglePayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoGooglePayMerchantId')}">
     <input type="hidden" id="ckoGooglePayCurrency" value="${session.getCurrency().getCurrencyCode()}">
-    <input type="hidden" id="ckoGooglePayAmount" value="${pdict.order.totals.grandTotal.replace(/[^\d\.\,\s]+/g, '')}">
-    <input type="hidden" id="ckoGatewayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('cko' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + dw.system.Site.getCurrent().getCustomPreferenceValue('cko'+ dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + 'NASEnabled').value + 'PublicKey')}">
-    <input type="hidden" id="ckoGooglePayData" <isprint value=${googlePayFields.ckoGooglePayData.attributes} encoding="htmlsinglequote"/> value="">
-    <input type="hidden" id="ckoProductPrice" value="${product.price.sales.decimalPrice}">
-    <input type="hidden" id="ckoCartProductPrice" value="${pdict.totals.subTotal.replace(/[^\d\.\,\s]+/g, '')}">
-    <input type="hidden" id="ckoCartSalesTax" value="${pdict.totals.totalTax.replace(/[^\d\.\,\s]+/g, '')}">
-    <input type="hidden" id="ckoProductID" value="${product.id}">
+    <input type="hidden" id="ckoGooglePayAmount" value="${!empty(pdict.order) && !empty(pdict.order.totalGrossPrice) ? pdict.order.totalGrossPrice : ''}"/>
+    <input type="hidden" id="ckoGatewayMerchantId" value="${dw.system.Site.getCurrent().getCustomPreferenceValue('cko' + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + dw.system.Site.getCurrent().getCustomPreferenceValue('cko'+ dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.charAt(0).toUpperCase() + dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMode').value.slice(1) + 'NASEnabled').value + 'PublicKey')}"/>
+    <isif condition="${!empty(googlePayFields) && !empty(googlePayFields.ckoGooglePayData)}">
+        <input type="hidden" id="ckoGooglePayData" <isprint value=${googlePayFields.ckoGooglePayData.attributes} encoding="htmlsinglequote"/> value=""/>
+    <iselse/>
+        <input type="hidden" id="ckoGooglePayData" name="dwfrm_billing_googlePayForm_ckoGooglePayData" value=""/>
+    </isif>
+    <input type="hidden" id="ckoProductPrice" value="${!empty(pdict.product) && !empty(pdict.product.price) && !empty(pdict.product.price.sales) ? pdict.product.price.sales.decimalPrice : ''}"/>
+    <input type="hidden" id="ckoCartProductPrice" value="${!empty(pdict.subTotal) ? pdict.subTotal : ''}"/>
+    <input type="hidden" id="ckoCartSalesTax" value="${!empty(pdict.totalTax) ? pdict.totalTax : ''}"/>
+    <input type="hidden" id="ckoProductID" value="${!empty(pdict.product) && !empty(pdict.product.id) ? pdict.product.id : ''}"/>
+    <input type="hidden" id="isGrossPricing" value="${!empty(pdict.product) && pdict.product.isGrossPricing}"/>
 </fieldset>

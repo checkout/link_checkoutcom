@@ -30,4 +30,33 @@
         <isinclude template="checkout/billing/paymentOptions/contents/apmContent" />
     </isif>
 
+    <iscomment> MB WAY </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_MBWAY'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/mbwayContent" />
+    </isif>
+
+    <iscomment> Alma </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALMA'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/almaContent" />
+    </isif>
+
+    <iscomment> Sequra </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_SEQURA'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/sequraContent" />
+    </isif>
+
+    <iscomment> Bizum </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_BIZUM'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/bizumContent" />
+    </isif>
+
+    <iscomment> Tabby </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_TABBY'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/tabbyContent" />
+    </isif>
+
+    <iscomment> ACH Direct Debit </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ACH'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/achContent" />
+    </isif>
 </isloop>

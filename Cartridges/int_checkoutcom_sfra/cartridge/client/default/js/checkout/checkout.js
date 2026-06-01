@@ -10,6 +10,7 @@ var billingHelpers = require('./billing');
 var summaryHelpers = require('base/checkout/summary');
 var formHelpers = require('base/checkout/formErrors');
 var klarna = require('../klarna');
+var tabby = require('../tabby');
 var scrollAnimate = require('base/components/scrollAnimate');
 var location = window.location;
 var history = window.history;
@@ -211,6 +212,9 @@ if(script) {
                                 $('body').trigger('checkout:enableButton', '.next-step-button button');
                                 shippingHelpers.methods.shippingFormResponse(defer, data);
                                 klarna.initializeKlarna();
+                                if ($('.tabby-tab').length > 0) {
+                                    tabby.createTabbyContext();
+                                }
                                 if (($('.paypal-buttons').length === 0) && ($('.payPal-tab').length > 0)) {
                                     initiPaypalbutton.initPayPalButton();
                                 }
@@ -682,7 +686,11 @@ var exports = {
                 data.options
             );
             billingHelpers.methods.updatePaymentInformation(data.order, data.options);
-            summaryHelpers.updateOrderProductSummaryInformation(data.order, data.options);
+            summaryHelpers.updateOrderProductSummaryInformation(data.order, data.options);    
+            if (data && data.order && data.order.totalGrossPrice) {
+                $('#ckoGooglePayAmount').val(data.order.totalGrossPrice);
+            }
+
         });
     },
 

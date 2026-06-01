@@ -5,6 +5,7 @@ var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
 
 /* Utility */
 var util = require('*/cartridge/scripts/helpers/ckoHelper');
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Transaction service wrapper.
@@ -20,6 +21,13 @@ var wrapper = {
             createRequest: function(svc, args) {
                 var serviceUrl = args.isPayPalApprove ? (svc.configuration.credential.URL + '/' + args.id) : svc.configuration.credential.URL;
                 var reqMethod = args.isPayPalApprove ? 'GET' : 'POST';
+
+                // Route to the configured Service Endpoint when present and valid;
+                // otherwise leave the default service credentials URL in place.
+                var serviceEndpoint = util.getServiceEndpoint();
+                if (serviceEndpoint) {
+                    serviceUrl = serviceUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);
+                }
 
                 // Prepare the http service
                 svc.setURL(serviceUrl);
@@ -54,6 +62,13 @@ var wrapper = {
             createRequest: function(svc, args) {
                 var serviceUrl = args.isPayPalApprove ? (svc.configuration.credential.URL + '/' + args.id) : svc.configuration.credential.URL;
                 var reqMethod = args.isPayPalApprove ? 'GET' : 'POST';
+
+                // Route to the configured Service Endpoint when present and valid;
+                // otherwise leave the default service credentials URL in place.
+                var serviceEndpoint = util.getServiceEndpoint();
+                if (serviceEndpoint) {
+                    serviceUrl = serviceUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);
+                }
 
                 // Prepare the http service
                 svc.setURL(serviceUrl);

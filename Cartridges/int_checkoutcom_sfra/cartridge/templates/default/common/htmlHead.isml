@@ -89,3 +89,9 @@ ${dw.system.HookMgr.callHook('app.template.htmlHead', 'htmlHead', pdict) || ''}
     </isif>
 </isif>
 
+<isscript>
+    var translationStrings = JSON.stringify({
+        googlePayDataInvalid: dw.web.Resource.msg('cko.googlepaydata.invalid', 'cko', null)
+    });
+</isscript>
+<input type="hidden" id="translationStrings" value="${translationStrings}"/>

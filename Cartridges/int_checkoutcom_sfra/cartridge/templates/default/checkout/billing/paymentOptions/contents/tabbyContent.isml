@@ -1,0 +1,15 @@
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/tabby.js');
+</isscript>
+
+<div class="tab-pane tabby-content" id="tabby-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <div class="invalid-field-message"></div>
+        <p class="tabby-redirect-message">${Resource.msg('cko.tabby.redirect.message','cko',null)}</p>
+        <input type="hidden" id="tabbyCreateContextUrl" class="tabbyCreateContextUrl"
+            value="${URLUtils.https('CKOTabby-CreateContext')}" />
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="CHECKOUTCOM_TABBY" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+    </fieldset>
+</div>

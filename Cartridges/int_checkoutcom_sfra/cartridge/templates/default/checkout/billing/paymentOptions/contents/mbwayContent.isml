@@ -1,0 +1,18 @@
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/mbway.js');
+    assets.addCss('/css/mbway.css');
+</isscript>
+
+<div class="tab-pane mbway-content" id="mbway-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+        <input type="hidden" id="mbwayCheckUrl" value="${URLUtils.https('CKOMain-CheckMBWayWebhook')}" />
+        <input type="hidden" id="mbwayWaitingMessage" value="${Resource.msg('cko.mbway.waiting','cko',null)}" />
+        <div class="mbway-info">
+            <p class="mbway-info-message">${Resource.msg('cko.mbway.info','cko',null)}</p>
+        </div>
+        <div id="mbway-error-message" class="alert alert-danger d-none" role="alert"></div>
+    </fieldset>
+</div>

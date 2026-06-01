@@ -1,0 +1,8 @@
+<div class="tab-pane alma-content" id="alma-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <div class="invalid-field-message"></div>
+        <p class="alma-redirect-message">${Resource.msg('cko.alma.redirect.message','cko',null)}</p>
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="CHECKOUTCOM_ALMA" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+    </fieldset>
+</div>

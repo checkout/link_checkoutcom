@@ -10,9 +10,11 @@
     <include formid="apmForm" name="apmForm"/>
     <include formid="boletoForm" name="boletoForm"/>
     <include formid="klarnaForm" name="klarnaForm"/>
+    <include formid="almaForm" name="almaForm"/>
     <include formid="qpayForm" name="qpayForm"/>
     <include formid="oxxoForm" name="oxxoForm"/>
     <include formid="payPalForm" name="payPalForm"/>
+    <include formid="sequraForm" name="sequraForm"/>
 
     <field formid="subscribe" type="boolean" checked="false" default-value="false" mandatory="false" />
 </form>

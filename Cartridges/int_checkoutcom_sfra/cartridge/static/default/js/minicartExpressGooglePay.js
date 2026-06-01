@@ -7,18 +7,10 @@ document.addEventListener(
         e.target.className.toString().indexOf("minicart-google-pay-button") &&
         (function() {
           var csrfToken = $('input[name="csrf_token"]').val();
-          var e = $.trim($(".sub-total")
-              .text()
-              .replace(/[^\d\.\,\s]+/g, "")
-              .replaceAll(",", "")),
+          var isGrossPricing = $('#isGrossPricing').val() === 'true';
+          var e = $.trim($("#ckoMiniCartProductPrice").val()).replace(/,/g, ""),
             t =
-              $.trim($(".tax-total")
-                .text()
-                .replace(/[^\d\.\,\s]+/g, "")
-                .replaceAll(",", "")) ||
-                $.trim(jQuery('[id="ckoMiniCartSalesTax"]')
-                .val()
-                .replaceAll(",", ""));
+              $.trim($("#ckoMiniCartSalesTax").val()).replace(/,/g, "");
           const a = { apiVersion: 2, apiVersionMinor: 0 },
             n = ["AMEX", "DISCOVER", "JCB", "MASTERCARD", "VISA"],
             o = ["PAN_ONLY", "CRYPTOGRAM_3DS"],
@@ -124,11 +116,13 @@ document.addEventListener(
             if (a)
               var n = y[a],
                 o = "-" + d[a];
+              var displayItems = [];
+              displayItems.push({label: "Subtotal", type: "SUBTOTAL", price: e});        
+              if (!isGrossPricing) {
+                displayItems.push({label: "Tax", type: "TAX", price: n || t});
+              }
             var i = {
-              displayItems: [
-                { label: "Subtotal", type: "SUBTOTAL", price: e },
-                { label: "Tax", type: "TAX", price: n || t },
-              ],
+              displayItems: displayItems,
               currencyCode: jQuery('[id="ckoMiniCartGooglePayCurrency"]').val(),
               totalPriceStatus: "FINAL",
               totalPrice: e,

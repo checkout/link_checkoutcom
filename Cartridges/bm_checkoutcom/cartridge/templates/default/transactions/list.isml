@@ -70,3 +70,8 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 <!-- Scripts-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/js/tabulator.min.js"></script>
 <script src="${URLUtils.staticURL('/js/core/list.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/almaActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/mbwayActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/sequraActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/bizumActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/achActions.js')}"></script>

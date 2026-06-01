@@ -56,6 +56,35 @@ function remoteCall() {
 
     var OrderMgr = require('dw/order/OrderMgr');
     var order = OrderMgr.getOrder(orderNumber);
+
+    // Block capture and void for Alma and ACH orders
+    if (order && (task.value === 'capture' || task.value === 'void')) {
+        var instruments = order.getPaymentInstruments().toArray();
+        if (instruments.length > 0) {
+            var paymentMethod = instruments[0].getPaymentMethod();
+            if (paymentMethod === 'CHECKOUTCOM_ALMA') {
+                // eslint-disable-next-line
+                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for Alma payments.' }));
+                return;
+            }
+            if (paymentMethod === 'CHECKOUTCOM_ACH') {
+                // eslint-disable-next-line
+                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for ACH Direct Debit payments.' }));
+                return;
+            }
+        }
+    }
+
+    // Block void for Sequra orders (void is not applicable for Sequra)
+    if (order && task.value === 'void') {
+        var sequraInstruments = order.getPaymentInstruments().toArray();
+        if (sequraInstruments.length > 0 && sequraInstruments[0].getPaymentMethod() === 'CHECKOUTCOM_SEQURA') {
+            // eslint-disable-next-line
+            response.writer.println(JSON.stringify({ error: true, message: 'Void is not supported for Sequra payments.' }));
+            return;
+        }
+    }
+
     // Prepare the payload
     var gRequest = {
         // eslint-disable-next-line

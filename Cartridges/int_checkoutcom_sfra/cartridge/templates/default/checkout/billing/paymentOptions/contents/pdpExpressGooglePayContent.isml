@@ -7,12 +7,18 @@
 
 <div class="tab-pane google-pay-content" id="google-pay-content" role="tabpanel">
     <fieldset class="payment-form-fields">
-		<input type="hidden" class="form-control"
-				name="${pdict.forms.billingForm.paymentMethod.htmlName}"
-				value=""
-		>
-        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}"/>
-        <isset name="googlePayFields" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
+        <isif condition="${!empty(pdict.forms) && !empty(pdict.forms.billingForm)}">
+            <input type="hidden" class="form-control"
+                    name="${pdict.forms.billingForm.paymentMethod.htmlName}"
+                    value=""
+            />
+            <isset name="googlePayFields" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
+        <iselse/>
+            <isset name="googlePayFields" value="${null}" scope="page"/>
+        </isif>
+        <isif condition="${!empty(pdict.csrf)}">
+            <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}"/>
+        </isif>
 
         <isinclude template="checkout/billing/forms/googlePayForm" />
     </fieldset>

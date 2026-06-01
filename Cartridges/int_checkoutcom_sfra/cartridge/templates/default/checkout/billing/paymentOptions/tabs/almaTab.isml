@@ -1,0 +1,6 @@
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link alma-tab" data-toggle="tab" href="#alma-content" role="tab">
+        <img alt="${Resource.msg('cko.alma.name','cko',null)}" height="22" id="almapay_thumb" src="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image.URL}"/>
+        ${paymentOption.name}
+    </a>
+</li>

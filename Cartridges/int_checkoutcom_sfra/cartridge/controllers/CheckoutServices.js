@@ -243,6 +243,23 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
         return;
     }
 
+    // MB WAY / Bizum / ACH: async payment — order is created but not yet placed.
+    // placeOrder() is deferred until the webhook is received and confirmed via client polling.
+    if (handlePaymentResult.mbwayPending || handlePaymentResult.bizumPending || handlePaymentResult.achPending) {
+        res.json({
+            error: false,
+            mbwayPending: handlePaymentResult.mbwayPending || false,
+            bizumPending: handlePaymentResult.bizumPending || false,
+            achPending: handlePaymentResult.achPending || false,
+            orderID: order.orderNo,
+            orderToken: order.orderToken,
+            continueUrl: '',
+        });
+
+        this.emit('route:Complete', req, res);
+        return;
+    }
+
     // Places the order
     var placeOrderResult = COHelpers.placeOrder(order, fraudDetectionStatus);
     if (placeOrderResult.error) {

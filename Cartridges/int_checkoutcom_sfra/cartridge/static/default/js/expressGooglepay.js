@@ -2,20 +2,11 @@
 function launchGooglePay() {
   jQuery(".google-pay-button").click(function() {
     var csrfToken = $('input[name="csrf_token"]').val();
-    var e = $.trim($(".tax-total")
-        .text()
-        .replace(/[^\d\.\,\s]+/g, "")
-        .replaceAll(",", "")) ||
-        $.trim($(".shipping-cost")
-        .text()
-        .replace(/[^\d\.\,\s]+/g, "")
-        .replaceAll(",", "")),
+    var isGrossPricing = $('#isGrossPricing').val() === 'true';
+    var e = $.trim($("#ckoCartSalesTax").val()).replace(/,/g, ""),
       t = $(".line-item-total-price-amount"),
       a = 0,
-      n = $.trim($(".sub-total")
-        .text()
-        .replace(/[^\d\.\,\s]+/g, "")
-        .replaceAll(",", ""));
+      n = $.trim($("#ckoCartProductPrice").val()).replace(/,/g, "");
     for (let e = 0; e < t.length; e++) {
       var o = t[e].innerHTML;
       (o = o.replaceAll(",", "")),
@@ -118,11 +109,14 @@ function launchGooglePay() {
       if (t)
         var o = I[t],
           i = "-" + g[t];
+        var displayItems = [];
+        displayItems.push({label: "Subtotal", type: "SUBTOTAL", price: n || a.toString()});        
+        if (!isGrossPricing) {
+          displayItems.push({label: "Tax", type: "TAX", price: o || e});
+        }
+
       var r = {
-        displayItems: [
-          { label: "Subtotal", type: "SUBTOTAL", price: n || a.toString() },
-          { label: "Tax", type: "TAX", price: o || e },
-        ],
+        displayItems: displayItems,
         currencyCode: jQuery('[id="ckoGooglePayCurrency"]').val(),
         totalPriceStatus: "FINAL",
         totalPrice: n || a.toString(),

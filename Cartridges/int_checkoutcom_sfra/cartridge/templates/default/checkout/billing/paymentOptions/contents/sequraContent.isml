@@ -1,0 +1,33 @@
+<isset name="sequraForm" value="${pdict.forms.billingForm.sequraForm}" scope="page" />
+
+<div class="tab-pane sequra-content" id="sequra-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <div class="invalid-field-message"></div>
+        <p class="sequra-redirect-message">${Resource.msg('cko.sequra.redirect.message','cko',null)}</p>
+        <div class="form-group">
+            <label for="sequraProduct">${Resource.msg('cko.sequra.select.label','cko',null)}</label>
+            <select class="form-control sequra-product custom-select" id="sequraProduct"
+                    name="${sequraForm.ckoSequraProduct.htmlName}"
+                    required>
+                <option value="">${Resource.msg('cko.sequra.product.select','cko',null)}</option>
+                <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayLaterInvoice')}">
+                    <option value="invoice">${Resource.msg('cko.sequra.product.invoice','cko',null)}</option>
+                </isif>
+                <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayLaterPP5')}">
+                    <option value="pp5">${Resource.msg('cko.sequra.product.pp5','cko',null)}</option>
+                </isif>
+                <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayIn3SP1')}">
+                    <option value="sp1">${Resource.msg('cko.sequra.product.sp1','cko',null)}</option>
+                </isif>
+                <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayInInstallmentsPP3')}">
+                    <option value="pp3">${Resource.msg('cko.sequra.product.pp3','cko',null)}</option>
+                </isif>
+                <isif condition="${dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraFlexi')}">
+                    <option value="flexi">${Resource.msg('cko.sequra.product.flexi','cko',null)}</option>
+                </isif>
+            </select>
+        </div>
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="CHECKOUTCOM_SEQURA" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+    </fieldset>
+</div>

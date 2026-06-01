@@ -54,4 +54,58 @@
             <production/>
         </preferences>
     </payment-processor>
+	<payment-processor processor-id="CHECKOUTCOM_ALMA">
+        <description>Checkout.com Alma payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
+	<payment-processor processor-id="CHECKOUTCOM_MBWAY">
+        <description>Checkout.com MBWay payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
+    <payment-processor processor-id="CHECKOUTCOM_SEQURA">
+        <description>Checkout.com Sequra payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
+	<payment-processor processor-id="CHECKOUTCOM_BIZUM">
+        <description>Checkout.com Bizum payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
+	<payment-processor processor-id="CHECKOUTCOM_TABBY">
+        <description>Checkout.com Tabby payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
+	<payment-processor processor-id="CHECKOUTCOM_ACH">
+        <description>Checkout.com ACH Direct Debit payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
 </payment-processors>

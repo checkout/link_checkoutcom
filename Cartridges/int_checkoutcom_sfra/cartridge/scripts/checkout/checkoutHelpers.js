@@ -143,7 +143,76 @@ function savePaymentInstrumentToWallet(billingData, currentBasket, customer) {
     });
 }
 
+/**
+ * Validates payment instruments against applicable payment methods.
+ *
+ * Overrides the base SFRA implementation to use billing address country code
+ * instead of req.geolocation.countryCode (IP-based). This ensures
+ * country-restricted payment methods (CHECKOUTCOM_BIZUM → ES,
+ * CHECKOUTCOM_MBWAY → PT) are correctly included in the applicable set when
+ * the shopper has selected a valid billing address, regardless of their IP.
+ *
+ * @param {Object} req - the request object
+ * @param {dw.order.Basket} currentBasket - The current basket
+ * @returns {Object} result object with error flag
+ */
+function validatePayment(req, currentBasket) {
+    var applicablePaymentCards;
+    var applicablePaymentMethods;
+    var creditCardPaymentMethod = PaymentMgr.getPaymentMethod(PaymentInstrument.METHOD_CREDIT_CARD);
+    var paymentAmount = currentBasket.totalGrossPrice.value;
+    var currentCustomer = req.currentCustomer.raw;
+    var paymentInstruments = currentBasket.paymentInstruments;
+    var result = {};
+
+    // Use billing address country when available; fall back to IP geolocation.
+    var countryCode = (currentBasket.billingAddress && currentBasket.billingAddress.countryCode)
+        ? currentBasket.billingAddress.countryCode.value
+        : req.geolocation.countryCode;
+
+    applicablePaymentMethods = PaymentMgr.getApplicablePaymentMethods(
+        currentCustomer,
+        countryCode,
+        paymentAmount
+    );
+    applicablePaymentCards = creditCardPaymentMethod
+        ? creditCardPaymentMethod.getApplicablePaymentCards(currentCustomer, countryCode, paymentAmount)
+        : new dw.util.ArrayList();
+
+    var invalid = true;
+
+    for (var i = 0; i < paymentInstruments.length; i++) {
+        var paymentInstrument = paymentInstruments[i];
+
+        if (PaymentInstrument.METHOD_GIFT_CERTIFICATE.equals(paymentInstrument.paymentMethod)) {
+            invalid = false;
+        }
+
+        var paymentMethod = PaymentMgr.getPaymentMethod(paymentInstrument.getPaymentMethod());
+
+        if (paymentMethod && applicablePaymentMethods.contains(paymentMethod)) {
+            if (PaymentInstrument.METHOD_CREDIT_CARD.equals(paymentInstrument.paymentMethod)) {
+                var card = PaymentMgr.getPaymentCard(paymentInstrument.creditCardType);
+
+                if (card && applicablePaymentCards.contains(card)) {
+                    invalid = false;
+                }
+            } else {
+                invalid = false;
+            }
+        }
+
+        if (invalid) {
+            break;
+        }
+    }
+
+    result.error = invalid;
+    return result;
+}
+
 checkoutHelper.handlePayments = handlePayments;
 checkoutHelper.savePaymentInstrumentToWallet = savePaymentInstrumentToWallet;
+checkoutHelper.validatePayment = validatePayment;
 
 module.exports = checkoutHelper;
