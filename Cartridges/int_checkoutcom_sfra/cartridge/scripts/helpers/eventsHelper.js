@@ -2,6 +2,7 @@
 
 /* API Includes */
 var OrderMgr = require('dw/order/OrderMgr');
+var Order = require('dw/order/Order');
 var Transaction = require('dw/system/Transaction');
 var PaymentTransaction = require('dw/order/PaymentTransaction');
 var PaymentMgr = require('dw/order/PaymentMgr');
@@ -59,46 +60,46 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      * @param {string} paymentStatus The payment status
      * @param {string} orderStatus The order status
+     * @param {boolean} onlyIfNotPaid When true, skips status/order updates if GET() already set the order to PAID
      */
-    addWebhookInfo: function(hook, paymentStatus, orderStatus) {
-        // Load the order
-        var order = OrderMgr.getOrder(hook.data.reference);
-        if (order) {
-            // Prepare the webhook info
-            var details = '';
-            details += ckoHelper._('cko.webhook.event', 'cko') + ': ' + hook.type + '\n';
-            details += ckoHelper._('cko.action.id', 'cko') + ': ' + hook.data.action_id + '\n';
-            details += ckoHelper._('cko.transaction.paymentId', 'cko') + ': ' + hook.data.id + '\n';
-            details += ckoHelper._('cko.transaction.eventId', 'cko') + ': ' + hook.id + '\n';
-            details += ckoHelper._('cko.response.code', 'cko') + ': ' + hook.data.response_code + '\n';
+    addWebhookInfo: function(hook, paymentStatus, orderStatus, onlyIfNotPaid) {
+        // Build details string outside the transaction (no DB writes here)
+        var details = '';
+        details += ckoHelper._('cko.webhook.event', 'cko') + ': ' + hook.type + '\n';
+        details += ckoHelper._('cko.action.id', 'cko') + ': ' + hook.data.action_id + '\n';
+        details += ckoHelper._('cko.transaction.paymentId', 'cko') + ': ' + hook.data.id + '\n';
+        details += ckoHelper._('cko.transaction.eventId', 'cko') + ': ' + hook.id + '\n';
+        details += ckoHelper._('cko.response.code', 'cko') + ': ' + hook.data.response_code + '\n';
 
-            if (hook.data.risk && hook.data.risk.flagged) {
-                var flagDetails = 'Subject: Payment authorized but flagged\nText: ' + hook.data.response_summary;
+        var flagDetails = (hook.data.risk && hook.data.risk.flagged)
+            ? 'Subject: Payment authorized but flagged\nText: ' + hook.data.response_summary
+            : null;
+
+        // Load the order INSIDE the transaction so we always read the latest OCA version.
+        // Loading it outside and then writing inside causes ORMOptimisticLockingException
+        // when two webhooks for the same order arrive concurrently.
+        Transaction.wrap(function() {
+            var order = OrderMgr.getOrder(hook.data.reference);
+            if (!order) { return; }
+
+            order.addNote(ckoHelper._('cko.webhook.info', 'cko'), details);
+
+            // If onlyIfNotPaid, skip status/order updates if GET() already confirmed the payment as PAID
+            var alreadyPaid = onlyIfNotPaid && order.paymentStatus === Order.PAYMENT_STATUS_PAID;
+
+            if (paymentStatus && !alreadyPaid) {
+                order.setPaymentStatus(order[paymentStatus]);
             }
 
-            // Process the transaction
-            Transaction.wrap(function() {
-                // Add the details to the order
-                order.addNote(ckoHelper._('cko.webhook.info', 'cko'), details);
+            if (flagDetails) {
+                order.addNote(ckoHelper._('cko.webhook.info', 'cko'), flagDetails);
+                order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
+            }
 
-                // Update the payment status
-                if (paymentStatus) {
-                    order.setPaymentStatus(order[paymentStatus]);
-                }
-
-                // Update order if flagged
-                // eslint-disable-next-line
-                if (flagDetails) {// eslint-disable-next-line
-                    order.addNote(ckoHelper._('cko.webhook.info', 'cko'), flagDetails);
-                    order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
-                }
-
-                // Update the order status
-                if ((orderStatus) && (orderStatus.indexOf('CANCELLED') !== -1 || orderStatus.indexOf('FAILED') !== -1)) {
-                    OrderMgr.failOrder(order, true);
-                }
-            });
-        }
+            if (orderStatus && !alreadyPaid && (orderStatus.indexOf('CANCELLED') !== -1 || orderStatus.indexOf('FAILED') !== -1)) {
+                OrderMgr.failOrder(order, true);
+            }
+        });
     },
 
     /**
@@ -115,8 +116,10 @@ var eventsHelper = {
         // Load the order
         var order = OrderMgr.getOrder(hook.data.reference);
 
-        // Get the payment processor id
-        var paymentProcessorId = hook.data.metadata.payment_processor;
+        // Get the payment processor id — fall back to order's payment instrument for methods without metadata (e.g. Alma)
+        var paymentProcessorId = (hook.data.metadata && hook.data.metadata.payment_processor)
+            ? hook.data.metadata.payment_processor
+            : order.getPaymentInstruments().toArray()[0].getPaymentMethod();
 
         // Create the captured transaction
         Transaction.wrap(function() {
@@ -172,7 +175,15 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentDeclined: function(hook) {
-        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED);
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED, true);
+
+        var declinedOrder = OrderMgr.getOrder(hook.data.reference);
+        if (declinedOrder && declinedOrder.paymentStatus !== Order.PAYMENT_STATUS_PAID) {
+            var declinedOrderRef = declinedOrder;
+            Transaction.wrap(function() {
+                declinedOrderRef.setConfirmationStatus(Order.CONFIRMATION_STATUS_NOTCONFIRMED);
+            });
+        }
 
         // Delete the card if needed
         savedCardHelper.updateSavedCard(hook);
@@ -281,15 +292,33 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentPending: function(hook) {
-        this.addWebhookInfo(hook, null, null);
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, '', true);
     },
 
     /**
      * Payment expired event.
+     * For ACH (AC11): retain Not Paid status, do NOT fail the order — no storefront action.
+     * For all other methods: mark the order as failed.
      * @param {Object} hook The gateway webhook data
      */
     paymentExpired: function(hook) {
-        this.addWebhookInfo(hook, null, null);
+        var isAch = hook.data && hook.data.metadata &&
+                    hook.data.metadata.payment_processor === 'CHECKOUTCOM_ACH';
+
+        if (isAch) {
+            // AC11: payment_expired for ACH — log the event, retain Not Paid, no order status change
+            this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, '');
+        } else {
+            this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED, true);
+
+            var expiredOrder = OrderMgr.getOrder(hook.data.reference);
+            if (expiredOrder && expiredOrder.paymentStatus !== Order.PAYMENT_STATUS_PAID) {
+                var expiredOrderRef = expiredOrder;
+                Transaction.wrap(function() {
+                    expiredOrderRef.setConfirmationStatus(Order.CONFIRMATION_STATUS_NOTCONFIRMED);
+                });
+            }
+        }
     },
 
     /**
@@ -306,6 +335,40 @@ var eventsHelper = {
      */
     paymentVoidDeclined: function(hook) {
         this.addWebhookInfo(hook, null, null);
+    },
+
+    /**
+     * Payment capture pending event.
+     * For MB WAY: shopper approved in banking app — confirm the order and mark payment as not yet settled.
+     * For all other methods: generic webhook info logging.
+     * @param {Object} hook The gateway webhook data
+     */
+    paymentCapturePending: function(hook) {
+        this.addWebhookInfo(hook, null, null); 
+    },
+
+    /**
+     * Payment refund pending event.
+     * @param {Object} hook The gateway webhook data
+     */
+    paymentRefundPending: function(hook) {
+        this.addWebhookInfo(hook, null, null);
+    },
+
+    /**
+     * Bank account updated event (ACH — AC18).
+     * Logs the event to Order Notes and deletes the stored Plaid processor token
+     * from the customer Profile so it cannot be reused after the bank account changes.
+     * @param {Object} hook The gateway webhook data
+     */
+    bankAccountUpdated: function(hook) {
+        this.addWebhookInfo(hook, null, null);
+
+        var order = OrderMgr.getOrder(hook.data.reference);
+        if (order && order.getCustomer() && order.getCustomer().isRegistered()) {
+            var achHelper = require('*/cartridge/scripts/helpers/achHelper');
+            achHelper.deleteProcessorToken(order.getCustomer());
+        }
     },
 };
 

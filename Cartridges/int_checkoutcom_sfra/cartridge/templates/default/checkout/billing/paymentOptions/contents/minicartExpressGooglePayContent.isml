@@ -8,12 +8,16 @@
 
 <div class="tab-pane google-pay-content" id="mini-cart-google-pay-content" role="tabpanel">
     <fieldset class="payment-form-fields">
-		<input type="hidden" class="form-control"
-				name="${pdict.forms.billingForm.paymentMethod.htmlName}"
-				value=""
-		>
+        <isif condition="${!empty(pdict.forms) && !empty(pdict.forms.billingForm)}">
+            <input type="hidden" class="form-control"
+                    name="${pdict.forms.billingForm.paymentMethod.htmlName}"
+                    value=""
+            />
+            <isset name="googlePayFields" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
+        <iselse/>
+            <isset name="googlePayFields" value="${null}" scope="page"/>
+        </isif>
         <input type="hidden" name="${csrfTokenName}" value="${csrfTokenValue}"/>
-        <isset name="googlePayFields" value="${pdict.forms.billingForm.googlePayForm}" scope="page"/>
 
         <isinclude template="checkout/billing/forms/expressMiniCartGooglePayForm" />
     </fieldset>

@@ -171,6 +171,42 @@ var ckoHelper = {
     },
 
     /**
+     * Validate the configured Service Endpoint URL.
+     * Accepts an https URL with a valid host; rejects empty, malformed,
+     * or unsafe values so the default service credentials URL is used instead.
+     * @param {string} endpoint The configured Service Endpoint value
+     * @returns {boolean} True if the value is a usable base URL
+     */
+    isValidServiceEndpoint: function(endpoint) {
+        if (!endpoint || typeof endpoint !== 'string') {
+            return false;
+        }
+        var trimmed = endpoint.trim();
+        // Must start with https:// and contain no whitespace or path/query characters in the host
+        var pattern = /^https:\/\/[A-Za-z0-9.\-]+(:\d+)?\/?$/;
+        return pattern.test(trimmed);
+    },
+
+    /**
+     * Resolve the Service Endpoint configured in Business Manager.
+     * Returns the trimmed endpoint when it passes validation, otherwise null
+     * so the default service credentials URL continues to be used.
+     * @returns {string|null} The configured base URL or null
+     */
+    getServiceEndpoint: function() {
+        var endpoint = this.getValue(constants.CKO_REGION_END_POINT);
+        if (this.isValidServiceEndpoint(endpoint)) {
+            return endpoint.trim().replace(/\/$/, '');
+        }
+        if (endpoint) {
+            Logger.getLogger('checkoutcom').warn(
+                'Invalid Service Endpoint configured; falling back to default service credentials URL.'
+            );
+        }
+        return null;
+    },
+
+    /**
      * Get the site country code from locale.
      * @returns {string} The site  country code
      */
@@ -376,11 +412,11 @@ var ckoHelper = {
             delete requestData.chargeId;
         }
 
-        // set url based on region
-        var regionEndPoint = this.getValue(constants.CKO_REGION_END_POINT);
-        var region = this.getValue(constants.CKO_REGION);
-        if (region && regionEndPoint && region.value !== 'Others') {
-            var serviceUrl = serv.getURL().replace(constants.CKO_END_POINTS, regionEndPoint);
+        // Route to the configured Service Endpoint when present and valid;
+        // otherwise leave the default service credentials URL in place.
+        var serviceEndpoint = this.getServiceEndpoint();
+        if (serviceEndpoint) {
+            var serviceUrl = serv.getURL().replace(constants.CKO_END_POINTS, serviceEndpoint);
             serv.setURL(serviceUrl);
         }
 
@@ -411,10 +447,9 @@ var ckoHelper = {
 
         // Prepare the request URL and data
         var requestUrl = serv.getURL();
-        var regionEndPoint = this.getValue(constants.CKO_REGION_END_POINT);
-        var region = this.getValue(constants.CKO_REGION);
-        if (region && regionEndPoint && region.value !== 'Others') {
-            requestUrl = requestUrl.replace(constants.CKO_END_POINTS, regionEndPoint);
+        var serviceEndpoint = this.getServiceEndpoint();
+        if (serviceEndpoint) {
+            requestUrl = requestUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);
         }
         serv.setURL(requestUrl);
 
@@ -634,7 +669,7 @@ var ckoHelper = {
         }
 
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'alipay' || gatewayResponse.source.type === 'oxxo' || gatewayResponse.source.type === 'boleto' || gatewayResponse.source.type === 'bancontact')) {
+            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'alipay' || gatewayResponse.source.type === 'oxxo' || gatewayResponse.source.type === 'boleto' || gatewayResponse.source.type === 'bancontact' || gatewayResponse.source.type === 'tabby')) {
                 return true;
             }
         }

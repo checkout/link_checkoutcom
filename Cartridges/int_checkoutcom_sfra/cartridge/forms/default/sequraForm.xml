@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<form xmlns="http://www.demandware.com/xml/form/2008-04-19">
+
+    <!-- Selected Sequra product type (invoice, pp5, sp1, pp3, flexi) -->
+    <field formid="ckoSequraProduct" type="string" mandatory="false" />
+</form>

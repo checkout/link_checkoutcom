@@ -1,0 +1,8 @@
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link tabby-tab" data-toggle="tab" href="#tabby-content" role="tab">
+        <isif condition="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image != null}">
+            <img alt="${Resource.msg('cko.tabby.name','cko',null)}" height="22" id="tabbypay_thumb" src="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image.URL}"/>
+        </isif>
+        ${paymentOption.name}
+    </a>
+</li>

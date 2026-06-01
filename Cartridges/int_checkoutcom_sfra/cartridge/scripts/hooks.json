@@ -57,6 +57,54 @@
             "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
         },
         {
+            "name": "app.payment.processor.checkoutcom_alma",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALMA"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_alma",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALMA_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_mbway",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_MBWAY"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_mbway",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_MBWAY_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_sequra",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_SEQURA"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_sequra",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_SEQURA_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_bizum",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_BIZUM"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_bizum",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_BIZUM_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_tabby",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TABBY"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_tabby",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TABBY_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_ach",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ACH"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_ach",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ACH_form_processor"
+        },
+        {
             "name": "app.payment.processor.default",
             "script": "./hooks/payment/processor/default"
         }

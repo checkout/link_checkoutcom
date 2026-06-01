@@ -99,6 +99,7 @@ var CKOHelper = {
                     captured_amount: this.getCapturedAmount(paymentInstruments),
                     data_type: paymentTransaction.type.toString(),
                     nasEnabled: result[j].custom.orderProcessedByABCorNAS,
+                    payment_method: paymentInstruments[0].getPaymentMethod(),
                 };
 
                 // Add the transaction
@@ -329,10 +330,9 @@ var CKOHelper = {
         // Prepare the request URL and data
         if (Object.prototype.hasOwnProperty.call(requestData, 'chargeId')) {
             var requestUrl = serv.getURL().replace('chargeId', requestData.chargeId);
-            var regionEndPoint = this.getValue(constants.CKO_REGION_END_POINT);
-            var region = this.getValue(constants.CKO_REGION);
-            if (region && regionEndPoint && region.value !== 'Others') {
-                requestUrl = requestUrl.replace(constants.CKO_END_POINTS, regionEndPoint);
+            var serviceEndpoint = this.getServiceEndpoint();
+            if (serviceEndpoint) {
+                requestUrl = requestUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);
             }
             serv.setURL(requestUrl);
             delete requestData.chargeId; // eslint-disable-line no-param-reassign
@@ -415,6 +415,37 @@ var CKOHelper = {
      */
     getValue: function(fieldName) {
         return Site.getCurrent().getCustomPreferenceValue(fieldName);
+    },
+
+    /**
+     * Validate the configured Service Endpoint URL.
+     * @param {string} endpoint The configured Service Endpoint value
+     * @returns {boolean} True if the value is a usable base URL
+     */
+    isValidServiceEndpoint: function(endpoint) {
+        if (!endpoint || typeof endpoint !== 'string') {
+            return false;
+        }
+        var trimmed = endpoint.trim();
+        var pattern = /^https:\/\/[A-Za-z0-9.\-]+(:\d+)?\/?$/;
+        return pattern.test(trimmed);
+    },
+
+    /**
+     * Resolve the Service Endpoint configured in Business Manager.
+     * @returns {string|null} The configured base URL or null when unset/invalid
+     */
+    getServiceEndpoint: function() {
+        var endpoint = this.getValue(constants.CKO_REGION_END_POINT);
+        if (this.isValidServiceEndpoint(endpoint)) {
+            return endpoint.trim().replace(/\/$/, '');
+        }
+        if (endpoint) {
+            Logger.getLogger('checkoutcom').warn(
+                'Invalid Service Endpoint configured; falling back to default service credentials URL.'
+            );
+        }
+        return null;
     },
 
     /**

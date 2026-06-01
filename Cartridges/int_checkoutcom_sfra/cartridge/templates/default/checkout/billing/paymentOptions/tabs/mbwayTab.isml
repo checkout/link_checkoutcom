@@ -1,0 +1,6 @@
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link mbway-tab" data-toggle="tab" href="#mbway-content" role="tab">
+        <img alt="${Resource.msg('cko.mbway.name','cko',null)}" height="22" id="mbway_thumb" src="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image.URL}"/>
+        ${paymentOption.name}
+    </a>
+</li>

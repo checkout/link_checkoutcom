@@ -1,0 +1,6 @@
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link ach-tab" data-toggle="tab" href="#ach-content" role="tab">
+        <img alt="${Resource.msg('cko.ach.name','cko',null)}" height="22" id="ach_thumb" src="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image.URL}"/>
+        ${paymentOption.name}
+    </a>
+</li>

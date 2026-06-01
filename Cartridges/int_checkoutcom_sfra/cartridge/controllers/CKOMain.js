@@ -69,14 +69,29 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
                 placeOrderResult = COHelpers.placeOrder(order, { status: '' });
                 if (placeOrderResult.error) {
                     Transaction.wrap(function() {
+                        order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
+                        order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
                         OrderMgr.failOrder(order, true);
                     });
-                }
+                    paymentHelper.getFailurePageRedirect(res);
+                } else {
+                    Transaction.wrap(function() {
+                        // Payment status: PAID if gateway confirms Captured, NOT PAID if Pending
+                        if (gVerify.status === 'Captured') {
+                            order.setPaymentStatus(order.PAYMENT_STATUS_PAID);
+                        } else {
+                            order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
+                        }
+                        order.setConfirmationStatus(order.CONFIRMATION_STATUS_CONFIRMED);
+                    });
 
-                // Show the order confirmation page
-                paymentHelper.getConfirmationPageRedirect(res, order);
+                    // Show the order confirmation page
+                    paymentHelper.getConfirmationPageRedirect(res, order);
+                }
             } else {
                 Transaction.wrap(function() {
+                    order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
+                    order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
                     OrderMgr.failOrder(order, true);
                 });
 
@@ -136,8 +151,10 @@ server.get('HandleFail', server.middleware.https, function(req, res, next) {
                 // Restore the cart
                 ckoHelper.checkAndRestoreBasket(order);
 
-                // Fail the order
+                // Fail the order and set payment/confirmation status explicitly
                 Transaction.wrap(function() {
+                    order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
+                    order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
                     OrderMgr.failOrder(order, true);
                 });
 
@@ -170,7 +187,61 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
             }
 
             // Call the event
-            eventsHelper[func](hook);
+            if (typeof eventsHelper[func] === 'function') {
+                eventsHelper[func](hook);
+            }
+
+            // MB WAY: store capture/error webhook events in the webhookNotification custom object
+            // so the client-side polling loop can detect them and act accordingly.
+            var isMbway = hook.data && hook.data.metadata && hook.data.metadata.payment_processor === 'CHECKOUTCOM_MBWAY';
+            if (isMbway) {
+                var mbwayNotificationEvents = [
+                    'payment_capture_pending',
+                    'payment_captured',
+                    'payment_declined',
+                    'payment_expired',
+                ];
+                if (mbwayNotificationEvents.indexOf(hook.type) !== -1) {
+                    var mbwayHelperInst = require('*/cartridge/scripts/helpers/mbwayHelper');
+                    mbwayHelperInst.storeWebhookNotification(hook.data.reference, hook);
+                }
+            }
+
+            // Bizum: store relevant webhook events in the webhookNotification custom object
+            // so the client-side polling loop can detect them and act accordingly.
+            var isBizum = hook.data && hook.data.metadata && hook.data.metadata.payment_processor === 'CHECKOUTCOM_BIZUM';
+            if (isBizum) {
+                var bizumNotificationEvents = [
+                    'payment_pending',
+                    'payment_capture_pending',
+                    'payment_captured',
+                    'payment_declined',
+                    'payment_expired',
+                ];
+                if (bizumNotificationEvents.indexOf(hook.type) !== -1) {
+                    var bizumHelperInst = require('*/cartridge/scripts/helpers/bizumHelper');
+                    bizumHelperInst.storeWebhookNotification(hook.data.reference, hook);
+                }
+            }
+
+            // ACH: store relevant webhook events in the webhookNotification custom object
+            // so the client-side polling loop can detect them and act accordingly.
+            // bank_account_updated is also stored so the processor token can be deleted.
+            var isAch = hook.data && hook.data.metadata && hook.data.metadata.payment_processor === 'CHECKOUTCOM_ACH';
+            if (isAch) {
+                var achNotificationEvents = [
+                    'payment_pending',
+                    'payment_capture_pending',
+                    'payment_captured',
+                    'payment_declined',
+                    'payment_expired',
+                    'bank_account_updated',
+                ];
+                if (achNotificationEvents.indexOf(hook.type) !== -1) {
+                    var achHelperInst = require('*/cartridge/scripts/helpers/achHelper');
+                    achHelperInst.storeWebhookNotification(hook.data.reference, hook);
+                }
+            }
         }
 
         // Set a success response
@@ -190,6 +261,150 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
                 null
             ),
         });
+    }
+
+    return next();
+});
+
+/**
+ * Polls the webhookNotification custom object to determine MB WAY payment outcome.
+ * On payment_capture_pending: places the order and returns the confirmation URL.
+ * On payment_declined / payment_expired: returns the failure URL.
+ * Otherwise: returns pending status so the client continues polling.
+ * @returns {Object} JSON response with status and optional redirect URL
+ */
+server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next) {
+    var orderNo = req.querystring.orderNo;
+    var token = req.querystring.token;
+    var order = OrderMgr.getOrder(orderNo);
+
+    if (!order || order.orderToken !== token) {
+        res.json({ status: 'error' });
+        return next();
+    }
+
+    var mbwayHelperInst = require('*/cartridge/scripts/helpers/mbwayHelper');
+    var notification = mbwayHelperInst.getWebhookNotification(orderNo);
+
+    if (!notification) {
+        res.json({ status: 'pending' });
+        return next();
+    }
+
+    var eventType = notification.webhookType;
+
+    if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
+        // Place the order if not already placed
+        var placeOrderResult;
+        try {
+            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
+        } catch (e) {
+            // Order may already be placed (race condition on second poll)
+            placeOrderResult = { error: false };
+        }
+
+        if (placeOrderResult && placeOrderResult.error) {
+            res.json({ status: 'error' });
+            return next();
+        }
+
+        // Clean up the notification so subsequent polls don't re-place
+        mbwayHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'confirmed',
+            confirmUrl: URLUtils.https(
+                'Order-Confirm',
+                'ID', order.orderNo,
+                'token', order.orderToken
+            ).toString(),
+        });
+    } else if (eventType === 'payment_declined' || eventType === 'payment_expired') {
+        mbwayHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'failed',
+            failureUrl: URLUtils.https(
+                'Checkout-Begin',
+                'stage', 'payment',
+                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
+            ).toString(),
+        });
+    } else {
+        res.json({ status: 'pending' });
+    }
+
+    return next();
+});
+
+/**
+ * Polls the webhookNotification custom object to determine Bizum payment outcome.
+ * On payment_capture_pending: places the order and returns the confirmation URL.
+ * On payment_declined / payment_expired: returns the failure URL.
+ * On payment_pending: returns pending status so the client continues polling.
+ * Otherwise: returns pending status so the client continues polling.
+ * @returns {Object} JSON response with status and optional redirect URL
+ */
+server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next) {
+    var orderNo = req.querystring.orderNo;
+    var token = req.querystring.token;
+    var order = OrderMgr.getOrder(orderNo);
+
+    if (!order || order.orderToken !== token) {
+        res.json({ status: 'error' });
+        return next();
+    }
+
+    var bizumHelperInst = require('*/cartridge/scripts/helpers/bizumHelper');
+    var notification = bizumHelperInst.getWebhookNotification(orderNo);
+
+    if (!notification) {
+        res.json({ status: 'pending' });
+        return next();
+    }
+
+    var eventType = notification.webhookType;
+
+    if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
+        // Place the order if not already placed
+        var placeOrderResult;
+        try {
+            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
+        } catch (e) {
+            // Order may already be placed (race condition on second poll)
+            placeOrderResult = { error: false };
+        }
+
+        if (placeOrderResult && placeOrderResult.error) {
+            res.json({ status: 'error' });
+            return next();
+        }
+
+        // Clean up the notification so subsequent polls don't re-place
+        bizumHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'confirmed',
+            confirmUrl: URLUtils.https(
+                'Order-Confirm',
+                'ID', order.orderNo,
+                'token', order.orderToken
+            ).toString(),
+        });
+    } else if (eventType === 'payment_declined' || eventType === 'payment_expired') {
+        bizumHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'failed',
+            failureUrl: URLUtils.https(
+                'Checkout-Begin',
+                'stage', 'payment',
+                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
+            ).toString(),
+        });
+    } else {
+        // payment_pending or any other event — keep polling
+        res.json({ status: 'pending' });
     }
 
     return next();
@@ -506,6 +721,276 @@ server.post('CreateBasketForPDP', csrfProtection.validateAjaxRequest, function(r
 
 server.post('restoreTemporaryBasket', csrfProtection.validateAjaxRequest, function(req, res, next) {
     ckoHelper.restoreBasket();
+});
+
+/**
+ * Polls the webhookNotification custom object to determine ACH payment outcome.
+ * On payment_pending: returns pending status so the client continues to show the spinner.
+ * On payment_capture_pending: places the order and returns the confirmation URL.
+ * On payment_declined / payment_expired: returns the failure URL.
+ * Otherwise: returns pending status so the client continues polling.
+ * @returns {Object} JSON response with status and optional redirect URL
+ */
+server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) {
+    var orderNo = req.querystring.orderNo;
+    var token = req.querystring.token;
+    var order = OrderMgr.getOrder(orderNo);
+
+    if (!order || order.orderToken !== token) {
+        res.json({ status: 'error' });
+        return next();
+    }
+
+    var achHelperInst = require('*/cartridge/scripts/helpers/achHelper');
+    var notification = achHelperInst.getWebhookNotification(orderNo);
+
+    if (!notification) {
+        res.json({ status: 'pending' });
+        return next();
+    }
+
+    var eventType = notification.webhookType;
+
+    if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
+        // Shopper approved payment in banking portal — place the order
+        var placeOrderResult;
+        try {
+            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
+        } catch (e) {
+            // Order may already be placed (race condition on second poll)
+            placeOrderResult = { error: false };
+        }
+
+        if (placeOrderResult && placeOrderResult.error) {
+            res.json({ status: 'error' });
+            return next();
+        }
+
+        achHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'confirmed',
+            confirmUrl: URLUtils.https(
+                'Order-Confirm',
+                'ID', order.orderNo,
+                'token', order.orderToken
+            ).toString(),
+        });
+    } else if (eventType === 'payment_declined') {
+        // eventsHelper.paymentDeclined already called OrderMgr.failOrder — do NOT call it again
+        achHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'failed',
+            failureUrl: URLUtils.https(
+                'Checkout-Begin',
+                'stage', 'payment',
+                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
+            ).toString(),
+        });
+    } else if (eventType === 'payment_expired') {
+        // AC11: server does NOT fail the order for ACH payment_expired,
+        // but the client must stop polling and allow the shopper to retry.
+        achHelperInst.deleteWebhookNotification(orderNo);
+
+        res.json({
+            status: 'failed',
+            failureUrl: URLUtils.https(
+                'Checkout-Begin',
+                'stage', 'payment',
+                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
+            ).toString(),
+        });
+    } else {
+        // payment_pending, bank_account_updated, or any other event — keep polling
+        res.json({ status: 'pending' });
+    }
+
+    return next();
+});
+
+/**
+ * Calls the Plaid /link/token/create API to obtain a Link token for the client-side
+ * Plaid Link popup. Reads Plaid credentials from SFCC site preferences.
+ * @returns {Object} JSON response with linkToken or error flag
+ */
+server.post('GetPlaidLinkToken', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
+    var Site = require('dw/system/Site');
+    var plaidService = require('*/cartridge/scripts/services/plaid');
+
+    var orderNo = req.form.orderNo;
+    var token = req.form.token;
+    var order = OrderMgr.getOrder(orderNo);
+
+    var failureUrl = URLUtils.https(
+        'Checkout-Begin',
+        'stage', 'payment',
+        'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
+    ).toString();
+
+    if (!order || order.orderToken !== token) {
+        res.json({ error: true, failureUrl: failureUrl });
+        return next();
+    }
+
+    try {
+        var plaidClientId = Site.getCurrent().getCustomPreferenceValue('ckoPlaidClientId');
+        var plaidSecret = Site.getCurrent().getCustomPreferenceValue('ckoPlaidSecret');
+        var plaidClientName = Site.getCurrent().getCustomPreferenceValue('ckoPlaidClientName');
+
+        if (!plaidClientId || !plaidSecret || !plaidClientName) {
+            ckoHelper.log('GetPlaidLinkToken', 'Plaid credentials not configured in Site Preferences.');
+            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            res.json({ error: true, failureUrl: failureUrl });
+            return next();
+        }
+
+        var mode = ckoHelper.getValue('ckoMode');
+        var service = (mode === 'live') ? plaidService.live() : plaidService.sandbox();
+
+        var resp = service.call({
+            endpoint: '/link/token/create',
+            body: {
+                client_id: plaidClientId,
+                secret: plaidSecret,
+                client_name: plaidClientName,
+                user: { client_user_id: order.orderNo },
+                products: ['auth'],
+                country_codes: ['US'],
+                language: 'en',
+            },
+        });
+
+        if (resp.status === 'OK' && resp.object && resp.object.statusCode === 200) {
+            var plaidResponse = JSON.parse(resp.object.text);
+            res.json({ error: false, linkToken: plaidResponse.link_token });
+        } else {
+            ckoHelper.log('GetPlaidLinkToken error', resp.errorMessage || (resp.object && resp.object.text));
+            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            res.json({ error: true, failureUrl: failureUrl });
+        }
+    } catch (e) {
+        ckoHelper.log('GetPlaidLinkToken exception', e.message);
+        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+        res.json({ error: true, failureUrl: failureUrl });
+    }
+
+    return next();
+});
+
+/**
+ * Completes the Plaid token exchange and submits the ACH payment to Checkout.com.
+ * Steps:
+ *   1. Exchange publicToken → accessToken via Plaid /item/public_token/exchange
+ *   2. Create processor token via Plaid /processor/token/create
+ *   3. Save processor token to the customer Profile (AC6b)
+ *   4. Submit payment to Checkout.com using the processor token
+ * @returns {Object} JSON response with error flag and pending status
+ */
+server.post('ProcessAchPayment', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
+    var Site = require('dw/system/Site');
+    var PaymentMgr = require('dw/order/PaymentMgr');
+    var plaidService = require('*/cartridge/scripts/services/plaid');
+
+    var orderNo = req.form.orderNo;
+    var token = req.form.token;
+    var publicToken = req.form.publicToken;
+    var accountId = req.form.accountId;
+
+    var order = OrderMgr.getOrder(orderNo);
+
+    var failureUrl = URLUtils.https(
+        'Checkout-Begin',
+        'stage', 'payment',
+        'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
+    ).toString();
+
+    if (!order || order.orderToken !== token || !publicToken || !accountId) {
+        res.json({ error: true, failureUrl: failureUrl });
+        return next();
+    }
+
+    try {
+        var plaidClientId = Site.getCurrent().getCustomPreferenceValue('ckoPlaidClientId');
+        var plaidSecret = Site.getCurrent().getCustomPreferenceValue('ckoPlaidSecret');
+        var mode = ckoHelper.getValue('ckoMode');
+
+        // Step 1: Exchange public token for access token
+        var exchangeService = (mode === 'live') ? plaidService.live() : plaidService.sandbox();
+        var exchangeResp = exchangeService.call({
+            endpoint: '/item/public_token/exchange',
+            body: {
+                client_id: plaidClientId,
+                secret: plaidSecret,
+                public_token: publicToken,
+            },
+        });
+
+        if (exchangeResp.status !== 'OK' || !exchangeResp.object || exchangeResp.object.statusCode !== 200) {
+            ckoHelper.log('ProcessAchPayment exchange error', exchangeResp.errorMessage || (exchangeResp.object && exchangeResp.object.text));
+            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            res.json({ error: true, failureUrl: failureUrl });
+            return next();
+        }
+
+        var accessToken = JSON.parse(exchangeResp.object.text).access_token;
+
+        // Step 2: Create processor token
+        var processorService = (mode === 'live') ? plaidService.live() : plaidService.sandbox();
+        var processorResp = processorService.call({
+            endpoint: '/processor/token/create',
+            body: {
+                client_id: plaidClientId,
+                secret: plaidSecret,
+                access_token: accessToken,
+                account_id: accountId,
+                processor: 'checkout',
+            },
+        });
+
+        if (processorResp.status !== 'OK' || !processorResp.object || processorResp.object.statusCode !== 200) {
+            ckoHelper.log('ProcessAchPayment processor token error', processorResp.errorMessage || (processorResp.object && processorResp.object.text));
+            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            res.json({ error: true, failureUrl: failureUrl });
+            return next();
+        }
+
+        var processorToken = JSON.parse(processorResp.object.text).processor_token;
+
+        // Step 3: Save processor token to customer profile (AC6b)
+        var achHelperInst = require('*/cartridge/scripts/helpers/achHelper');
+        if (order.getCustomer() && order.getCustomer().isAuthenticated()) {
+            achHelperInst.saveProcessorToken(order.getCustomer(), processorToken);
+        }
+
+        // Step 4: Submit payment to Checkout.com
+        var achPaymentHelper = require('*/cartridge/scripts/helpers/achPaymentHelper');
+        var paymentResult = achPaymentHelper.handleRequest('CHECKOUTCOM_ACH', orderNo, processorToken);
+
+        if (paymentResult.error) {
+            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            res.json({ error: true, failureUrl: failureUrl });
+            return next();
+        }
+
+        // Record the transaction ID on the payment instrument
+        Transaction.wrap(function() {
+            var paymentInstruments = order.getPaymentInstruments('CHECKOUTCOM_ACH');
+            if (paymentInstruments && paymentInstruments.length > 0) {
+                var paymentProcessor = PaymentMgr.getPaymentMethod('CHECKOUTCOM_ACH').getPaymentProcessor();
+                paymentInstruments[0].paymentTransaction.setTransactionID(paymentResult.transactionID);
+                paymentInstruments[0].paymentTransaction.setPaymentProcessor(paymentProcessor);
+            }
+        });
+
+        res.json({ error: false, pending: true });
+    } catch (e) {
+        ckoHelper.log('ProcessAchPayment exception', e.message);
+        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+        res.json({ error: true, failureUrl: failureUrl });
+    }
+
+    return next();
 });
 
 /*

@@ -120,6 +120,18 @@
         <password/>
     </service-credential>
 
+    <service-credential service-credential-id="cko.plaid.sandbox.credential">
+        <url>https://sandbox.plaid.com</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.plaid.live.credential">
+        <url>https://production.plaid.com</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
     <service-profile service-profile-id="CheckoutCom">
         <timeout-millis>10000</timeout-millis>
         <rate-limit-enabled>false</rate-limit-enabled>
@@ -315,4 +327,23 @@
         <profile-id>CheckoutCom</profile-id>
         <credential-id>cko.cartes.bancaires.sandbox.credential</credential-id>
     </service>
+
+    <service service-id="cko.plaid.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-plaid</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.plaid.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.plaid.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-plaid</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.plaid.live.credential</credential-id>
+    </service>
+
 </services>

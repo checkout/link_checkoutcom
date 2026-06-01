@@ -5,6 +5,7 @@ var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
 
 /* Utility */
 var util = require('*/cartridge/scripts/helpers/ckoHelper');
+var constants = require('*/cartridge/config/constants');
 
 /**
  * Transaction service wrapper.
@@ -19,6 +20,13 @@ var wrapper = {
         return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
                 var serviceUrl = svc.configuration.credential.URL + '/' + args.paymentToken;
+
+                // Route to the configured Service Endpoint when present and valid;
+                // otherwise leave the default service credentials URL in place.
+                var serviceEndpoint = util.getServiceEndpoint();
+                if (serviceEndpoint) {
+                    serviceUrl = serviceUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);
+                }
 
                 // Prepare the http service
                 svc.setURL(serviceUrl);
@@ -53,6 +61,13 @@ var wrapper = {
         return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
                 var serviceUrl = svc.configuration.credential.URL + '/' + args.paymentToken;
+
+                // Route to the configured Service Endpoint when present and valid;
+                // otherwise leave the default service credentials URL in place.
+                var serviceEndpoint = util.getServiceEndpoint();
+                if (serviceEndpoint) {
+                    serviceUrl = serviceUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);
+                }
 
                 // Prepare the http service
                 svc.setURL(serviceUrl);

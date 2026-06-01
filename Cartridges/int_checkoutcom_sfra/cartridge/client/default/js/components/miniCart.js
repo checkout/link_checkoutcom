@@ -6,6 +6,11 @@ var miniCartExpressPaypal = require('../paypal/minicartExpressPaypal');
 var updateMiniCart = true;
 var location = window.location;
 
+function loadTranslations() {
+  var a = $("#translationStrings").val();
+  window.ckoLang = JSON.parse(a);
+}
+
 module.exports = function () {
     cart();
 
@@ -65,7 +70,67 @@ module.exports = function () {
     $('body').on('product:afterAddToCart', function () {
         updateMiniCart = true;
     });
-    $('body').on('cart:update', function () {
+    $('body').on('cart:update', function(e, data) {
         updateMiniCart = true;
+
+        var subTotal = '0.00';
+        if (data) {
+            if (data.subTotal) {
+                subTotal = data.subTotal;
+            } else if (data.basket && data.basket.subTotal) {
+                subTotal = data.basket.subTotal;
+            }
+        }
+        subTotal = subTotal.toString().replace(/[^\d.]/g, '');
+
+        $('#ckoMiniCartProductPrice').val(subTotal);
+        $('#ckoCartProductPrice').val(subTotal);
+
+
+        var totalTax = '0.00';
+        if (data) {
+            if (data.totalTax) {
+                totalTax = data.totalTax;
+            } else if (data.basket && data.basket.totalTax) {
+                totalTax = data.basket.totalTax;
+            }
+        }
+        totalTax = totalTax.toString().replace(/[^\d.]/g, '');
+
+        $('#ckoMiniCartSalesTax').val(totalTax);
+        $('#ckoCartSalesTax').val(totalTax);
+    });
+
+    $('body').on('promotion:success', function(e, data) {
+        var subTotal = '0.00';
+        if (data) {
+            if (data.subTotal) {
+                subTotal = data.subTotal;
+            } else if (data.basket && data.basket.subTotal) {
+                subTotal = data.basket.subTotal;
+            }
+        }
+        subTotal = subTotal.toString().replace(/[^\d.]/g, '');
+
+        $('#ckoMiniCartProductPrice').val(subTotal);
+        $('#ckoCartProductPrice').val(subTotal);
+
+
+        var totalTax = '0.00';
+        if (data) {
+            if (data.totalTax) {
+                totalTax = data.totalTax;
+            } else if (data.basket && data.basket.totalTax) {
+                totalTax = data.basket.totalTax;
+            }
+        }
+        totalTax = totalTax.toString().replace(/[^\d.]/g, '');
+
+        $('#ckoMiniCartSalesTax').val(totalTax);
+        $('#ckoCartSalesTax').val(totalTax);
+    });
+
+    $(document).ready(function() {
+        loadTranslations();
     });
 };

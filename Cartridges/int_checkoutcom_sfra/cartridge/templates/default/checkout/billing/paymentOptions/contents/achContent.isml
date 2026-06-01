@@ -1,0 +1,25 @@
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addJs('/js/ach.js');
+    assets.addCss('/css/ach.css');
+</isscript>
+
+<iscomment>Plaid Link SDK — loaded here so window.Plaid is available before ach.js runs</iscomment>
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+
+<div class="tab-pane ach-content" id="ach-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+        <input type="hidden" id="achCsrfName" value="${pdict.csrf.tokenName}" />
+        <input type="hidden" id="achCsrfValue" value="${pdict.csrf.token}" />
+        <input type="hidden" id="achCheckUrl" value="${URLUtils.https('CKOMain-CheckAchWebhook')}" />
+        <input type="hidden" id="achGetLinkTokenUrl" value="${URLUtils.https('CKOMain-GetPlaidLinkToken')}" />
+        <input type="hidden" id="achProcessUrl" value="${URLUtils.https('CKOMain-ProcessAchPayment')}" />
+        <input type="hidden" id="achWaitingMessage" value="${Resource.msg('cko.ach.waiting','cko',null)}" />
+        <div class="ach-info">
+            <p class="ach-info-message">${Resource.msg('cko.ach.info','cko',null)}</p>
+        </div>
+        <div id="ach-error-message" class="alert alert-danger d-none" role="alert"></div>
+    </fieldset>
+</div>

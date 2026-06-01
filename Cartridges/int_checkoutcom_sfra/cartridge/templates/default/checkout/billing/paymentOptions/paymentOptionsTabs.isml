@@ -29,4 +29,33 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_APM' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoEnabled')}">
         <isinclude template="checkout/billing/paymentOptions/tabs/apmTab"/>
     </isif>
+
+    <iscomment> MB WAY - Portugal billing address and EUR currency only </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_MBWAY' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoMbwayEnabled') && session.getCurrency().getCurrencyCode() === 'EUR'}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/mbwayTab"/>
+    </isif>
+
+    <iscomment> Alma - France billing address and EUR currency only </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALMA' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAlmaEnabled') && session.getCurrency().getCurrencyCode() === 'EUR'}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/almaTab"/>
+    </isif>
+
+    <iscomment> Sequra - Spain billing address and EUR currency only; master toggle and at least one payment type must be enabled </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_SEQURA' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraEnabled') && session.getCurrency().getCurrencyCode() === 'EUR' && (dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayLaterInvoice') || dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayLaterPP5') || dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayIn3SP1') || dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraPayInInstallmentsPP3') || dw.system.Site.getCurrent().getCustomPreferenceValue('ckoSequraFlexi'))}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/sequraTab"/>
+    </isif>
+    <iscomment> Bizum - Spain billing address and EUR currency only </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_BIZUM' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoBizumEnabled') && session.getCurrency().getCurrencyCode() === 'EUR'}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/bizumTab"/>
+    </isif>
+
+    <iscomment> Tabby - enabled/country/currency validation handled by BM (applicablePaymentMethods) and validatePayment </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_TABBY' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoTabbyEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/tabbyTab"/>
+    </isif>
+
+    <iscomment> ACH Direct Debit - US only and USD currency only </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ACH' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAchEnabled') && session.getCurrency().getCurrencyCode() === 'USD'}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/achTab"/>
+    </isif>
 </isloop>
