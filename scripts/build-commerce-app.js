@@ -70,8 +70,10 @@ Object.keys(cartridgeMap).forEach(function (name) {
             throw new Error('Required CAP file missing: ' + required);
         }
     });
-if (!fs.existsSync(path.join(stageDir, 'icons', 'checkoutcom.png'))) {
-    console.warn('  ! icons/checkoutcom.png not found — add the brand icon before submitting (see commerce-app/icons/README.md)');
+const iconName = ['checkoutcom.svg', 'checkoutcom.png', 'checkoutcom.jpg', 'checkoutcom.jpeg']
+    .find(function (name) { return fs.existsSync(path.join(stageDir, 'icons', name)); });
+if (!iconName) {
+    console.warn('  ! icons/checkoutcom.<svg|png> not found — add the brand icon before submitting (see commerce-app/icons/README.md)');
 }
 console.warn('  ! reminder: run "npm run build" first if client JS under cartridge/client changed');
 
@@ -85,7 +87,7 @@ const entry = {
     id: manifest.id,
     name: manifest.name,
     description: manifest.description,
-    iconName: 'checkoutcom.png',
+    iconName: iconName || 'checkoutcom.png',
     domain: manifest.domain,
     type: 'app',
     provider: 'thirdParty',

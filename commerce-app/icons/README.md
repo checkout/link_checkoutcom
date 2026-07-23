@@ -1,11 +1,10 @@
 # App icon
 
-Place the Checkout.com app icon here before packaging:
+`checkoutcom.svg` is the Checkout.com brand mark shown on the app card in
+Business Manager. The filename must match the `iconName` in the registry
+manifest entry (`scripts/build-commerce-app.js` auto-detects
+`checkoutcom.<svg|png|jpg|jpeg>` when generating `dist/manifest-entry.json`).
 
-- **Filename:** `checkoutcom.png` (must match the `iconName` used in the registry manifest entry)
-- **Format:** PNG, SVG, JPG or JPEG (PNG recommended)
-- **Size:** 512x512 px for raster formats, scalable for SVG
-- **Content:** official Checkout.com brand mark — icons are shown on the app card in Business Manager and must be unique per ISV
-
-The packaging script (`npm run package:app`) warns if the icon is missing; the
-registry CI extracts it into `commerce-apps-manifest/icons/` on merge.
+Registry CI extracts image files from this directory into
+`commerce-apps-manifest/icons/` on merge; this README is not extracted.
+Keep the icon square (SVG, or ≥176px raster) and unique to Checkout.com.

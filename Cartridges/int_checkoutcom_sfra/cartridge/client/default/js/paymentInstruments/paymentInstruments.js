@@ -233,21 +233,23 @@ module.exports = {
         function checkMadaBin (cardNumber, madaBinConfigs) {
             var cardBinFirstNumber = cardNumber.charAt(0);
             var cardBin = cardNumber.substring(0,6);
-            if (!cardBinFirstNumber) {
+            // madaBinConfigs is {} when MADA is disabled or the locale is not SA,
+            // and null before the CKOMain-MadaBin response is cached
+            if (!cardBinFirstNumber || !madaBinConfigs) {
                 return false;
             }
             switch (cardBinFirstNumber) {
                 case '4':
-                    if (madaBinConfigs.four.includes(cardBin)) return 'mada';
+                    if (madaBinConfigs.four && madaBinConfigs.four.includes(cardBin)) return 'mada';
                     break;
                 case '5':
-                    if (madaBinConfigs.five.includes(cardBin)) return 'mada';
+                    if (madaBinConfigs.five && madaBinConfigs.five.includes(cardBin)) return 'mada';
                     break;
                 case '6':
-                    if (madaBinConfigs.six.includes(cardBin)) return 'mada';
+                    if (madaBinConfigs.six && madaBinConfigs.six.includes(cardBin)) return 'mada';
                     break;
                 case '9':
-                    if (madaBinConfigs.nine.includes(cardBin)) return 'mada';
+                    if (madaBinConfigs.nine && madaBinConfigs.nine.includes(cardBin)) return 'mada';
                     break;
                 default:
                     return false;

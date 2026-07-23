@@ -60,19 +60,19 @@ function s() {
           var t = (function (e, t) {
             var r = e.charAt(0),
               n = e.substr(0, 6);
-            if (!r) return !1;
+            if (!r || !t) return !1;
             switch (r) {
               case "4":
-                if (t.four.includes(n)) return "mada";
+                if (t.four && t.four.includes(n)) return "mada";
                 break;
               case "5":
-                if (t.five.includes(n)) return "mada";
+                if (t.five && t.five.includes(n)) return "mada";
                 break;
               case "6":
-                if (t.six.includes(n)) return "mada";
+                if (t.six && t.six.includes(n)) return "mada";
                 break;
               case "9":
-                if (t.nine.includes(n)) return "mada";
+                if (t.nine && t.nine.includes(n)) return "mada";
                 break;
               default:
                 return !1;
