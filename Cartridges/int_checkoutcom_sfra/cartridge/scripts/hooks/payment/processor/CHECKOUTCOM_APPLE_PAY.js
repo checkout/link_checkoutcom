@@ -133,3 +133,8 @@ exports.shippingContactSelected = function(basket, event, response) {
 
     return;
 };
+
+// Alias export required by the Commerce Apps registry scan: the hook name's
+// last segment (hooks.json) must exist as an export. SFCC resolves the hook
+// functions above by name through HookMgr; this alias is not invoked.
+exports.checkoutcom_apple_pay = { authorizeOrderPayment: exports.authorizeOrderPayment, getRequest: exports.getRequest, shippingContactSelected: exports.shippingContactSelected };

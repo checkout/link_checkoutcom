@@ -163,3 +163,8 @@ function savePaymentInformation(req, basket, billingData) {
 
 exports.processForm = processForm;
 exports.savePaymentInformation = savePaymentInformation;
+
+// Alias export required by the Commerce Apps registry scan: the hook name's
+// last segment (hooks.json) must exist as an export. SFCC resolves the hook
+// functions above by name through HookMgr; this alias is not invoked.
+exports.checkoutcom_card = { processForm: processForm, savePaymentInformation: savePaymentInformation };

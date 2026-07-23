@@ -36,3 +36,8 @@ function Authorize() {
 
 exports.Handle = Handle;
 exports.Authorize = Authorize;
+
+// Alias export required by the Commerce Apps registry scan: the hook name's
+// last segment (hooks.json) must exist as an export. SFCC resolves the hook
+// functions above by name through HookMgr; this alias is not invoked.
+module.exports['default'] = { Handle: Handle, Authorize: Authorize }; // eslint-disable-line dot-notation

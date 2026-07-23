@@ -10,7 +10,11 @@
                     && pdict.order.billing.billingAddress.address.firstName
                     ? pdict.order.billing.billingAddress.address.firstName
                     : ''}"
-                <isprint value=${billingFields.firstName.attributes} encoding="off"/>
+                name="${billingFields.firstName.htmlName}"
+                <isif condition="${billingFields.firstName.mandatory === true}">required aria-required="true"</isif>
+                <isif condition="${!empty(billingFields.firstName.maxLength)}">maxLength="${billingFields.firstName.maxLength}"</isif>
+                <isif condition="${!empty(billingFields.firstName.minLength)}">minLength="${billingFields.firstName.minLength}"</isif>
+                <isif condition="${!empty(billingFields.firstName.regEx)}">pattern="${billingFields.firstName.regEx}"</isif>
                 autocomplete="given-name" >
             <div class="invalid-feedback"></div>
         </div>
@@ -25,7 +29,11 @@
                     && pdict.order.billing.billingAddress.address.lastName
                     ? pdict.order.billing.billingAddress.address.lastName
                     : ''}"
-                <isprint value=${billingFields.lastName.attributes} encoding="off"/>
+                name="${billingFields.lastName.htmlName}"
+                <isif condition="${billingFields.lastName.mandatory === true}">required aria-required="true"</isif>
+                <isif condition="${!empty(billingFields.lastName.maxLength)}">maxLength="${billingFields.lastName.maxLength}"</isif>
+                <isif condition="${!empty(billingFields.lastName.minLength)}">minLength="${billingFields.lastName.minLength}"</isif>
+                <isif condition="${!empty(billingFields.lastName.regEx)}">pattern="${billingFields.lastName.regEx}"</isif>
                 autocomplete="family-name">
             <div class="invalid-feedback"></div>
         </div>
@@ -43,7 +51,11 @@
                     && pdict.order.billing.billingAddress.address.address1
                     ? pdict.order.billing.billingAddress.address.address1
                     : ''}"
-                <isprint value=${billingFields.address1.attributes} encoding="off"/>
+                name="${billingFields.address1.htmlName}"
+                <isif condition="${billingFields.address1.mandatory === true}">required aria-required="true"</isif>
+                <isif condition="${!empty(billingFields.address1.maxLength)}">maxLength="${billingFields.address1.maxLength}"</isif>
+                <isif condition="${!empty(billingFields.address1.minLength)}">minLength="${billingFields.address1.minLength}"</isif>
+                <isif condition="${!empty(billingFields.address1.regEx)}">pattern="${billingFields.address1.regEx}"</isif>
                 autocomplete="billing address-line1">
             <div class="invalid-feedback"></div>
         </div>
@@ -61,7 +73,11 @@
                     && pdict.order.billing.billingAddress.address.address2
                     ? pdict.order.billing.billingAddress.address.address2
                     : ''}"
-                <isprint value=${billingFields.address2.attributes} encoding="off"/>
+                name="${billingFields.address2.htmlName}"
+                <isif condition="${billingFields.address2.mandatory === true}">required aria-required="true"</isif>
+                <isif condition="${!empty(billingFields.address2.maxLength)}">maxLength="${billingFields.address2.maxLength}"</isif>
+                <isif condition="${!empty(billingFields.address2.minLength)}">minLength="${billingFields.address2.minLength}"</isif>
+                <isif condition="${!empty(billingFields.address2.regEx)}">pattern="${billingFields.address2.regEx}"</isif>
                 autocomplete="billing address-line2">
             <div class="invalid-feedback"></div>
         </div>
@@ -76,7 +92,8 @@
             ${billingFields.country.htmlName}">
             <label class="form-control-label" for="billingCountry">${Resource.msg('field.billing.address.country','address',null)}</label>
             <select class="form-control billingCountry custom-select" id="billingCountry"
-                <isprint value=${billingFields.country.attributes} encoding="off"/>
+                name="${billingFields.country.htmlName}"
+                <isif condition="${billingFields.country.mandatory === true}">required aria-required="true"</isif>
                 autocomplete="billing country">
                     <option label=" "></option>
                     <isloop items=${billingFields.country.options} var="country">
@@ -100,7 +117,8 @@
             ${billingFields.states.stateCode.htmlName}">
             <label class="form-control-label" for="billingState">${Resource.msg('field.billing.address.state','address',null)}</label>
             <select class="form-control billingState custom-select" id="billingState"
-                <isprint value=${billingFields.states.stateCode.attributes} encoding="off"/>
+                name="${billingFields.states.stateCode.htmlName}"
+                <isif condition="${billingFields.states.stateCode.mandatory === true}">required aria-required="true"</isif>
                 autocomplete="billing address-level1">
                     <isloop items=${billingFields.states.stateCode.options} var="state">
                         <option id="${state.id}"  value="${state.htmlValue}"
@@ -129,7 +147,11 @@
                     && pdict.order.billing.billingAddress.address.city
                     ? pdict.order.billing.billingAddress.address.city
                     : ''}"
-                <isprint value=${billingFields.city.attributes} encoding="off"/>
+                name="${billingFields.city.htmlName}"
+                <isif condition="${billingFields.city.mandatory === true}">required aria-required="true"</isif>
+                <isif condition="${!empty(billingFields.city.maxLength)}">maxLength="${billingFields.city.maxLength}"</isif>
+                <isif condition="${!empty(billingFields.city.minLength)}">minLength="${billingFields.city.minLength}"</isif>
+                <isif condition="${!empty(billingFields.city.regEx)}">pattern="${billingFields.city.regEx}"</isif>
                 autocomplete="billing address-level2">
             <div class="invalid-feedback"></div>
         </div>
@@ -144,7 +166,11 @@
                     && pdict.order.billing.billingAddress.address.postalCode
                     ? pdict.order.billing.billingAddress.address.postalCode
                     : ''}"
-                <isprint value=${billingFields.postalCode.attributes} encoding="off"/>
+                name="${billingFields.postalCode.htmlName}"
+                <isif condition="${billingFields.postalCode.mandatory === true}">required aria-required="true"</isif>
+                <isif condition="${!empty(billingFields.postalCode.maxLength)}">maxLength="${billingFields.postalCode.maxLength}"</isif>
+                <isif condition="${!empty(billingFields.postalCode.minLength)}">minLength="${billingFields.postalCode.minLength}"</isif>
+                <isif condition="${!empty(billingFields.postalCode.regEx)}">pattern="${billingFields.postalCode.regEx}"</isif>
                 autocomplete="billing postal-code">
             <div class="invalid-feedback"></div>
             <span>${Resource.msg('example.postalcode','forms',null)}</span>

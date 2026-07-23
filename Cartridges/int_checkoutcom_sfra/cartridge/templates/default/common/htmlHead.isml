@@ -51,9 +51,17 @@ ${dw.system.HookMgr.callHook('app.template.htmlHead', 'htmlHead', pdict) || ''}
     IMPORTANT: Note that this module will be called to cached as well as uncached pages
         Refrain from calling processing intensive logic in here
         do not include shopper specific information.
-        This hook will be executed with encoding disabled. Please sanitize output in the hook.
+    Unlike app_storefront_base, only the customCSSFile variant of the store-skin
+    content asset is rendered: printing the asset body raw (encoding="off") is
+    not allowed for Commerce App Packages.
 </iscomment>
-<isprint value="${require('*/cartridge/scripts/theming/skin.js').renderSkin()}" encoding="off" />
+<isscript>
+    var skinAsset = require('dw/content/ContentMgr').getContent('store-skin');
+    var skinCssUrl = (skinAsset && skinAsset.custom.customCSSFile) ? skinAsset.custom.customCSSFile.getURL() : null;
+</isscript>
+<isif condition="${!empty(skinCssUrl)}">
+    <link rel="stylesheet" href="${skinCssUrl}" />
+</isif>
 <link rel="stylesheet" href="${URLUtils.staticURL('/css/skin/skin.css')}" />
 <link rel="stylesheet" href="${URLUtils.staticURL('/css/minicartExpressGooglePay.css')}" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
