@@ -3,6 +3,7 @@
 link-checkoutcom.code-workspace
 dw.json
 node_modules/
+dist/
 .vscode/
 Cartridges/app_storefront_base/
 Cartridges/demo_core/

@@ -1,0 +1,32 @@
+{
+    "tasks": {
+        "configure_api_credentials": {
+            "name": "Enter your Checkout.com API credentials",
+            "description": "In Merchant Tools > Site Preferences > Custom Preferences, open the CKO preference groups and enter the Secret Key, Public Key and (for NAS accounts) the Processing Channel ID from your Checkout.com Dashboard. Use the Sandbox Keys group to test before going live."
+        },
+        "select_environment_and_platform": {
+            "name": "Select environment and account platform",
+            "description": "In the CKO Business Details custom preference group, choose Sandbox or Live mode and select whether your Checkout.com account is on the NAS (current) or ABC (legacy) platform, then enable the integration."
+        },
+        "add_cartridges_to_site_path": {
+            "name": "Add the cartridges to the cartridge paths",
+            "description": "Prepend int_checkoutcom_sfra to your site cartridge path (Administration > Sites > Manage Sites > your site > Settings) and add bm_checkoutcom to the Business Manager cartridge path (Administration > Sites > Manage Sites > Business Manager > Settings)."
+        },
+        "configure_capture_and_3ds": {
+            "name": "Configure capture and 3D Secure",
+            "description": "In the CKO Payment Settings custom preference group, set the auto-capture behaviour and delay, and enable 3D Secure for card payments as required by your region."
+        },
+        "enable_payment_methods": {
+            "name": "Enable the payment methods you are approved for",
+            "description": "In Merchant Tools > Ordering > Payment Methods, enable the CHECKOUTCOM_* payment methods (card, Apple Pay, Google Pay, PayPal, Klarna, Alma, Sequra, MB WAY, Bizum, Tabby, ACH) that are activated on your Checkout.com account."
+        },
+        "register_webhook_endpoint": {
+            "name": "Register the webhook endpoint in the Checkout.com Dashboard",
+            "description": "In your Checkout.com Dashboard, create a webhook pointing to https://<your-domain>/on/demandware.store/Sites-<your-site>-Site/default/CKOMain-HandleWebhook and subscribe to payment events so payment status updates reconcile automatically with your orders."
+        },
+        "place_test_order": {
+            "name": "Place a test order",
+            "description": "With Sandbox mode enabled, place a test order on the storefront using Checkout.com test cards, then verify the payment appears in the Checkout.com Transactions module in Business Manager and that capture, void and refund actions work."
+        }
+    }
+}

@@ -15,10 +15,10 @@ function launchGooglePay() {
             },
             method: "POST",
             success: function (e) {
-                console.log(e);
+                void (e);
             },
             error: function (e) {
-                console.log(e);
+                void (e);
             }
         });
 
@@ -80,7 +80,7 @@ function launchGooglePay() {
                 productDiscountTotal = e.productDiscountTotal;
             },
             error: function (e) {
-                console.log(e);
+                void (e);
             }
         });
 
@@ -101,7 +101,7 @@ function launchGooglePay() {
             }
         })
         .catch(function (e) {
-            console.log(e);
+            void (e);
         });
 
         var paymentDataRequest = buildRequest();
@@ -243,11 +243,13 @@ function launchGooglePay() {
                                         } else if (e.redirectUrl) {
                                             location.href = e.redirectUrl;
                                         } else {
-                                            document.getElementsByClassName("page")[0].innerHTML = e;
+                                            var pageElement = document.getElementsByClassName("page")[0];
+                                            var pageDoc = new DOMParser().parseFromString(e, "text/html");
+                                            pageElement.replaceChildren.apply(pageElement, pageDoc.body.childNodes);
                                         }
                                     },
                                     error: function (e) {
-                                        console.log(e);
+                                        void (e);
                                     }
                                 });
                             }
@@ -324,7 +326,7 @@ function launchGooglePay() {
                         }
                     },
                     error: function (e) {
-                        console.log(e);
+                        void (e);
                     }
                 });
 
@@ -387,7 +389,7 @@ function launchGooglePay() {
             .then(function () {})
             .catch(function (e) {
                 location.reload();
-                console.log(e);
+                void (e);
             });
 
     });

@@ -7,28 +7,37 @@
  * @returns {Object} an object that has error information or payment information
  */
 function processForm(paymentForm, viewFormData) {
-    var viewData = viewFormData;
-    var ckoApplePayData = paymentForm.ckoApplePayData ? paymentForm.applePayForm.ckoApplePayData.htmlValue : null;
-    var error = true;
+    try {
+        var viewData = viewFormData;
+        var ckoApplePayData = paymentForm.ckoApplePayData ? paymentForm.applePayForm.ckoApplePayData.htmlValue : null;
+        var error = true;
 
-    if (ckoApplePayData) {
-        viewData.paymentMethod = {
-            value: paymentForm.paymentMethod.htmlValue,
-            htmlName: paymentForm.paymentMethod.htmlValue,
+        if (ckoApplePayData) {
+            viewData.paymentMethod = {
+                value: paymentForm.paymentMethod.htmlValue,
+                htmlName: paymentForm.paymentMethod.htmlValue,
+            };
+
+            viewData.paymentInformation = {
+                ckoApplePayData: {
+                    value: ckoApplePayData.htmlValue,
+                    htmlName: ckoApplePayData.htmlName,
+                },
+            };
+        }
+
+        return {
+            error: error,
+            viewData: viewData,
         };
-
-        viewData.paymentInformation = {
-            ckoApplePayData: {
-                value: ckoApplePayData.htmlValue,
-                htmlName: ckoApplePayData.htmlName,
-            },
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_APPLE_PAY processForm failed: {0}', e.message);
+        return {
+            error: true,
+            viewData: viewFormData,
         };
     }
-
-    return {
-        error: error,
-        viewData: viewData,
-    };
 }
 
 exports.processForm = processForm;

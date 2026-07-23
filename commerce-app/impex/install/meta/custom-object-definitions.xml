@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+    <custom-type type-id="webhookNotification">
+        <display-name xml:lang="x-default">Checkout payments webhook notifications</display-name>
+        <staging-mode>no-staging</staging-mode>
+        <storage-scope>organization</storage-scope>
+        <key-definition attribute-id="orderNo">
+            <display-name xml:lang="x-default">Order Number</display-name>
+            <type>string</type>
+            <min-length>0</min-length>
+        </key-definition>
+        <attribute-definitions>
+            <attribute-definition attribute-id="webhookPayload">
+                <display-name xml:lang="x-default">Webhook notification payload</display-name>
+                <type>text</type>
+                <localizable-flag>false</localizable-flag>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="webhookType">
+                <display-name xml:lang="x-default">Webhook notification type</display-name>
+                <type>string</type>
+                <localizable-flag>false</localizable-flag>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="webhookNotification">
+                <display-name xml:lang="x-default">Webhook Notification</display-name>
+                <attribute attribute-id="webhookPayload"/>
+                <attribute attribute-id="webhookType"/>
+            </attribute-group>
+        </group-definitions>
+    </custom-type>
+
+</metadata>

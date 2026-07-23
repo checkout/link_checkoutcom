@@ -15,19 +15,29 @@ var OrderMgr = require('dw/order/OrderMgr');
  * @returns {Object} The form validation result
  */
 function Handle(basket, billingData, processorId, req) {
-    var fieldErrors = {};
-    var serverErrors = [];
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
 
-    Transaction.wrap(function() {
-        basket.removeAllPaymentInstruments();
-        basket.createPaymentInstrument('CHECKOUTCOM_MBWAY', basket.getTotalGrossPrice());
-    });
+        Transaction.wrap(function() {
+            basket.removeAllPaymentInstruments();
+            basket.createPaymentInstrument('CHECKOUTCOM_MBWAY', basket.getTotalGrossPrice());
+        });
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_MBWAY Handle failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 /**
@@ -38,35 +48,45 @@ function Handle(basket, billingData, processorId, req) {
  * @returns {Object} The payment result
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
-    var serverErrors = [];
-    var fieldErrors = {};
-    var order = OrderMgr.getOrder(orderNumber);
+    try {
+        var serverErrors = [];
+        var fieldErrors = {};
+        var order = OrderMgr.getOrder(orderNumber);
 
-    var result = mbwayPaymentHelper.handleRequest(
-        paymentProcessor.ID,
-        orderNumber
-    );
+        var result = mbwayPaymentHelper.handleRequest(
+            paymentProcessor.ID,
+            orderNumber
+        );
 
-    if (result.error) {
-        Transaction.wrap(function() {
-            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-            paymentInstrument.paymentTransaction.setTransactionID(result.transactionID);
-            order.addNote('MB WAY Authorization Failed', ckoHelper.getPaymentFailureMessage());
-        });
-        serverErrors.push(ckoHelper.getPaymentFailureMessage());
-    } else {
-        Transaction.wrap(function() {
-            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-            paymentInstrument.paymentTransaction.setTransactionID(result.transactionID);
-        });
+        if (result.error) {
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+                paymentInstrument.paymentTransaction.setTransactionID(result.transactionID);
+                order.addNote('MB WAY Authorization Failed', ckoHelper.getPaymentFailureMessage());
+            });
+            serverErrors.push(ckoHelper.getPaymentFailureMessage());
+        } else {
+            Transaction.wrap(function() {
+                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+                paymentInstrument.paymentTransaction.setTransactionID(result.transactionID);
+            });
+        }
+
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: result.error,
+            mbwayPending: result.mbwayPending,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_MBWAY Authorize failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
     }
-
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: result.error,
-        mbwayPending: result.mbwayPending,
-    };
 }
 
 exports.Handle = Handle;

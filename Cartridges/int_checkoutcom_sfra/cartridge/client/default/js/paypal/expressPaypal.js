@@ -50,8 +50,7 @@ function createPayPalOrder() {
                 showError(response && response.message);
             }
         },
-        error: function(e) {
-            console.log(e);
+        error: function() {
             showError();
         },
     });
@@ -99,8 +98,7 @@ function onApprovePayPalOrder(paymentContextId) {
             }
             $.spinner().stop();
         },
-        error: function(e) {
-            console.log(e);
+        error: function() {
             showError();
             $.spinner().stop();
         },

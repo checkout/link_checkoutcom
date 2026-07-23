@@ -56,12 +56,12 @@ async function initializeKlarna(billingCountry) {
                 container: '#klarna-payments-container',
             },
             {},
-            function (res) {
-                console.debug(res);
+            function () {
+                // Klarna widget load callback — no further action required
             }
         );
     } catch (error) {
-        console.error('Error occurred while initializing or loading Klarna:', error);
+        // Klarna initialization failed — the payment method stays hidden
     }
 }
 
@@ -70,7 +70,6 @@ async function onPaymentContextApproved(res) {
     var klarnaOnApproveUrl = $('.klarnaonApproveUrl').val();
 
         if (!klarnaOnApproveUrl) {
-            console.log('klarna callback url is not available');
             return;
         };
         $.spinner().start();

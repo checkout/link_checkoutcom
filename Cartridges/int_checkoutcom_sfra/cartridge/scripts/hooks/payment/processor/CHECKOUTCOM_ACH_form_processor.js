@@ -10,19 +10,28 @@
  * @returns {Object} an object that has error information or payment information
  */
 function processForm(req, paymentForm, viewFormData) {
-    var viewData = viewFormData;
+    try {
+        var viewData = viewFormData;
 
-    viewData.paymentMethod = {
-        value: paymentForm.paymentMethod.htmlValue,
-        htmlName: paymentForm.paymentMethod.htmlValue,
-    };
+        viewData.paymentMethod = {
+            value: paymentForm.paymentMethod.htmlValue,
+            htmlName: paymentForm.paymentMethod.htmlValue,
+        };
 
-    viewData.paymentInformation = {};
+        viewData.paymentInformation = {};
 
-    return {
-        error: false,
-        viewData: viewData,
-    };
+        return {
+            error: false,
+            viewData: viewData,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_ACH processForm failed: {0}', e.message);
+        return {
+            error: true,
+            viewData: viewFormData,
+        };
+    }
 }
 
 exports.processForm = processForm;

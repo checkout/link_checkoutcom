@@ -474,8 +474,14 @@ var ckoHelper = {
         var mode = parts[3];
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
         var svcClass;
-        if (svcFile === 'verifyCharges' || svcFile === 'networkToken' || svcFile === 'cartesBancaires' || svcFile === 'paymentContexts') {
-            svcClass = require('*/cartridge/scripts/services/' + svcFile);
+        if (svcFile === 'verifyCharges') {
+            svcClass = require('*/cartridge/scripts/services/verifyCharges');
+        } else if (svcFile === 'networkToken') {
+            svcClass = require('*/cartridge/scripts/services/networkToken');
+        } else if (svcFile === 'cartesBancaires') {
+            svcClass = require('*/cartridge/scripts/services/cartesBancaires');
+        } else if (svcFile === 'paymentContexts') {
+            svcClass = require('*/cartridge/scripts/services/paymentContexts');
         } else {
             svcClass = require('*/cartridge/scripts/services/ckoPayments');
         }

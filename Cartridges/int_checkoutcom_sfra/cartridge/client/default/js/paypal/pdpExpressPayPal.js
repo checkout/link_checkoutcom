@@ -27,11 +27,10 @@ function createBasketFromPDP() {
         },
         method: 'POST',
         success: function(e) {
-            console.log(e);
             response = e;
         },
-        error: function(e) {
-            console.log(e);
+        error: function() {
+            // request failed — response stays null and is handled by the caller
         },
     });
     return response;
@@ -64,12 +63,11 @@ function onCancel() {
         data: {
             csrf_token: csrfToken,
         },
-        success: function(response) {
-            console.log('basket restored successfully');
+        success: function() {
+            // basket restored successfully — nothing further to do
         },
-        error: function(e) {
+        error: function() {
             expressPaypal.showError();
-            console.log(e);
         },
     });
 }

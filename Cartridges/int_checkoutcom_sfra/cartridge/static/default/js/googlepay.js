@@ -83,7 +83,7 @@ function launchGooglePay() {
         }
       })
       .catch(function (err) {
-        console.log(err);
+        void (err);
       });
 
     var paymentDataRequest = getGooglePaymentDataRequest();
@@ -108,7 +108,7 @@ function launchGooglePay() {
         }
       })
       .catch(function (err) {
-        console.log(err);
+        void (err);
       });
   });
 }

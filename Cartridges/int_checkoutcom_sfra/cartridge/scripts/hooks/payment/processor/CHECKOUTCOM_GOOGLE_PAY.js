@@ -14,23 +14,33 @@ var Transaction = require('dw/system/Transaction');
  * @returns {Object} The form validation result
  */
 function Handle(basket, billingData, processorId, req) {
-    var fieldErrors = {};
-    var serverErrors = [];
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
 
-    Transaction.wrap(function() {
-        basket.removeAllPaymentInstruments();
-        var paymentInstrument = basket.createPaymentInstrument(
-            'CHECKOUTCOM_GOOGLE_PAY', basket.getTotalGrossPrice()
-        );
+        Transaction.wrap(function() {
+            basket.removeAllPaymentInstruments();
+            var paymentInstrument = basket.createPaymentInstrument(
+                'CHECKOUTCOM_GOOGLE_PAY', basket.getTotalGrossPrice()
+            );
 
-        paymentInstrument.custom.ckoPaymentData = billingData.ckoGooglePayData.value;
-    });
+            paymentInstrument.custom.ckoPaymentData = billingData.ckoGooglePayData.value;
+        });
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_GOOGLE_PAY Handle failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 /**
@@ -41,36 +51,46 @@ function Handle(basket, billingData, processorId, req) {
  * @returns {Object} The payment result
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
-    var serverErrors = [];
-    var fieldErrors = {};
+    try {
+        var serverErrors = [];
+        var fieldErrors = {};
 
-    // Payment request
-    var result = googlePayHelper.handleRequest(
-        paymentInstrument.custom.ckoPaymentData,
-        paymentProcessor,
-        orderNumber
-    );
+        // Payment request
+        var result = googlePayHelper.handleRequest(
+            paymentInstrument.custom.ckoPaymentData,
+            paymentProcessor,
+            orderNumber
+        );
 
-    // Handle errors
-    if (result.error) {
+        // Handle errors
+        if (result.error) {
+            Transaction.wrap(function() { // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
+            });
+            serverErrors.push(
+                ckoHelper.getPaymentFailureMessage()
+            );
+        }
+
         Transaction.wrap(function() { // eslint-disable-next-line
             paymentInstrument.custom.ckoPaymentData = '';
         });
-        serverErrors.push(
-            ckoHelper.getPaymentFailureMessage()
-        );
+
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: result.error,
+            redirectUrl: result.redirectUrl,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_GOOGLE_PAY Authorize failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
     }
-
-    Transaction.wrap(function() { // eslint-disable-next-line
-        paymentInstrument.custom.ckoPaymentData = '';
-    });
-
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: result.error,
-        redirectUrl: result.redirectUrl,
-    };
 }
 
 exports.Handle = Handle;

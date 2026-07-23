@@ -2,111 +2,111 @@
     "hooks": [
         {
             "name": "app.payment.processor.checkoutcom_card",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_CARD"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_CARD.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_card",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_CARD_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_CARD_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_google_pay",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_GOOGLE_PAY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_GOOGLE_PAY.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_google_pay",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_GOOGLE_PAY_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_GOOGLE_PAY_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_apm",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APM"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_APM.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_apm",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APM_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_APM_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_apple_pay",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_paypal",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_PAYPAL"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_PAYPAL.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_paypal",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_PAYPAL_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_PAYPAL_form_processor.js"
         },
         {
             "name": "dw.extensions.applepay.getRequest",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_klarna",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_KLARNA"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_KLARNA.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_klarna",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_KLARNA_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_KLARNA_form_processor.js"
         },
         {
             "name": "dw.extensions.applepay.paymentAuthorized.authorizeOrderPayment",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY.js"
         },
         {
             "name": "dw.extensions.applepay.shippingContactSelected",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_APPLE_PAY.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_alma",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_ALMA"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALMA.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_alma",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_ALMA_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALMA_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_mbway",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_MBWAY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_MBWAY.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_mbway",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_MBWAY_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_MBWAY_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_sequra",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_SEQURA"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_SEQURA.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_sequra",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_SEQURA_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_SEQURA_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_bizum",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_BIZUM"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_BIZUM.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_bizum",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_BIZUM_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_BIZUM_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_tabby",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_TABBY"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TABBY.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_tabby",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_TABBY_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TABBY_form_processor.js"
         },
         {
             "name": "app.payment.processor.checkoutcom_ach",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_ACH"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ACH.js"
         },
         {
             "name": "app.payment.form.processor.checkoutcom_ach",
-            "script": "./hooks/payment/processor/CHECKOUTCOM_ACH_form_processor"
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ACH_form_processor.js"
         },
         {
             "name": "app.payment.processor.default",
-            "script": "./hooks/payment/processor/default"
+            "script": "./hooks/payment/processor/default.js"
         }
     ]
 }

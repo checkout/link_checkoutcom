@@ -17,21 +17,31 @@ var constants = require('*/cartridge/config/constants');
  * @returns {Object} The form validation result
  */
 function Handle(basket, billingData, processorId, req) {
-    var fieldErrors = {};
-    var serverErrors = [];
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
 
-    Transaction.wrap(function() {
-        basket.removeAllPaymentInstruments();
-        basket.createPaymentInstrument(constants.CKO_SEQURA_PAYMENTINSTRUMENT, basket.getTotalGrossPrice());
-    });
+        Transaction.wrap(function() {
+            basket.removeAllPaymentInstruments();
+            basket.createPaymentInstrument(constants.CKO_SEQURA_PAYMENTINSTRUMENT, basket.getTotalGrossPrice());
+        });
 
-    // Product type is stored in session by the form processor during SubmitPayment
+        // Product type is stored in session by the form processor during SubmitPayment
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_SEQURA Handle failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 /**
@@ -44,37 +54,47 @@ function Handle(basket, billingData, processorId, req) {
  * @returns {Object} The payment result including a redirectUrl
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
-    var serverErrors = [];
-    var fieldErrors = {};
-    var order = OrderMgr.getOrder(orderNumber);
+    try {
+        var serverErrors = [];
+        var fieldErrors = {};
+        var order = OrderMgr.getOrder(orderNumber);
 
-    var selectedProduct = session.privacy.ckoSequraProductType || 'invoice';
-    session.privacy.ckoSequraProductType = null;
+        var selectedProduct = session.privacy.ckoSequraProductType || 'invoice';
+        session.privacy.ckoSequraProductType = null;
 
-    var result = sequraHelper.handleRequest(paymentProcessor.ID, order, selectedProduct);
+        var result = sequraHelper.handleRequest(paymentProcessor.ID, order, selectedProduct);
 
-    if (result.error) {
+        if (result.error) {
+            Transaction.wrap(function() {
+                if (result.errorMessage) {
+                    order.addNote('Sequra Authorization Failed', result.errorMessage);
+                }
+            });
+            serverErrors.push(ckoHelper.getPaymentFailureMessage());
+        }
+
+        var transactionID = result.transactionID ? result.transactionID : '';
+
         Transaction.wrap(function() {
-            if (result.errorMessage) {
-                order.addNote('Sequra Authorization Failed', result.errorMessage);
-            }
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+            paymentInstrument.paymentTransaction.setTransactionID(transactionID);
         });
-        serverErrors.push(ckoHelper.getPaymentFailureMessage());
+
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: result.error,
+            redirectUrl: result.redirectUrl,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_SEQURA Authorize failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
     }
-
-    var transactionID = result.transactionID ? result.transactionID : '';
-
-    Transaction.wrap(function() {
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.paymentTransaction.setTransactionID(transactionID);
-    });
-
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: result.error,
-        redirectUrl: result.redirectUrl,
-    };
 }
 
 exports.Handle = Handle;

@@ -14,22 +14,32 @@ var Transaction = require('dw/system/Transaction');
  * @returns {Object} The form validation result
  */
 function Handle(basket, billingData, processorId, req) {
-    var fieldErrors = {};
-    var serverErrors = [];
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
 
-    Transaction.wrap(function() {
-        basket.removeAllPaymentInstruments();
+        Transaction.wrap(function() {
+            basket.removeAllPaymentInstruments();
 
-        var paymentInstrument = basket.createPaymentInstrument('CHECKOUTCOM_PAYPAL', basket.getTotalGrossPrice());
+            var paymentInstrument = basket.createPaymentInstrument('CHECKOUTCOM_PAYPAL', basket.getTotalGrossPrice());
 
-        paymentInstrument.custom.ckoPaymentData = billingData.ckoPayPalData.value;
-    });
+            paymentInstrument.custom.ckoPaymentData = billingData.ckoPayPalData.value;
+        });
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_PAYPAL Handle failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 /**
@@ -40,39 +50,49 @@ function Handle(basket, billingData, processorId, req) {
  * @returns {Object} The payment result
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
-    var serverErrors = [];
-    var fieldErrors = {};
+    try {
+        var serverErrors = [];
+        var fieldErrors = {};
 
-    // Payment request
-    var result = payPalHelper.handleRequest(
-        paymentInstrument.custom.ckoPaymentData,
-        paymentProcessor,
-        orderNumber
-    );
+        // Payment request
+        var result = payPalHelper.handleRequest(
+            paymentInstrument.custom.ckoPaymentData,
+            paymentProcessor,
+            orderNumber
+        );
 
-    // Handle errors
-    if (result.error) {
+        // Handle errors
+        if (result.error) {
+            Transaction.wrap(function() { // eslint-disable-next-line
+                paymentInstrument.custom.ckoPaymentData = '';
+            });
+            serverErrors.push(
+                ckoHelper.getPaymentFailureMessage()
+            );
+        }
+        var transactionID = result.transactionID ? result.transactionID : '';
+
         Transaction.wrap(function() { // eslint-disable-next-line
             paymentInstrument.custom.ckoPaymentData = '';
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+            paymentInstrument.paymentTransaction.setTransactionID(transactionID);
         });
-        serverErrors.push(
-            ckoHelper.getPaymentFailureMessage()
-        );
+
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: result.error,
+            redirectUrl: result.redirectUrl,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_PAYPAL Authorize failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
     }
-    var transactionID = result.transactionID ? result.transactionID : '';
-
-    Transaction.wrap(function() { // eslint-disable-next-line
-        paymentInstrument.custom.ckoPaymentData = '';
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.paymentTransaction.setTransactionID(transactionID);
-    });
-
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: result.error,
-        redirectUrl: result.redirectUrl,
-    };
 }
 
 exports.Handle = Handle;

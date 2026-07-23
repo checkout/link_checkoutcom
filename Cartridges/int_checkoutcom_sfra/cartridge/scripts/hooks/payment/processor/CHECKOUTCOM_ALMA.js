@@ -16,19 +16,29 @@ var OrderMgr = require('dw/order/OrderMgr');
  * @returns {Object} The form validation result
  */
 function Handle(basket, billingData, processorId, req) {
-    var fieldErrors = {};
-    var serverErrors = [];
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
 
-    Transaction.wrap(function() {
-        basket.removeAllPaymentInstruments();
-        basket.createPaymentInstrument(constants.CKO_ALMA_PAYMENTINSTRUMENT, basket.getTotalGrossPrice());
-    });
+        Transaction.wrap(function() {
+            basket.removeAllPaymentInstruments();
+            basket.createPaymentInstrument(constants.CKO_ALMA_PAYMENTINSTRUMENT, basket.getTotalGrossPrice());
+        });
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_ALMA Handle failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 /**
@@ -39,35 +49,45 @@ function Handle(basket, billingData, processorId, req) {
  * @returns {Object} The payment result including a redirectUrl
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
-    var serverErrors = [];
-    var fieldErrors = {};
-    var order = OrderMgr.getOrder(orderNumber);
+    try {
+        var serverErrors = [];
+        var fieldErrors = {};
+        var order = OrderMgr.getOrder(orderNumber);
 
-    var result = almaHelper.handleRequest(paymentProcessor, order);
+        var result = almaHelper.handleRequest(paymentProcessor, order);
 
-    if (result.error) {
-        var errorTitle = 'Alma Authorization Failed';
+        if (result.error) {
+            var errorTitle = 'Alma Authorization Failed';
+            Transaction.wrap(function() {
+                if (result.errorMessage) {
+                    order.addNote(errorTitle, result.errorMessage);
+                }
+            });
+            serverErrors.push(ckoHelper.getPaymentFailureMessage());
+        }
+
+        var transactionID = result.transactionID ? result.transactionID : '';
+
         Transaction.wrap(function() {
-            if (result.errorMessage) {
-                order.addNote(errorTitle, result.errorMessage);
-            }
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+            paymentInstrument.paymentTransaction.setTransactionID(transactionID);
         });
-        serverErrors.push(ckoHelper.getPaymentFailureMessage());
+
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: result.error,
+            redirectUrl: result.redirectUrl,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_ALMA Authorize failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
     }
-
-    var transactionID = result.transactionID ? result.transactionID : '';
-
-    Transaction.wrap(function() {
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        paymentInstrument.paymentTransaction.setTransactionID(transactionID);
-    });
-
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: result.error,
-        redirectUrl: result.redirectUrl,
-    };
 }
 
 exports.Handle = Handle;

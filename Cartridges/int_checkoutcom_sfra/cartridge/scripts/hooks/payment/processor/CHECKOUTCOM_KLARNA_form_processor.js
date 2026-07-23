@@ -8,26 +8,35 @@
  * @returns {Object} an object that has error information or payment information
  */
 function processForm(req, paymentForm, viewFormData) {
-    var viewData = viewFormData;
-    var ckoKlarnaData = paymentForm.klarnaForm ? paymentForm.klarnaForm.ckoKlarnaData.htmlValue : null;
+    try {
+        var viewData = viewFormData;
+        var ckoKlarnaData = paymentForm.klarnaForm ? paymentForm.klarnaForm.ckoKlarnaData.htmlValue : null;
 
 
-    viewData.paymentMethod = {
-        value: paymentForm.paymentMethod.htmlValue,
-        htmlName: paymentForm.paymentMethod.htmlValue,
-    };
+        viewData.paymentMethod = {
+            value: paymentForm.paymentMethod.htmlValue,
+            htmlName: paymentForm.paymentMethod.htmlValue,
+        };
 
-    viewData.paymentInformation = {
-        ckoKlarnaData: {
-            value: ckoKlarnaData,
-            htmlName: ckoKlarnaData,
-        },
-    };
+        viewData.paymentInformation = {
+            ckoKlarnaData: {
+                value: ckoKlarnaData,
+                htmlName: ckoKlarnaData,
+            },
+        };
 
-    return {
-        error: false,
-        viewData: viewData,
-    };
+        return {
+            error: false,
+            viewData: viewData,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_KLARNA processForm failed: {0}', e.message);
+        return {
+            error: true,
+            viewData: viewFormData,
+        };
+    }
 }
 
 exports.processForm = processForm;

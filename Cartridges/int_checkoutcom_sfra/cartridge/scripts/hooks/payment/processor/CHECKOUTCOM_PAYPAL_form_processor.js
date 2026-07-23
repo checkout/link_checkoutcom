@@ -8,28 +8,37 @@
  * @returns {Object} an object that has error information or payment information
  */
 function processForm(req, paymentForm, viewFormData) {
-    var viewData = viewFormData;
-    var ckoPayPalData = paymentForm.payPalForm ? paymentForm.payPalForm.ckoPayPalData.htmlValue : null;
-    var error = true;
+    try {
+        var viewData = viewFormData;
+        var ckoPayPalData = paymentForm.payPalForm ? paymentForm.payPalForm.ckoPayPalData.htmlValue : null;
+        var error = true;
 
-    if (ckoPayPalData) {
-        error = false;
-        viewData.paymentMethod = {
-            value: paymentForm.paymentMethod.htmlValue,
-            htmlName: paymentForm.paymentMethod.htmlValue,
+        if (ckoPayPalData) {
+            error = false;
+            viewData.paymentMethod = {
+                value: paymentForm.paymentMethod.htmlValue,
+                htmlName: paymentForm.paymentMethod.htmlValue,
+            };
+
+            viewData.paymentInformation = {
+                ckoPayPalData: {
+                    value: ckoPayPalData,
+                    htmlName: ckoPayPalData,
+                },
+            };
+        }
+        return {
+            error: error,
+            viewData: viewData,
         };
-
-        viewData.paymentInformation = {
-            ckoPayPalData: {
-                value: ckoPayPalData,
-                htmlName: ckoPayPalData,
-            },
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_PAYPAL processForm failed: {0}', e.message);
+        return {
+            error: true,
+            viewData: viewFormData,
         };
     }
-    return {
-        error: error,
-        viewData: viewData,
-    };
 }
 
 exports.processForm = processForm;

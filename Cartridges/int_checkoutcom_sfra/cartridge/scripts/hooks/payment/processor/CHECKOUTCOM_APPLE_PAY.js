@@ -8,39 +8,50 @@ var Transaction = require('dw/system/Transaction');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 
 exports.authorizeOrderPayment = function(order, event) {
-    var isEventTrusted = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
-    && event.isTrusted === true
-    && order;
-    /* eslint-disable no-param-reassign */
-    order.custom.orderProcessedByABCorNAS = ckoHelper.getNasEnabled();
+    try {
+        var isEventTrusted = Object.prototype.hasOwnProperty.call(event, 'isTrusted')
+        && event.isTrusted === true
+        && order;
+        /* eslint-disable no-param-reassign */
+        order.custom.orderProcessedByABCorNAS = ckoHelper.getNasEnabled();
 
-    if (isEventTrusted) {
-        // Payment request
-        var result = applePayHelper.handleRequest(
-            event.payment.token.paymentData,
-            'CHECKOUTCOM_APPLE_PAY',
-            order.orderNo
-        );
+        if (isEventTrusted) {
+            // Payment request
+            var result = applePayHelper.handleRequest(
+                event.payment.token.paymentData,
+                'CHECKOUTCOM_APPLE_PAY',
+                order.orderNo
+            );
 
-        Transaction.wrap(function() {
-            order.removeAllPaymentInstruments();
-            order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
-        });
+            Transaction.wrap(function() {
+                order.removeAllPaymentInstruments();
+                order.createPaymentInstrument('CHECKOUTCOM_APPLE_PAY', order.getTotalGrossPrice());
+            });
 
-        if (!result.error) {
-            return new Status(Status.OK);
+            if (!result.error) {
+                return new Status(Status.OK);
+            }
         }
-    }
 
-    return new Status(Status.ERROR);
+        return new Status(Status.ERROR);
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_APPLE_PAY authorizeOrderPayment failed: {0}', e.message);
+        return new Status(Status.ERROR);
+    }
 };
 
 exports.getRequest = function(basket, req) {
-    var currentLocale = ckoHelper.getSiteCurrentCountryCode();
-    if(currentLocale === 'SA') {
-        req.supportedNetworks.push('mada');
+    try {
+        var currentLocale = ckoHelper.getSiteCurrentCountryCode();
+        if(currentLocale === 'SA') {
+            req.supportedNetworks.push('mada');
+        }
+        session.custom.applepaysession = 'yes';  // eslint-disable-line
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_APPLE_PAY getRequest failed: {0}', e.message);
     }
-    session.custom.applepaysession = 'yes';  // eslint-disable-line
 };
 
 exports.shippingContactSelected = function(basket, event, response) {

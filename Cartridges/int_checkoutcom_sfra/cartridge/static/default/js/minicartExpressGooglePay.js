@@ -51,7 +51,7 @@ document.addEventListener(
                 (d = e.discounts);
             },
             error: function(e) {
-              console.log(e);
+              void (e);
             },
           }),
             I()
@@ -72,7 +72,7 @@ document.addEventListener(
                   })();
               })
               .catch(function(e) {
-                console.log(e);
+                void (e);
               });
           var f = S();
           function I() {
@@ -192,12 +192,13 @@ document.addEventListener(
                                 )
                               : e.redirectUrl
                               ? (location.href = e.redirectUrl)
-                              : (document.getElementsByClassName(
-                                  "page"
-                                )[0].innerHTML = e);
+                              : (function(page) {
+                                  var doc = new DOMParser().parseFromString(e, "text/html");
+                                  page.replaceChildren.apply(page, doc.body.childNodes);
+                                })(document.getElementsByClassName("page")[0]);
                           },
                           error: function(e) {
-                            console.log(e);
+                            void (e);
                           },
                         }),
                       t({});
@@ -252,7 +253,7 @@ document.addEventListener(
                       t || (m = Object.keys(g)[0]);
                   },
                   error: function(e) {
-                    console.log(e);
+                    void (e);
                   },
                 }),
                 "INITIALIZE" == e.callbackTrigger ||

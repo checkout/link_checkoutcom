@@ -361,7 +361,20 @@ var CKOHelper = {
         var action = parts[2];
         var mode = parts[3];
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
-        var svcClass = require('*/cartridge/scripts/services/' + svcFile);
+        var svcClass;
+        if (svcFile === 'transactionCapture') {
+            svcClass = require('*/cartridge/scripts/services/transactionCapture');
+        } else if (svcFile === 'transactionVoid') {
+            svcClass = require('*/cartridge/scripts/services/transactionVoid');
+        } else if (svcFile === 'transactionRefund') {
+            svcClass = require('*/cartridge/scripts/services/transactionRefund');
+        } else if (svcFile === 'klarna_transactionCapture') {
+            svcClass = require('*/cartridge/scripts/services/klarna_transactionCapture');
+        } else if (svcFile === 'klarna_transactionVoid') {
+            svcClass = require('*/cartridge/scripts/services/klarna_transactionVoid');
+        } else {
+            throw new Error('Unknown Checkout.com service: ' + serviceId);
+        }
 
         return svcClass[mode]();
     },

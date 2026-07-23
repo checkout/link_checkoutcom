@@ -15,19 +15,29 @@ var OrderMgr = require('dw/order/OrderMgr');
  * @returns {Object} The form validation result
  */
 function Handle(basket, billingData, processorId, req) {
-    var fieldErrors = {};
-    var serverErrors = [];
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
 
-    Transaction.wrap(function() {
-        basket.removeAllPaymentInstruments();
-        basket.createPaymentInstrument('CHECKOUTCOM_ACH', basket.getTotalGrossPrice());
-    });
+        Transaction.wrap(function() {
+            basket.removeAllPaymentInstruments();
+            basket.createPaymentInstrument('CHECKOUTCOM_ACH', basket.getTotalGrossPrice());
+        });
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_ACH Handle failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 /**
@@ -41,21 +51,31 @@ function Handle(basket, billingData, processorId, req) {
  * @returns {Object} The payment result with achPending flag
  */
 function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
-    var fieldErrors = {};
-    var serverErrors = [];
-    var order = OrderMgr.getOrder(orderNumber);
+    try {
+        var fieldErrors = {};
+        var serverErrors = [];
+        var order = OrderMgr.getOrder(orderNumber);
 
-    Transaction.wrap(function() {
-        paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-        order.addNote('ACH Authorization', 'ACH payment initiated — awaiting Plaid bank authentication.');
-    });
+        Transaction.wrap(function() {
+            paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
+            order.addNote('ACH Authorization', 'ACH payment initiated — awaiting Plaid bank authentication.');
+        });
 
-    return {
-        fieldErrors: fieldErrors,
-        serverErrors: serverErrors,
-        error: false,
-        achPending: true,
-    };
+        return {
+            fieldErrors: fieldErrors,
+            serverErrors: serverErrors,
+            error: false,
+            achPending: true,
+        };
+    } catch (e) {
+        var Logger = require('dw/system/Logger');
+        Logger.getLogger('ckoPayments').error('CHECKOUTCOM_ACH Authorize failed: {0}', e.message);
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
 }
 
 exports.Handle = Handle;
