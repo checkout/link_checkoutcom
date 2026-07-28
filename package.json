@@ -2,7 +2,7 @@
   "name": "int_checkoutcom_sfra",
   "packageName": "int_checkoutcom_sfra",
   "version": "26.1.0",
-  "description": "Checkout.com payment integrations for SFCC",
+  "description": "Checkout.com payment integrations for SFCC.",
   "main": "index.js",
   "scripts": {
     "compile:js": "webpack --config webpack.config.js",
