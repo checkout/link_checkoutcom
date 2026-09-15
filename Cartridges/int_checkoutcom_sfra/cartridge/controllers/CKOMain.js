@@ -60,10 +60,15 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
             // Load the order
             order = OrderMgr.getOrder(gVerify.reference);
 
+            var isSessionTamaraOrder = order
+                && order.getPaymentInstruments(constants.CKO_TAMARA_PAYMENTINSTRUMENT).length > 0;
+
             // If there is a valid response
             var isValidResult = order && typeof (gVerify) === 'object'
             && Object.prototype.hasOwnProperty.call(gVerify, 'id')
-            && ckoHelper.redirectPaymentSuccess(gVerify);
+            && (isSessionTamaraOrder
+                ? (gVerify.status === 'Captured' || gVerify.status === 'Pending')
+                : ckoHelper.redirectPaymentSuccess(gVerify));
             if (isValidResult) {
                 // Place the order
                 placeOrderResult = COHelpers.placeOrder(order, { status: '' });

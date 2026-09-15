@@ -58,4 +58,9 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ACH' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAchEnabled') && session.getCurrency().getCurrencyCode() === 'USD'}">
         <isinclude template="checkout/billing/paymentOptions/tabs/achTab"/>
     </isif>
+
+    <iscomment> Tamara - country validation handled by BM (applicablePaymentMethods) </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_TAMARA' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoTamaraEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/tamaraTab"/>
+    </isif>
 </isloop>

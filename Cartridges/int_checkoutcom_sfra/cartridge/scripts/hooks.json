@@ -105,6 +105,14 @@
             "script": "./hooks/payment/processor/CHECKOUTCOM_ACH_form_processor"
         },
         {
+            "name": "app.payment.processor.checkoutcom_tamara",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TAMARA"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_tamara",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TAMARA_form_processor"
+        },
+        {
             "name": "app.payment.processor.default",
             "script": "./hooks/payment/processor/default"
         }

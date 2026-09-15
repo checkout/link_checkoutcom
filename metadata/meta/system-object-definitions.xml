@@ -360,15 +360,15 @@
             </attribute-definition>
             <attribute-definition attribute-id="ckoSgPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Site Genesis Cartridge - Version: 26.1.0</default-value>
+                <default-value>Checkout.com Site Genesis Cartridge - Version: 26.2.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSfraPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com SFRA Cartridge - Version: 26.1.0</default-value>
+                <default-value>Checkout.com SFRA Cartridge - Version: 26.2.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBmPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Business Manager Cartridge - Version: 26.1.0</default-value>
+                <default-value>Checkout.com Business Manager Cartridge - Version: 26.2.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBillingDescriptor1">
                 <display-name xml:lang="x-default">Billing Descriptor 1</display-name>
@@ -894,6 +894,14 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
+			<attribute-definition attribute-id="ckoTamaraEnabled">
+                <display-name xml:lang="x-default">Enable Tamara</display-name>
+                <description xml:lang="x-default">Enable Tamara as a payment method on the checkout page.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoApplePayEnabled">
                 <display-name xml:lang="x-default">Enable Apple Pay</display-name>
                 <description xml:lang="x-default">Enable payments with Apple Pay.</description>
@@ -1079,6 +1087,10 @@
                 <attribute attribute-id="ckoPlaidClientId"/>
                 <attribute attribute-id="ckoPlaidSecret"/>
                 <attribute attribute-id="ckoPlaidClientName"/>
+            </attribute-group>
+			<attribute-group group-id="CKO [16] Tamara Settings">
+                <display-name xml:lang="x-default">Checkout.com Tamara Payment Settings</display-name>
+                <attribute attribute-id="ckoTamaraEnabled"/>
             </attribute-group>
        </group-definitions>
        

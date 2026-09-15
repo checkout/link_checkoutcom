@@ -11,6 +11,7 @@ var PaymentMgr = require('dw/order/PaymentMgr');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var savedCardHelper = require('*/cartridge/scripts/helpers/savedCardHelper');
 var transactionHelper = require('*/cartridge/scripts/helpers/transactionHelper');
+var constants = require('*/cartridge/config/constants');
 
 var CONSTANTS = {
     PAYMENT_STATUS_PAID: 'PAYMENT_STATUS_PAID',
@@ -107,6 +108,24 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentCaptured: function(hook) {
+        var isTamara = hook.data && hook.data.metadata && hook.data.metadata.payment_processor === 'CHECKOUTCOM_TAMARA';
+        if (isTamara) {
+            this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_PAID, null, true);
+            var tamaraOrder = OrderMgr.getOrder(hook.data.reference);
+            if (tamaraOrder) {
+                var tamaraInstruments = tamaraOrder.getPaymentInstruments(constants.CKO_TAMARA_PAYMENTINSTRUMENT).toArray();
+                if (tamaraInstruments.length > 0) {
+                    Transaction.wrap(function() {
+                        tamaraInstruments[0].paymentTransaction.setType(PaymentTransaction.TYPE_CAPTURE);
+                        tamaraInstruments[0].paymentTransaction.custom.ckoActionId = hook.data.action_id;
+                        tamaraInstruments[0].paymentTransaction.custom.ckoTransactionOpened = true;
+                        tamaraInstruments[0].paymentTransaction.custom.ckoTransactionType = 'Capture';
+                    });
+                }
+            }
+            return;
+        }
+
         // Get the  transaction amount
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
 
@@ -344,7 +363,7 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentCapturePending: function(hook) {
-        this.addWebhookInfo(hook, null, null); 
+        this.addWebhookInfo(hook, null, null);
     },
 
     /**

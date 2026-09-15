@@ -108,4 +108,13 @@
             <production/>
         </preferences>
     </payment-processor>
+    <payment-processor processor-id="CHECKOUTCOM_TAMARA">
+        <description>Checkout.com Tamara payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
 </payment-processors>

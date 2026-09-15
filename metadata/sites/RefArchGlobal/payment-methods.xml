@@ -112,4 +112,17 @@
             <country country-code="US"/>
         </countries>
     </payment-method>
+    <payment-method method-id="CHECKOUTCOM_TAMARA">
+        <name xml:lang="x-default">Checkout.com Tamara</name>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_TAMARA</processor-id>
+        <countries>
+            <country country-code="SA"/>
+            <country country-code="AE"/>
+        </countries>
+        <currencies>
+            <currency>SAR</currency>
+            <currency>AED</currency>
+        </currencies>
+    </payment-method>
 </payment-settings>
