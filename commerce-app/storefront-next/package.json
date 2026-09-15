@@ -1,0 +1,15 @@
+{
+    "name": "@checkout.com/commerce-storefront-next",
+    "version": "1.0.0",
+    "description": "Checkout.com payment components for Salesforce B2C Commerce Storefront Next",
+    "type": "module",
+    "main": "src/index.ts",
+    "peerDependencies": {
+        "react": "^19.0.0",
+        "react-router": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.0.0",
+        "typescript": "^5.6.0"
+    }
+}

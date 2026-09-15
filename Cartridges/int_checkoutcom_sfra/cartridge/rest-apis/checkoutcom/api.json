@@ -1,0 +1,29 @@
+{
+    "endpoints": [
+        {
+            "endpoint": "checkPaymentStatus",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        },
+        {
+            "endpoint": "getApmEligibility",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        },
+        {
+            "endpoint": "getBinLookup",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        },
+        {
+            "endpoint": "createPaymentContext",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        },
+        {
+            "endpoint": "completeReturn",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        }
+    ]
+}

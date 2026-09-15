@@ -1,0 +1,16 @@
+{
+    "$comment": "UI target bindings for the Storefront Next extension build. Target names follow the {namespace}.{surface}.{domain}.{feature} convention; confirm the exact checkout payment targets against the Storefront Next template version in use before install.",
+    "extensionId": "checkoutcom-payments",
+    "targets": [
+        {
+            "target": "sfnext.checkout.payment.methods",
+            "component": "./src/components/CheckoutcomPaymentMethods.tsx",
+            "export": "CheckoutcomPaymentMethods"
+        },
+        {
+            "target": "sfnext.checkout.payment.return",
+            "component": "./src/components/CheckoutcomReturnHandler.tsx",
+            "export": "CheckoutcomReturnHandler"
+        }
+    ]
+}

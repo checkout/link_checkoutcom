@@ -1,0 +1,172 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Checkout.com Payments Custom API
+  description: >-
+    Headless payment endpoints for the Checkout.com integration. Used by
+    Storefront Next / PWA Kit storefronts alongside the standard Shopper
+    Baskets and Shopper Orders APIs.
+components:
+  securitySchemes:
+    ShopperToken: {}
+paths:
+  /payment-status:
+    post:
+      summary: Check the outcome of an asynchronous payment (MB WAY, Bizum, ACH)
+      description: >-
+        Reads the webhook-recorded outcome for the order and, on approval,
+        places the order. POST because order placement commits a transaction.
+      operationId: checkPaymentStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderNo
+                - orderToken
+              properties:
+                orderNo:
+                  type: string
+                orderToken:
+                  type: string
+      responses:
+        "200":
+          description: The async payment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - pending
+                      - confirmed
+                      - failed
+                      - error
+                      - unsupported
+  /apm-eligibility:
+    get:
+      summary: Get Checkout.com payment method eligibility for a country/currency
+      operationId: getApmEligibility
+      parameters:
+        - in: query
+          name: c_country
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: c_currency
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Eligible methods keyed by method identifier
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  country:
+                    type: string
+                  currency:
+                    type: string
+                  methods:
+                    type: object
+  /bin-lookup:
+    get:
+      summary: Look up card scheme metadata for a BIN (Mada, Cartes Bancaires)
+      operationId: getBinLookup
+      parameters:
+        - in: query
+          name: c_bin
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: BIN scheme information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isMada:
+                    type: boolean
+                  isCartesBancaires:
+                    type: boolean
+  /payment-contexts:
+    post:
+      summary: Create a Checkout.com payment context for the current basket
+      operationId: createPaymentContext
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - klarna
+                    - tabby
+                billingCountry:
+                  type: string
+      responses:
+        "200":
+          description: The created payment context
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  paymentType:
+                    type: string
+  /return:
+    post:
+      summary: Complete the gateway redirect return leg (3DS or APM)
+      description: >-
+        Verifies the cko-session-id against the gateway and places or fails
+        the order. Call from the storefront return route configured in the
+        ckoReturnSuccessUrl / ckoReturnFailureUrl site preferences.
+      operationId: completeReturn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ckoSessionId
+                - success
+              properties:
+                ckoSessionId:
+                  type: string
+                success:
+                  type: boolean
+      responses:
+        "200":
+          description: The return handling outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  outcome:
+                    type: string
+                    enum:
+                      - confirmed
+                      - failed
+                      - invalid
+                  orderNo:
+                    type: string
+security:
+  - ShopperToken: ["c_ckopayments"]
