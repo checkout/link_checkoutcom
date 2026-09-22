@@ -131,6 +131,32 @@ var ckoHelper = {
     },
 
     /**
+     * Get the gateway success return URL. Merchants running a headless storefront
+     * (e.g. Storefront Next) can point the gateway back at their storefront by
+     * setting the ckoReturnSuccessUrl site preference to an absolute URL;
+     * otherwise the SFRA controller route is used.
+     * @returns {string} The success return URL
+     */
+    getSuccessUrl: function() {
+        var URLUtils = require('dw/web/URLUtils');
+        var override = this.getValue(constants.CKO_RETURN_SUCCESS_URL);
+        return override || URLUtils.https('CKOMain-HandleReturn').toString();
+    },
+
+    /**
+     * Get the gateway failure return URL. Merchants running a headless storefront
+     * (e.g. Storefront Next) can point the gateway back at their storefront by
+     * setting the ckoReturnFailureUrl site preference to an absolute URL;
+     * otherwise the SFRA controller route is used.
+     * @returns {string} The failure return URL
+     */
+    getFailureUrl: function() {
+        var URLUtils = require('dw/web/URLUtils');
+        var override = this.getValue(constants.CKO_RETURN_FAILURE_URL);
+        return override || URLUtils.https('CKOMain-HandleFail').toString();
+    },
+
+    /**
      * Check if the gateway response is valid.
      * @param {Object} req The HTTP response data
      * @returns {boolean} Is the private shared key valid

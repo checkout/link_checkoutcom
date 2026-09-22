@@ -13,6 +13,9 @@
     "storefrontSupport": {
         "sfra": {
             "minVersion": "7.0.1"
+        },
+        "storefrontNext": {
+            "minVersion": "1.0.0"
         }
     }
 }

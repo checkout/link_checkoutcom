@@ -959,6 +959,22 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoReturnSuccessUrl">
+                <display-name xml:lang="x-default">Storefront Success Return URL</display-name>
+                <description xml:lang="x-default">Absolute URL the gateway redirects to after a successful 3DS/APM payment. Leave empty to use the default SFRA controller route (CKOMain-HandleReturn). Set this when running a headless storefront such as Storefront Next.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoReturnFailureUrl">
+                <display-name xml:lang="x-default">Storefront Failure Return URL</display-name>
+                <description xml:lang="x-default">Absolute URL the gateway redirects to after a failed 3DS/APM payment. Leave empty to use the default SFRA controller route (CKOMain-HandleFail). Set this when running a headless storefront such as Storefront Next.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
         </custom-attribute-definitions>
 
         <group-definitions>
@@ -1080,6 +1096,11 @@
                 <attribute attribute-id="ckoPlaidSecret"/>
                 <attribute attribute-id="ckoPlaidClientName"/>
             </attribute-group>
+			<attribute-group group-id="CKO [16] Headless Storefront Settings">
+                <display-name xml:lang="x-default">Checkout.com Headless Storefront Settings</display-name>
+                <attribute attribute-id="ckoReturnSuccessUrl"/>
+                <attribute attribute-id="ckoReturnFailureUrl"/>
+            </attribute-group>
        </group-definitions>
        
     </type-extension>
@@ -1093,11 +1114,20 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoRedirectUrl">
+                <display-name xml:lang="x-default">Checkout.com Redirect URL</display-name>
+                <description xml:lang="x-default">Gateway redirect URL (3DS challenge or APM page) produced during headless authorization; exposed to the storefront on the SCAPI order response.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
         </custom-attribute-definitions>
         <group-definitions>
             <attribute-group group-id="ckoOrder">
                 <display-name xml:lang="x-default">CKO Order</display-name>
                 <attribute attribute-id="orderProcessedByABCorNAS"/>
+                <attribute attribute-id="ckoRedirectUrl"/>
             </attribute-group>
         </group-definitions>
     </type-extension>

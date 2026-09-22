@@ -81,8 +81,8 @@ var googlePayHelper = {
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
                 shipping: ckoHelper.getShipping(order),
                 metadata: ckoHelper.getMetadata({}, processorId),
-                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
-                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
+                success_url: ckoHelper.getSuccessUrl(),
+                failure_url: ckoHelper.getFailureUrl(),
             };
 
             if (ckoHelper.getValue(constants.CKO_AUTO_CAPTURE) === true) {

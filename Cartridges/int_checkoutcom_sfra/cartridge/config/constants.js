@@ -9,6 +9,8 @@ var constants = {
     CKO_BUSINESS_CITY: 'ckoBusinessCity',
     CKO_BUSINESS_COUNTRY: 'ckoBusinessCountry',
     CKO_MODE: 'ckoMode',
+    CKO_RETURN_SUCCESS_URL: 'ckoReturnSuccessUrl',
+    CKO_RETURN_FAILURE_URL: 'ckoReturnFailureUrl',
     CKO_DEBUG_ENABLED: 'ckoDebugEnabled',
     CKO_AUTO_CAPTURE: 'ckoAutoCapture',
     CKO_AUTO_CAPTURE_TIME: 'ckoAutoCaptureTime',

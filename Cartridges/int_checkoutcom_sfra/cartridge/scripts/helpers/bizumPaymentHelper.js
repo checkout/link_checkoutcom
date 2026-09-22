@@ -56,8 +56,8 @@ var bizumPaymentHelper = {
                     },
                 },
                 processing_channel_id: ckoProcessingChannelId,
-                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
-                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
+                success_url: ckoHelper.getSuccessUrl(),
+                failure_url: ckoHelper.getFailureUrl(),
                 metadata: ckoHelper.getMetadata({}, processorId),
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
                 risk: {

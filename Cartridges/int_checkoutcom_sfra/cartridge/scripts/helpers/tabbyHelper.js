@@ -64,8 +64,8 @@ function buildContextRequest(basket) {
             locale: ckoHelper.getLanguage(),
         },
         processing_channel_id: Site.getCurrent().getCustomPreferenceValue('ckoProcessingChannelId'),
-        success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
-        failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
+        success_url: ckoHelper.getSuccessUrl(),
+        failure_url: ckoHelper.getFailureUrl(),
     };
 }
 

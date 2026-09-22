@@ -104,8 +104,8 @@ var almaHelper = {
                     country: billingAddress.getCountryCode().getValue(),
                 },
             },
-            failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
-            success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
+            failure_url: ckoHelper.getFailureUrl(),
+            success_url: ckoHelper.getSuccessUrl(),
             reference: order.orderNo,
             customer: customer,
             shipping: {

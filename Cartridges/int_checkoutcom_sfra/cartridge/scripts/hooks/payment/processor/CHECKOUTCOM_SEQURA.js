@@ -59,7 +59,17 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         var fieldErrors = {};
         var order = OrderMgr.getOrder(orderNumber);
 
-        var selectedProduct = session.privacy.ckoSequraProductType || 'invoice';
+        // Headless (SCAPI) flows carry the product type on the payment instrument;
+        // SFRA flows store it in the session via the form processor.
+        var instrumentData = null;
+        if (paymentInstrument.custom.ckoPaymentData) {
+            try {
+                instrumentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+            } catch (parseError) {
+                instrumentData = null;
+            }
+        }
+        var selectedProduct = (instrumentData && instrumentData.sequraProductType) || session.privacy.ckoSequraProductType || 'invoice';
         session.privacy.ckoSequraProductType = null;
 
         var result = sequraHelper.handleRequest(paymentProcessor.ID, order, selectedProduct);

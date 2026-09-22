@@ -45,8 +45,18 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     try {
         var order = OrderMgr.getOrder(orderNumber);
 
-        var paymentContextId = session.privacy.ckoTabbyContextId;
-        var paymentType = session.privacy.ckoTabbyPaymentType || 'Installment';
+        // Headless (SCAPI) flows carry the context on the payment instrument;
+        // SFRA flows store it in the session via CKOTabby-CreateContext.
+        var instrumentData = null;
+        if (paymentInstrument.custom.ckoPaymentData) {
+            try {
+                instrumentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+            } catch (parseError) {
+                instrumentData = null;
+            }
+        }
+        var paymentContextId = (instrumentData && instrumentData.ckoTabbyContextId) || session.privacy.ckoTabbyContextId;
+        var paymentType = (instrumentData && instrumentData.ckoTabbyPaymentType) || session.privacy.ckoTabbyPaymentType || 'Installment';
 
         if (!paymentContextId) {
             Transaction.wrap(function() {

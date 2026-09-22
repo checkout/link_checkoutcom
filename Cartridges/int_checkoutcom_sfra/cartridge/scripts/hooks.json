@@ -107,6 +107,22 @@
         {
             "name": "app.payment.processor.default",
             "script": "./hooks/payment/processor/default.js"
+        },
+        {
+            "name": "dw.ocapi.shop.basket.payment_instrument.beforePOST",
+            "script": "./hooks/scapi/basketPaymentInstrumentHooks.js"
+        },
+        {
+            "name": "dw.ocapi.shop.basket.payment_instrument.afterPOST",
+            "script": "./hooks/scapi/basketPaymentInstrumentHooks.js"
+        },
+        {
+            "name": "dw.ocapi.shop.order.afterPOST",
+            "script": "./hooks/scapi/orderHooks.js"
+        },
+        {
+            "name": "dw.ocapi.shop.order.modifyPOSTResponse",
+            "script": "./hooks/scapi/orderHooks.js"
         }
     ]
 }

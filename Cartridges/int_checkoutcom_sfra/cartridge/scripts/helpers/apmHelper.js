@@ -155,8 +155,8 @@ var apmHelper = {
                 reference: order.orderNo,
                 metadata: ckoHelper.getMetadata({}, processorId),
                 billing_descriptor: ckoHelper.getBillingDescriptor(),
-                success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
-                failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
+                success_url: ckoHelper.getSuccessUrl(),
+                failure_url: ckoHelper.getFailureUrl(),
             };
 
             // Test Klarna

@@ -93,8 +93,14 @@ var cardHelper = {
         var device_session_id;
 
         var riskJsEnabled = Site.getCurrent().getCustomPreferenceValue('riskJsEnabled');
-        if (riskJsEnabled && session.privacy.deviceSessionId) {
-            device_session_id = session.privacy.deviceSessionId;
+        if (riskJsEnabled) {
+            // Headless (SCAPI) flows carry the Risk.js device session on the payment
+            // instrument; SFRA flows store it in the session.
+            if (paymentData.deviceSessionId) {
+                device_session_id = paymentData.deviceSessionId;
+            } else if (session.privacy.deviceSessionId) {
+                device_session_id = session.privacy.deviceSessionId;
+            }
         }
 
         var source = this.getCardSource(paymentInstrument);
@@ -152,8 +158,8 @@ var cardHelper = {
                     network: formattedIP
                 }
              },
-            success_url: URLUtils.https('CKOMain-HandleReturn').toString(),
-            failure_url: URLUtils.https('CKOMain-HandleFail').toString(),
+            success_url: ckoHelper.getSuccessUrl(),
+            failure_url: ckoHelper.getFailureUrl(),
             metadata: metadata,
             udf5: udf5Metadata,
         };
@@ -189,7 +195,14 @@ var cardHelper = {
         var cardSource;
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
 
-        if (paymentData.securityCode && paymentData.saveCard) {
+        if (paymentData.ckoToken) {
+            // Headless (SCAPI) flows tokenize client-side with Frames and never
+            // send raw card data to the instance.
+            cardSource = {
+                type: 'token',
+                token: paymentData.ckoToken,
+            };
+        } else if (paymentData.securityCode && paymentData.saveCard) {
             cardSource = {
                 type: 'id',
                 id: paymentInstrument.creditCardToken,
