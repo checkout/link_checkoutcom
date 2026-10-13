@@ -1,0 +1,14 @@
+{
+    "endpoints": [
+        {
+            "endpoint": "createPaymentSession",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        },
+        {
+            "endpoint": "completePayment",
+            "schema": "schema.yaml",
+            "implementation": "script"
+        }
+    ]
+}

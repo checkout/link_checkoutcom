@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+    <type-extension type-id="SitePreferences">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="ckoMode">
+                <display-name xml:lang="x-default">Mode</display-name>
+                <description xml:lang="x-default">Should the payment method should run in sandbox or live mode.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <select-multiple-flag>false</select-multiple-flag>
+                <value-definitions>
+                    <value-definition>
+                        <display xml:lang="x-default">Sandbox</display>
+                        <value>sandbox</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Live</display>
+                        <value>live</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoSandboxNASSecretKey">
+                <display-name xml:lang="x-default">NAS Secret Key</display-name>
+                <description xml:lang="x-default">NAS Sandbox secret key provided by Checkout.com.</description>
+                <type>password</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoSandboxNASPublicKey">
+                <display-name xml:lang="x-default">NAS Public Key</display-name>
+                <description xml:lang="x-default">NAS Sandbox public key provided by Checkout.com.</description>
+                <type>password</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoSandboxNASPrivateSharedKey">
+                <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
+                <description xml:lang="x-default">NAS Sandbox private shared key provided by Checkout.com.</description>
+                <type>password</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveNASSecretKey">
+                <display-name xml:lang="x-default">NAS Secret key</display-name>
+                <description xml:lang="x-default">NAS Live secret key provided by Checkout.com.</description>
+                <type>password</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveNASPublicKey">
+                <display-name xml:lang="x-default">NAS Public Key</display-name>
+                <description xml:lang="x-default">NAS Live public key provided by Checkout.com.</description>
+                <type>password</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveNASPrivateSharedKey">
+                <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
+                <description xml:lang="x-default">NAS Live private shared key provided by Checkout.com.</description>
+                <type>password</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoProcessingChannelId">
+                <display-name xml:lang="x-default">Processing channel ID</display-name>
+                <description xml:lang="x-default">Holds processing channel ID</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoDebugEnabled">
+                <display-name xml:lang="x-default">Enable debug mode</display-name>
+                <description xml:lang="x-default">If set to yes, the gateway requests and responses are displayed in the request log.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowSuccessUrl">
+                <display-name xml:lang="x-default">Flow Success Return URL</display-name>
+                <description xml:lang="x-default">Absolute storefront URL the gateway redirects to after a successful redirect payment (3DS, APMs). Point this at the headless storefront's cko-return route.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowFailureUrl">
+                <display-name xml:lang="x-default">Flow Failure Return URL</display-name>
+                <description xml:lang="x-default">Absolute storefront URL the gateway redirects to after a failed redirect payment. Point this at the headless storefront's cko-return route failure leg.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </custom-attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="CKO Flow [1] Account">
+                <display-name xml:lang="x-default">Checkout.com Flow Account</display-name>
+                <attribute attribute-id="ckoMode"/>
+                <attribute attribute-id="ckoSandboxNASPublicKey"/>
+                <attribute attribute-id="ckoSandboxNASSecretKey"/>
+                <attribute attribute-id="ckoSandboxNASPrivateSharedKey"/>
+                <attribute attribute-id="ckoLiveNASPublicKey"/>
+                <attribute attribute-id="ckoLiveNASSecretKey"/>
+                <attribute attribute-id="ckoLiveNASPrivateSharedKey"/>
+                <attribute attribute-id="ckoProcessingChannelId"/>
+                <attribute attribute-id="ckoDebugEnabled"/>
+            </attribute-group>
+            <attribute-group group-id="CKO Flow [2] Storefront">
+                <display-name xml:lang="x-default">Checkout.com Flow Storefront</display-name>
+                <attribute attribute-id="ckoFlowSuccessUrl"/>
+                <attribute attribute-id="ckoFlowFailureUrl"/>
+            </attribute-group>
+        </group-definitions>
+    </type-extension>
+
+    <type-extension type-id="OrderPaymentInstrument">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="ckoFlowSessionId">
+                <display-name xml:lang="x-default">Checkout.com Flow Session Id</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </custom-attribute-definitions>
+    </type-extension>
+</metadata>

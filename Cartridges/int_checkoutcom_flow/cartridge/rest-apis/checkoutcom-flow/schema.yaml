@@ -1,0 +1,79 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Checkout.com Flow Custom API
+  description: >-
+    Headless payment endpoints for the Checkout.com Flow integration.
+    The storefront creates a payment session for the shopper's basket, mounts
+    the Flow web component with it, and completes the order after payment.
+components:
+  securitySchemes:
+    ShopperToken: {}
+paths:
+  /payment-sessions:
+    post:
+      summary: Create a Checkout.com payment session for the current basket
+      description: >-
+        Builds the payment-session payload from the shopper's basket (amount,
+        currency, billing country, return URLs) and creates it with the
+        gateway. The full session object is returned for Flow initialization.
+        Replaces the basket's payment instruments with a CHECKOUTCOM_FLOW
+        instrument covering the order total.
+      operationId: createPaymentSession
+      responses:
+        "200":
+          description: The created payment session (pass verbatim to CheckoutWebComponents)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  payment_session_token:
+                    type: string
+                  payment_session_secret:
+                    type: string
+  /complete:
+    post:
+      summary: Verify a Flow payment and place the order
+      description: >-
+        Verifies the payment against the gateway (status, amount, currency and
+        basket binding), creates and places the order idempotently keyed on
+        the payment id, and reverses the payment automatically when order
+        creation fails. Returns 'pending' while the payment is still being
+        processed asynchronously; the storefront polls by repeating the call.
+      operationId: completePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentId
+              properties:
+                paymentId:
+                  type: string
+      responses:
+        "200":
+          description: The completion outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - complete
+                      - pending
+                      - failed
+                  orderNo:
+                    type: string
+                  orderToken:
+                    type: string
+                  errorMessage:
+                    type: string
+security:
+  - ShopperToken: ["c_ckoflow"]

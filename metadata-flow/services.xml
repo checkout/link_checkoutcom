@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+    <service-credential service-credential-id="cko.flow.sessions.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payment-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.sessions.live.credential">
+        <url>https://api.checkout.com/payment-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.payments.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/paymentId</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.payments.live.credential">
+        <url>https://api.checkout.com/payments/paymentId</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.voids.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/paymentId/voids</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.voids.live.credential">
+        <url>https://api.checkout.com/payments/paymentId/voids</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.refunds.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/paymentId/refunds</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+    <service-credential service-credential-id="cko.flow.refunds.live.credential">
+        <url>https://api.checkout.com/payments/paymentId/refunds</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-profile service-profile-id="CheckoutComFlow">
+        <timeout-millis>10000</timeout-millis>
+        <rate-limit-enabled>false</rate-limit-enabled>
+        <rate-limit-calls>0</rate-limit-calls>
+        <rate-limit-millis>0</rate-limit-millis>
+        <cb-enabled>false</cb-enabled>
+        <cb-calls>0</cb-calls>
+        <cb-millis>0</cb-millis>
+    </service-profile>
+
+    <service service-id="cko.flow.sessions.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.sessions.sandbox.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.sessions.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.sessions.live.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.payments.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.payments.sandbox.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.payments.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.payments.live.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.voids.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.voids.sandbox.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.voids.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.voids.live.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.refunds.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.refunds.sandbox.credential</credential-id>
+    </service>
+    <service service-id="cko.flow.refunds.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <profile-id>CheckoutComFlow</profile-id>
+        <credential-id>cko.flow.refunds.live.credential</credential-id>
+    </service>
+</services>
