@@ -105,6 +105,30 @@
             "script": "./hooks/payment/processor/CHECKOUTCOM_ACH_form_processor"
         },
         {
+            "name": "app.payment.processor.checkoutcom_tamara",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TAMARA"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_tamara",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_TAMARA_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_alipayhk",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALIPAYHK"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_alipayhk",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALIPAYHK_form_processor"
+        },
+        {
+            "name": "app.payment.processor.checkoutcom_alipaycn",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALIPAYCN"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_alipaycn",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_ALIPAYCN_form_processor"
+        },
+        {
             "name": "app.payment.processor.default",
             "script": "./hooks/payment/processor/default"
         }
