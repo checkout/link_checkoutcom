@@ -64,4 +64,14 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_TAMARA'}">
         <isinclude template="checkout/billing/paymentOptions/contents/tamaraContent" />
     </isif>
+
+    <iscomment> AlipayHK </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYHK'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/alipayHkContent" />
+    </isif>
+
+    <iscomment> AlipayCN </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYCN'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/alipayCnContent" />
+    </isif>
 </isloop>

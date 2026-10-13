@@ -11,6 +11,12 @@
     "id": "zh_CN",
     "currencyCode": "CNY"
 }, {
+    "id": "zh_HK",
+    "currencyCode": "HKD"
+}, {
+    "id": "en_SG",
+    "currencyCode": "SGD"
+}, {
     "id": "fr_FR",
     "currencyCode": "EUR"
 }, {

@@ -117,4 +117,22 @@
             <production/>
         </preferences>
     </payment-processor>
+    <payment-processor processor-id="CHECKOUTCOM_ALIPAYHK">
+        <description>Checkout.com AlipayHK payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
+    <payment-processor processor-id="CHECKOUTCOM_ALIPAYCN">
+        <description>Checkout.com AlipayCN payment processor</description>
+        <preferences>
+            <all-instances/>
+            <development/>
+            <staging/>
+            <production/>
+        </preferences>
+    </payment-processor>
 </payment-processors>
