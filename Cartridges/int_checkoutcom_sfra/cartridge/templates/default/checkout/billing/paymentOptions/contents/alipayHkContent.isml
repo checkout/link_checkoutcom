@@ -1,0 +1,8 @@
+<div class="tab-pane alipayhk-content" id="alipayhk-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <div class="invalid-field-message"></div>
+        <p class="alipayhk-redirect-message">${Resource.msg('cko.alipayhk.redirect.message','cko',null)}</p>
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="CHECKOUTCOM_ALIPAYHK" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+    </fieldset>
+</div>
