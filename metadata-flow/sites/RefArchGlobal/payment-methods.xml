@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<payment-settings xmlns="http://www.demandware.com/xml/impex/paymentsettings/2009-09-15">
+    <!-- Only CHECKOUTCOM_FLOW. Payment methods are merged by id on import, so the
+         enabled-flag of every other payment method is left untouched. -->
+    <payment-method method-id="CHECKOUTCOM_FLOW">
+        <name xml:lang="x-default">Checkout.com Flow</name>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_FLOW</processor-id>
+    </payment-method>
+</payment-settings>

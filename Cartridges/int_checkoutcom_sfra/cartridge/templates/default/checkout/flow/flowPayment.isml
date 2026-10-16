@@ -1,0 +1,63 @@
+<iscomment>
+    Checkout.com Flow payment page.
+
+    Rendered by CKOFlow-Show for an order that the standard SFRA place order route
+    has already created. The Checkout Web Components (Flow) bundle is loaded as an
+    ES module and mounted into #cko-flow-container by static/default/js/flow.js.
+</iscomment>
+<isdecorate template="common/layout/checkout">
+
+    <isscript>
+        var assets = require('*/cartridge/scripts/assets.js');
+        assets.addCss('/css/flow.css');
+        assets.addJs('/js/flow.js');
+    </isscript>
+
+    <div class="container cko-flow-page">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-7">
+
+                <h1 class="cko-flow-title">${Resource.msg('cko.flow.page.title', 'cko', null)}</h1>
+                <p class="cko-flow-subtitle">${Resource.msgf('cko.flow.page.subtitle', 'cko', null, pdict.ckoFlow.orderNo)}</p>
+
+                <div id="cko-flow-error" class="alert alert-danger d-none" role="alert"></div>
+
+                <iscomment>
+                    Flow bootstrap data. Read by flow.js through the dataset API, so
+                    every value is written as a standard, escaped ISML attribute.
+                </iscomment>
+                <div id="cko-flow-config"
+                     class="d-none"
+                     data-components-url="${pdict.ckoFlow.componentsUrl}"
+                     data-public-key="${pdict.ckoFlow.publicKey}"
+                     data-environment="${pdict.ckoFlow.environment}"
+                     data-locale="${pdict.ckoFlow.locale}"
+                     data-appearance="${pdict.ckoFlow.appearanceJson}"
+                     data-payment-session="${pdict.ckoFlow.paymentSessionJson}"
+                     data-order-no="${pdict.ckoFlow.orderNo}"
+                     data-complete-url="${pdict.ckoFlow.completeUrl}"
+                     data-failure-url="${pdict.ckoFlow.failureUrl}"
+                     data-csrf-name="${pdict.csrf.tokenName}"
+                     data-csrf-token="${pdict.csrf.token}"
+                     data-generic-error="${Resource.msg('cko.flow.error.generic', 'cko', null)}"
+                     data-load-error="${Resource.msg('cko.flow.error.unavailable', 'cko', null)}"></div>
+
+                <div id="cko-flow-container" class="cko-flow-container"></div>
+
+                <p class="cko-flow-cancel">
+                    <a href="${pdict.ckoFlow.failureUrl}">${Resource.msg('cko.flow.cancel', 'cko', null)}</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+
+    <iscomment>
+        The Checkout Web Components bundle is injected by flow.js as a classic
+        script, using the URL in data-components-url above. It is deliberately not
+        pulled in here as an ES module: module scripts are always fetched in CORS
+        mode and the CDN serves index.js with no Access-Control-Allow-Origin
+        header, which blocks the import on every storefront origin.
+    </iscomment>
+
+</isdecorate>

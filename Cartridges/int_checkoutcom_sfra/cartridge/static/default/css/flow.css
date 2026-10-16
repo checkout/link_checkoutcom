@@ -1,0 +1,46 @@
+/* Checkout.com Flow component styles. */
+
+.cko-flow-page {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+}
+
+.cko-flow-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.cko-flow-subtitle {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Reserves room while the Checkout Web Components bundle is still loading so the
+   page does not jump once the Flow component mounts. */
+.cko-flow-container {
+    min-height: 18rem;
+}
+
+.cko-flow-container.cko-flow-busy {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cko-flow-cancel {
+    margin-top: 1.25rem;
+    text-align: center;
+}
+
+.cko-flow-cancel a {
+    font-size: 0.875rem;
+}
+
+/* Billing step tab */
+.flow-info {
+    padding: 0.5rem 0;
+}
+
+.flow-info-message {
+    margin-bottom: 0;
+}

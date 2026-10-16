@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+
+    <!-- Checkout.com Flow payment session services only. The CheckoutCom profile
+         is re-declared because it is referenced below; importing it again is a
+         no-op when it already exists. -->
+    <service-credential service-credential-id="cko.flow.sessions.live.credential">
+        <url>https://api.checkout.com/payment-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.sessions.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payment-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-profile service-profile-id="CheckoutCom">
+        <timeout-millis>10000</timeout-millis>
+        <rate-limit-enabled>false</rate-limit-enabled>
+        <rate-limit-calls>0</rate-limit-calls>
+        <rate-limit-millis>0</rate-limit-millis>
+        <cb-enabled>false</cb-enabled>
+        <cb-calls>0</cb-calls>
+        <cb-millis>0</cb-millis>
+    </service-profile>
+
+    <service service-id="cko.flow.sessions.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.sessions.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.sessions.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.sessions.live.credential</credential-id>
+    </service>
+
+</services>
