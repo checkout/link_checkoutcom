@@ -112,4 +112,47 @@
             <country country-code="US"/>
         </countries>
     </payment-method>
+    <payment-method method-id="CHECKOUTCOM_TAMARA">
+        <name xml:lang="x-default">Checkout.com Tamara</name>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_TAMARA</processor-id>
+        <countries>
+            <country country-code="SA"/>
+            <country country-code="AE"/>
+        </countries>
+        <currencies>
+            <currency>SAR</currency>
+            <currency>AED</currency>
+        </currencies>
+    </payment-method>
+    <payment-method method-id="CHECKOUTCOM_ALIPAYHK">
+        <name xml:lang="x-default">Checkout.com AlipayHK</name>
+        <image>images/thumbs/AliPayHK-APM.png</image>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_ALIPAYHK</processor-id>
+        <countries>
+            <country country-code="HK"/>
+            <country country-code="SG"/>
+        </countries>
+        <currencies>
+            <currency>HKD</currency>
+            <currency>SGD</currency>
+        </currencies>
+    </payment-method>
+    <payment-method method-id="CHECKOUTCOM_ALIPAYCN">
+        <name xml:lang="x-default">Checkout.com AlipayCN</name>
+        <image>images/thumbs/Alipay-APM.png</image>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_ALIPAYCN</processor-id>
+        <countries>
+            <country country-code="CN"/>
+            <country country-code="HK"/>
+            <country country-code="SG"/>
+        </countries>
+        <currencies>
+            <currency>HKD</currency>
+            <currency>SGD</currency>
+            <currency>CNY</currency>
+        </currencies>
+    </payment-method>
 </payment-settings>
