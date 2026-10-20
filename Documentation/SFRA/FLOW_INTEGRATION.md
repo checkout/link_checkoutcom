@@ -23,13 +23,13 @@ Flow is an order-first integration, which means the SFRA order always exists bef
 money moves and the Checkout.com `reference` is always the real SFCC order number.
 
 ```
-Billing step              Place Order                 Flow page                Confirmation
-──────────────────────────────────────────────────────────────────────────────────────────
-Shopper picks the   →  CheckoutServices-PlaceOrder  →  CKOFlow-Show         →  Order-Confirm
-"Checkout.com Flow"    creates the order and calls     POST /payment-sessions
-tab                    the Authorize hook, which       and mounts the Flow
-                       returns a redirect to           component
-                       CKOFlow-Show
+Billing step              Place Order                       Place order step         Confirmation
+───────────────────────────────────────────────────────────────────────────────────────────────
+Shopper picks the   →  CheckoutServices-PlaceOrder  →  CKOFlow-Session (AJAX)   →  Order-Confirm
+"Checkout.com Flow"    creates the order and calls     POST /payment-sessions;
+tab                    the Authorize hook, which       Flow is mounted inline
+                       returns flowSessionUrl (and     below the payment summary
+                       CKOFlow-Show as fallback)
                                                        Shopper pays
                                                           │
                                         ┌─────────────────┴──────────────────┐
@@ -51,13 +51,26 @@ Because `reference` is the order number, the existing `CKOMain-HandleWebhook` ha
 settle Flow payments (captures, refunds, voids, delayed `payment_approved`) with no extra
 work — the metadata carries `payment_processor: CHECKOUTCOM_FLOW`.
 
-### Why Flow renders on its own page
+### Why Flow is mounted after Place Order
 
 SFRA takes the payment authorization server side, during `CheckoutServices-PlaceOrder`,
-while Flow takes it client side. Rendering Flow on a dedicated page after the order is
-created is what lets both be true at once, and it reuses the `redirectUrl` contract that
-the existing redirect APMs already use — so no base SFRA controller or client script had
-to be modified.
+while Flow takes it client side. Creating the order first and only then mounting Flow is
+what lets both be true at once.
+
+Where Flow is shown is chosen with the `ckoFlowDisplayMode` preference.
+
+**Inline (default).** After Place Order, `js/flow/flowInline.js` (bundled into `checkout.js`) fetches the payment
+session from `CKOFlow-Session` and mounts Flow in a panel below the payment summary, on the
+same checkout page. Because the order now exists and the basket has been consumed, the
+step *Edit* buttons and *Place Order* are hidden; the panel's cancel link
+(`CKOFlow-HandleFail`) fails the order and restores the basket. A shopper who reloads or
+leaves the page gets their basket back from the existing `Cart-Show` / `Cart-MiniCart`
+reclaim.
+
+**Separate page.** The shopper is redirected to `CKOFlow-Show`, a standalone Flow page.
+In inline mode that page is also used as the fallback whenever the inline mount is not
+possible (for example a network error while fetching the session), so
+an order can always still be paid for.
 
 ---
 
@@ -73,18 +86,22 @@ to be modified.
 | `cartridge/scripts/helpers/flowPaymentHelper.js` | Turns a confirmed payment into a placed order |
 | `cartridge/scripts/hooks/payment/processor/CHECKOUTCOM_FLOW.js` | `Handle` / `Authorize` |
 | `cartridge/scripts/hooks/payment/processor/CHECKOUTCOM_FLOW_form_processor.js` | `processForm` |
-| `cartridge/controllers/CKOFlow.js` | `Show`, `Complete`, `HandleReturn`, `HandleFail` |
-| `cartridge/templates/default/checkout/flow/flowPayment.isml` | The Flow page |
+| `cartridge/controllers/CKOFlow.js` | `Session`, `Show`, `Complete`, `HandleReturn`, `HandleFail` |
+| `cartridge/templates/default/checkout/flow/flowPayment.isml` | The standalone Flow page (fallback) |
 | `cartridge/templates/default/checkout/billing/paymentOptions/tabs/flowTab.isml` | Billing step tab |
 | `cartridge/templates/default/checkout/billing/paymentOptions/contents/flowContent.isml` | Billing step tab content |
-| `cartridge/client/default/js/flow.js` | Mounts the component, settles the order |
-| `cartridge/static/default/css/flow.css` | Flow page and tab styles |
+| `cartridge/client/default/js/flow/flowComponent.js` | Loads the bundle, mounts the component, settles the order |
+| `cartridge/client/default/js/flow/flowInline.js` | Mounts Flow inline in the place order step |
+| `cartridge/client/default/js/flow.js` | Boots the component on the standalone Flow page |
+| `cartridge/static/default/css/flow.css` | Flow page, inline panel and tab styles |
 
 ### Modified (additive only)
 
 | File | Change |
 | --- | --- |
 | `cartridge/scripts/hooks.json` | Two new hook registrations |
+| `cartridge/controllers/CheckoutServices.js` | `PlaceOrder` passes `flowSessionUrl` through to the client |
+| `cartridge/client/default/js/checkout/checkout.js` | Place order step mounts Flow inline when `flowSessionUrl` is returned |
 | `.../paymentOptions/paymentOptionsTabs.isml` | One new `isif` block |
 | `.../paymentOptions/paymentOptionsContent.isml` | One new `isif` block |
 | `cartridge/templates/resources/cko.properties` | New `cko.flow.*` keys |
@@ -92,10 +109,6 @@ to be modified.
 | `metadata/meta/system-object-definitions.xml` | `ckoFlow*` site preferences and the "CKO [19] Flow Settings" group |
 | `metadata/sites/{RefArch,RefArchGlobal}/payment-processors.xml` | `CHECKOUTCOM_FLOW` processor |
 | `metadata/sites/{RefArch,RefArchGlobal}/payment-methods.xml` | `CHECKOUTCOM_FLOW` method, disabled by default |
-
-The same Flow entries are also kept on their own in `metadata-flow/` (and
-`metadata-flow.zip`) for adding Flow to an instance that is already configured. Keep the
-two copies in sync when changing Flow metadata.
 
 The SiteGenesis site metadata (`metadata/sites/SiteGenesis*`) is deliberately untouched —
 Flow is SFRA only.
@@ -117,28 +130,30 @@ Flow is SFRA only.
 2. **Import the metadata** in Business Manager
    (_Administration → Site Development → Site Import & Export_).
 
-   On a **brand new instance**, import `metadata.zip` from the repository root. It
-   installs the whole cartridge in one pass — Flow and every individual Checkout.com
-   payment method — so no second import is needed. `CHECKOUTCOM_FLOW` is imported
-   disabled; step 3 is where you choose between Flow and the individual methods.
+   Import `metadata.zip` from the repository root. The same file is used for a **new
+   install** and for **upgrading** an existing one (for example to add Flow): there is no
+   separate Flow or upgrade package. It installs the whole cartridge in one pass — Flow
+   and every individual Checkout.com payment method.
 
-   On an instance that is **already configured**, import `metadata-flow.zip` instead. It
-   contains only the Flow preferences, services, processor and payment method. Payment
-   settings import merges by id, so it adds Flow without touching anything else.
+   `metadata.zip` is safe to re-import over an existing configuration:
 
-   > ⚠️ Do **not** import the full `metadata.zip` on a configured instance. Its
-   > `metadata/sites/<site>/payment-methods.xml` ships with `enabled-flag=false` for
-   > every Checkout.com method except PayPal, so importing it switches off whatever
-   > the merchant had enabled. The symptom is "The payment you submitted is not
-   > valid. Please re-enter payment information." at the place order step, because
-   > `COHelpers.validatePayment()` no longer finds the basket's payment method in
-   > `PaymentMgr.getApplicablePaymentMethods()`.
+   - **Payment methods ship without an `enabled-flag`.** New methods, such as
+     `CHECKOUTCOM_FLOW` on an upgrade, are created disabled, and methods that already
+     exist keep whatever the merchant set. Step 3 is where you choose what to enable.
+   - **Service credentials ship without `user-id` / `password`.** The secret key is read
+     from the site preferences at runtime, so there is nothing to set there, and an
+     import never blanks a value.
+   - **No site preference values are shipped.** Preference definitions and groups are
+     imported, with their defaults, but existing values are left alone.
 
-   To rebuild either archive:
+   What an import does still reset to the shipped values: each payment method's name,
+   processor and **country / currency restrictions**, and each service's settings
+   (enabled, logging, profile, URL). Re-apply any customisation of those after importing.
+
+   To rebuild the archive after changing anything under `metadata/`:
 
    ```bash
-   rm -f metadata-flow.zip && zip -rq metadata-flow.zip metadata-flow -x "*.DS_Store"
-   rm -f metadata.zip      && zip -rq metadata.zip      metadata      -x "*.DS_Store"
+   rm -f metadata.zip && zip -rq metadata.zip metadata -x "*.DS_Store"
    ```
 
    The archive's root folder name must match the zip file name or BM rejects the import.
@@ -164,6 +179,7 @@ Flow is SFRA only.
    | `ckoFlowPaymentMethods` | string | empty | Optional comma separated allow-list, e.g. `card,googlepay,klarna`. Empty means "everything enabled on the account". |
    | `ckoFlowAppearance` | text | empty | Optional JSON for the Flow `appearance` option, e.g. `{"colorAction":"#000000"}`. Invalid JSON is logged and ignored. |
    | `ckoFlowSavePaymentDetails` | boolean | `false` | Offer registered shoppers the option to store their details with Checkout.com. |
+   | `ckoFlowDisplayMode` | enum | `inline` | `inline` shows Flow in the checkout place order step, below the payment summary; `page` redirects to the separate Flow page. |
 
    Flow reuses the existing cartridge configuration for everything else: `ckoMode`,
    the ABC/NAS keys, `ckoProcessingChannelId`, `ckoBusinessName`, the billing descriptor,

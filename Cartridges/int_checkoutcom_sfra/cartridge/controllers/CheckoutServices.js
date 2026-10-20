@@ -237,6 +237,7 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
             apm: true,
             error: false,
             continueUrl: handlePaymentResult.redirectUrl,
+            flowSessionUrl: handlePaymentResult.flowSessionUrl,
         });
 
         this.emit('route:Complete', req, res);

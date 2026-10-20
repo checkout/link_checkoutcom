@@ -4,6 +4,7 @@
 var server = require('server');
 
 /* API Includes */
+var CSRFProtection = require('dw/web/CSRFProtection');
 var Logger = require('dw/system/Logger');
 var Resource = require('dw/web/Resource');
 var URLUtils = require('dw/web/URLUtils');
@@ -26,6 +27,8 @@ var flowPaymentHelper = require('*/cartridge/scripts/helpers/flowPaymentHelper')
  *
  * Route overview:
  *   Show         - renders Flow for the order reserved in the shopper session
+ *   Session      - same payment session as Show, as JSON, so the checkout page can
+ *                  mount Flow inline in the place order step
  *   Complete     - AJAX settlement, called from the onPaymentCompleted callback
  *   HandleReturn - success_url, used by the payment methods that redirect offsite
  *   HandleFail   - failure_url, and the shopper facing "cancel" target
@@ -71,41 +74,91 @@ function getPaymentErrorPayload() {
 }
 
 /**
- * Renders the Flow payment page for the order currently being paid for.
+ * Create the Flow payment session for an order reserved in the shopper session.
+ * Shared by Show and Session so the page and the inline mount behave the same.
+ * The order is failed, and the basket restored, when it cannot be paid for.
+ * @param {string} orderNo The order number the shopper is paying for
+ * @param {string} routeName The calling route, for the log message
+ * @returns {Object|null} The order and payment session, or null on failure
  */
-server.get('Show', server.middleware.https, csrfProtection.generateToken, function(req, res, next) {
-    var order = flowPaymentHelper.getSessionOrder(req.querystring.ref);
+function startPaymentSession(orderNo, routeName) {
+    var order = flowPaymentHelper.getSessionOrder(orderNo);
 
     if (!order) {
         Logger.getLogger('checkoutcom').warn(
-            'Flow page requested for an order that is not valid for this session.'
+            'Flow {0} requested for an order that is not valid for this session.',
+            routeName
         );
-        paymentHelper.getFailurePageRedirect(res);
 
-        return next();
+        return null;
     }
 
     if (!flowHelper.isEnabled()) {
         flowPaymentHelper.failOrder(order);
-        paymentHelper.getFailurePageRedirect(res);
 
-        return next();
+        return null;
     }
 
     var sessionResult = flowHelper.createPaymentSession(order);
 
     if (sessionResult.error) {
         flowPaymentHelper.failOrder(order);
-        paymentHelper.getFailurePageRedirect(res);
 
-        return next();
+        return null;
     }
 
     // eslint-disable-next-line no-undef
     session.privacy.ckoFlowSessionId = sessionResult.session.id;
 
+    return { order: order, session: sessionResult.session };
+}
+
+/**
+ * Renders the Flow payment page for the order currently being paid for.
+ */
+server.get('Show', server.middleware.https, csrfProtection.generateToken, function(req, res, next) {
+    var started = startPaymentSession(req.querystring.ref, 'Show');
+
+    if (!started) {
+        paymentHelper.getFailurePageRedirect(res);
+
+        return next();
+    }
+
     res.render('checkout/flow/flowPayment', {
-        ckoFlow: flowHelper.getViewData(order, sessionResult.session),
+        ckoFlow: flowHelper.getViewData(started.order, started.session),
+    });
+
+    return next();
+});
+
+/**
+ * Returns the Flow payment session as JSON so the checkout page can mount Flow
+ * inline in the place order step, instead of redirecting to Show. Called over
+ * AJAX right after CheckoutServices-PlaceOrder has created the order.
+ */
+server.post('Session', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
+    var started = startPaymentSession(req.querystring.ref, 'Session');
+
+    if (!started) {
+        res.json(getPaymentErrorPayload());
+
+        return next();
+    }
+
+    var viewData = flowHelper.getViewData(started.order, started.session);
+
+    // A fresh token for the CKOFlow-Complete call that settles the order
+    viewData.csrfName = CSRFProtection.getTokenName();
+    viewData.csrfToken = CSRFProtection.generateToken();
+    viewData.title = Resource.msg('cko.flow.page.title', 'cko', null);
+    viewData.cancelLabel = Resource.msg('cko.flow.cancel', 'cko', null);
+    viewData.genericError = Resource.msg('cko.flow.error.generic', 'cko', null);
+    viewData.loadError = Resource.msg('cko.flow.error.unavailable', 'cko', null);
+
+    res.json({
+        error: false,
+        ckoFlow: viewData,
     });
 
     return next();

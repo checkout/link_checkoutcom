@@ -101,12 +101,21 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         // eslint-disable-next-line no-undef
         session.privacy.ckoFlowOrderNo = orderNumber;
 
-        return {
+        var result = {
             fieldErrors: {},
             serverErrors: serverErrors,
             error: false,
             redirectUrl: URLUtils.https('CKOFlow-Show', 'ref', orderNumber).toString(),
         };
+
+        // In inline display mode the checkout page mounts Flow in the place order
+        // step instead of following redirectUrl, which stays the fallback for when
+        // the inline mount is not possible. In page mode the shopper is redirected.
+        if (flowHelper.isInlineDisplay()) {
+            result.flowSessionUrl = URLUtils.https('CKOFlow-Session', 'ref', orderNumber).toString();
+        }
+
+        return result;
     } catch (e) {
         serverErrors.push(ckoHelper.getPaymentFailureMessage());
 

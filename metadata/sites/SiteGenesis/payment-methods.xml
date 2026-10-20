@@ -1,28 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <payment-settings xmlns="http://www.demandware.com/xml/impex/paymentsettings/2009-09-15">
+    <!-- enabled-flag is deliberately omitted. New payment methods are created disabled
+         (the schema default) and re-importing this file never changes whether a
+         merchant has a method switched on. Enable methods in Business Manager. -->
     <payment-method method-id="CHECKOUTCOM_CARD">
         <name xml:lang="x-default">Checkout.com Card</name>
-        <enabled-flag>false</enabled-flag>
         <processor-id>CHECKOUTCOM_CARD</processor-id>
     </payment-method>
     <payment-method method-id="CHECKOUTCOM_APM">
         <name xml:lang="x-default">Checkout.com APM</name>
-        <enabled-flag>false</enabled-flag>
         <processor-id>CHECKOUTCOM_APM</processor-id>
     </payment-method>
     <payment-method method-id="CHECKOUTCOM_GOOGLE_PAY">
         <name xml:lang="x-default">Checkout.com Google Pay</name>
-        <enabled-flag>false</enabled-flag>
         <processor-id>CHECKOUTCOM_GOOGLE_PAY</processor-id>
     </payment-method>
     <payment-method method-id="CHECKOUTCOM_APPLE_PAY">
         <name xml:lang="x-default">Checkout.com Apple Pay</name>
-        <enabled-flag>false</enabled-flag>
         <processor-id>CHECKOUTCOM_APPLE_PAY</processor-id>
     </payment-method>
     <payment-method method-id="CHECKOUTCOM_PAYPAL">
         <name xml:lang="x-default">Checkout.com Paypal</name>
-        <enabled-flag>true</enabled-flag>
         <processor-id>CHECKOUTCOM_PAYPAL</processor-id>
     </payment-method>
 </payment-settings>

@@ -18,6 +18,11 @@ var ckoFlowConfig = {
     CKO_FLOW_APPEARANCE: 'ckoFlowAppearance',
     CKO_FLOW_PAYMENT_METHODS: 'ckoFlowPaymentMethods',
     CKO_FLOW_SAVE_PAYMENT_DETAILS: 'ckoFlowSavePaymentDetails',
+    CKO_FLOW_DISPLAY_MODE: 'ckoFlowDisplayMode',
+
+    /* Values of the ckoFlowDisplayMode preference */
+    DISPLAY_MODE_INLINE: 'inline',
+    DISPLAY_MODE_PAGE: 'page',
 
     /* Checkout Web Components (Flow) ES module bundle */
     COMPONENTS_URL: 'https://checkout-web-components.checkout.com/index.js',

@@ -2,146 +2,98 @@
 <services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
     <service-credential service-credential-id="cko.verify.charges.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.payment.contexts.live.credential">
         <url>https://api.checkout.com/payment-contexts</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.payment.contexts.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payment-contexts</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.card.sources.sandbox.credential">
         <url>https://api.sandbox.checkout.com/sources</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.card.charge.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.payment.actions.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments/chargeId/actions</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.transaction.capture.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments/chargeId/captures</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.transaction.void.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments/chargeId/voids</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.transaction.refund.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payments/chargeId/refunds</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.network.token.sandbox.credential">
         <url>https://api.sandbox.checkout.com/tokens</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.verify.charges.live.credential">
         <url>https://api.checkout.com/payments</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.card.sources.live.credential">
         <url>https://api.checkout.com/sources</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.card.charge.live.credential">
         <url>https://api.checkout.com/payments</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.payment.actions.live.credential">
         <url>https://api.checkout.com/payments/chargeId/actions</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.transaction.capture.live.credential">
         <url>https://api.checkout.com/payments/chargeId/captures</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.transaction.void.live.credential">
         <url>https://api.checkout.com/payments/chargeId/voids</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.transaction.refund.live.credential">
         <url>https://api.checkout.com/payments/chargeId/refunds</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.network.token.live.credential">
         <url>https://api.checkout.com/tokens</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.cartes.bancaires.live.credential">
         <url>https://api.checkout.com/metadata/card</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.cartes.bancaires.sandbox.credential">
         <url>https://api.sandbox.checkout.com/metadata/card</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.plaid.sandbox.credential">
         <url>https://sandbox.plaid.com</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.plaid.live.credential">
         <url>https://production.plaid.com</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.flow.sessions.live.credential">
         <url>https://api.checkout.com/payment-sessions</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-credential service-credential-id="cko.flow.sessions.sandbox.credential">
         <url>https://api.sandbox.checkout.com/payment-sessions</url>
-        <user-id/>
-        <password/>
     </service-credential>
 
     <service-profile service-profile-id="CheckoutCom">

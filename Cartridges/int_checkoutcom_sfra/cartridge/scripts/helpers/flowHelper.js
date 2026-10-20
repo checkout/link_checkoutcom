@@ -37,6 +37,21 @@ var flowHelper = {
     },
 
     /**
+     * Check whether Flow is mounted inline in the checkout place order step, rather
+     * than on the separate CKOFlow-Show page. Inline is the default, including when
+     * the preference has not been imported yet.
+     * @returns {boolean} True when Flow is displayed inline
+     */
+    isInlineDisplay: function() {
+        var mode = ckoHelper.getValue(flowConfig.CKO_FLOW_DISPLAY_MODE);
+
+        // Enum preferences come back as dw.value.EnumValue, so compare its value
+        var value = mode && mode.value !== undefined ? mode.value : mode;
+
+        return String(value || flowConfig.DISPLAY_MODE_INLINE) !== flowConfig.DISPLAY_MODE_PAGE;
+    },
+
+    /**
      * Resolve the Checkout Web Components environment from the cartridge mode.
      * @returns {string} Either "sandbox" or "production"
      */

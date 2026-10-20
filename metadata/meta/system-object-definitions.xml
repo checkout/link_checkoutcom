@@ -1023,6 +1023,24 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <default-value>false</default-value>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowDisplayMode">
+                <display-name xml:lang="x-default">Flow Display Mode</display-name>
+                <description xml:lang="x-default">Where Flow is shown after the shopper places the order. Inline: in the place order step of the checkout page, below the payment summary. Separate page: on a dedicated Checkout.com Flow page. The separate page is also used as a fallback when Flow cannot be shown inline.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <select-multiple-flag>false</select-multiple-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">Inline in the checkout page</display>
+                        <value>inline</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Separate page</display>
+                        <value>page</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
         </custom-attribute-definitions>
 
         <group-definitions>
@@ -1163,6 +1181,7 @@
                 <attribute attribute-id="ckoFlowPaymentMethods"/>
                 <attribute attribute-id="ckoFlowAppearance"/>
                 <attribute attribute-id="ckoFlowSavePaymentDetails"/>
+                <attribute attribute-id="ckoFlowDisplayMode"/>
             </attribute-group>
        </group-definitions>
        
