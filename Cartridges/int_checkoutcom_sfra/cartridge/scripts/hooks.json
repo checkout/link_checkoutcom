@@ -105,6 +105,14 @@
             "script": "./hooks/payment/processor/CHECKOUTCOM_ACH_form_processor"
         },
         {
+            "name": "app.payment.processor.checkoutcom_flow",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_FLOW"
+        },
+        {
+            "name": "app.payment.form.processor.checkoutcom_flow",
+            "script": "./hooks/payment/processor/CHECKOUTCOM_FLOW_form_processor"
+        },
+        {
             "name": "app.payment.processor.default",
             "script": "./hooks/payment/processor/default"
         }

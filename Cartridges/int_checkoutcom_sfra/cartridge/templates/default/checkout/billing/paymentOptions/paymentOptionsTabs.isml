@@ -58,4 +58,9 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ACH' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAchEnabled') && session.getCurrency().getCurrencyCode() === 'USD'}">
         <isinclude template="checkout/billing/paymentOptions/tabs/achTab"/>
     </isif>
+
+    <iscomment> Checkout.com Flow - countries and currencies are restricted on the payment method in BM </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_FLOW' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoFlowEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/flowTab"/>
+    </isif>
 </isloop>

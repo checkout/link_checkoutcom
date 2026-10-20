@@ -59,4 +59,9 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ACH'}">
         <isinclude template="checkout/billing/paymentOptions/contents/achContent" />
     </isif>
+
+    <iscomment> Checkout.com Flow </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_FLOW'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/flowContent" />
+    </isif>
 </isloop>
