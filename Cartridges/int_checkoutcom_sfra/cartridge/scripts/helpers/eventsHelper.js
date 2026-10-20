@@ -11,6 +11,7 @@ var PaymentMgr = require('dw/order/PaymentMgr');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var savedCardHelper = require('*/cartridge/scripts/helpers/savedCardHelper');
 var transactionHelper = require('*/cartridge/scripts/helpers/transactionHelper');
+var constants = require('*/cartridge/config/constants');
 
 var CONSTANTS = {
     PAYMENT_STATUS_PAID: 'PAYMENT_STATUS_PAID',
@@ -107,6 +108,57 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentCaptured: function(hook) {
+        // Tamara is submitted with capture: true and placed on a single payment instrument
+        // (no separate auth-instrument + capture-instrument pair like other processors), so
+        // this branch flips that one instrument to CAPTURE in place instead of creating a new
+        // instrument via createPaymentInstrument()/setPaymentStatus() further down.
+        var isTamara = hook.data && hook.data.metadata && hook.data.metadata.payment_processor === 'CHECKOUTCOM_TAMARA';
+        if (isTamara) {
+            this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_PAID, null, true);
+            var tamaraOrder = OrderMgr.getOrder(hook.data.reference);
+            if (tamaraOrder) {
+                var tamaraInstruments = tamaraOrder.getPaymentInstruments(constants.CKO_TAMARA_PAYMENTINSTRUMENT).toArray();
+                if (tamaraInstruments.length > 0) {
+                    Transaction.wrap(function() {
+                        tamaraInstruments[0].paymentTransaction.setType(PaymentTransaction.TYPE_CAPTURE);
+                        tamaraInstruments[0].paymentTransaction.custom.ckoActionId = hook.data.action_id;
+                        tamaraInstruments[0].paymentTransaction.custom.ckoTransactionOpened = true;
+                        tamaraInstruments[0].paymentTransaction.custom.ckoTransactionType = 'Capture';
+                    });
+                }
+            }
+            return;
+        }
+
+        // Alipay+ (AlipayHK/AlipayCN): this is a backup to the synchronous Get() call made in
+        // CKOMain-HandleReturn (AC5/AC8) — only update the existing instrument if the Get() call
+        // hasn't already paid the order. Both settle as a single Sale instrument (no separate
+        // auth/capture pair), and their processor id doubles as the payment instrument type
+        // (see constants.CKO_ALIPAYHK_PAYMENTINSTRUMENT / CKO_ALIPAYCN_PAYMENTINSTRUMENT).
+        var alipayPlusProcessorIds = [constants.CKO_ALIPAYHK_PAYMENTINSTRUMENT, constants.CKO_ALIPAYCN_PAYMENTINSTRUMENT];
+        var hookProcessorId = hook.data && hook.data.metadata && hook.data.metadata.payment_processor;
+        var isAlipayPlus = alipayPlusProcessorIds.indexOf(hookProcessorId) !== -1;
+        if (isAlipayPlus) {
+            var alipayOrder = OrderMgr.getOrder(hook.data.reference);
+            var alreadyPaid = alipayOrder && alipayOrder.paymentStatus === Order.PAYMENT_STATUS_PAID;
+
+            this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_PAID, null, true);
+
+            if (alipayOrder && !alreadyPaid) {
+                var alipayInstruments = alipayOrder.getPaymentInstruments(hookProcessorId).toArray();
+                if (alipayInstruments.length > 0) {
+                    Transaction.wrap(function() {
+                        alipayInstruments[0].paymentTransaction.setType(PaymentTransaction.TYPE_CAPTURE);
+                        alipayInstruments[0].paymentTransaction.custom.ckoActionId = hook.data.action_id;
+                        alipayInstruments[0].paymentTransaction.custom.ckoTransactionOpened = true;
+                        alipayInstruments[0].paymentTransaction.custom.ckoTransactionType = 'Capture';
+                        alipayOrder.setConfirmationStatus(alipayOrder.CONFIRMATION_STATUS_CONFIRMED);
+                    });
+                }
+            }
+            return;
+        }
+
         // Get the  transaction amount
         var transactionAmount = transactionHelper.getHookTransactionAmount(hook);
 
@@ -212,7 +264,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
+        var paymentProcessorId = order.getPaymentInstruments().toArray()[0].getPaymentMethod();
 
         // Create the refunded transaction
         Transaction.wrap(function() {
@@ -252,7 +304,7 @@ var eventsHelper = {
         var order = OrderMgr.getOrder(hook.data.reference);
 
         // Get the payment processor id
-        var paymentProcessorId = order.getPaymentInstrument().getPaymentMethod();
+        var paymentProcessorId = order.getPaymentInstruments().toArray()[0].getPaymentMethod();
 
         // Create the voided transaction
         Transaction.wrap(function() {
@@ -344,7 +396,7 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentCapturePending: function(hook) {
-        this.addWebhookInfo(hook, null, null); 
+        this.addWebhookInfo(hook, null, null);
     },
 
     /**

@@ -1,0 +1,9 @@
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link alipaycn-tab" data-toggle="tab" href="#alipaycn-content" role="tab">
+        <isif condition="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image != null}">
+            <img alt="${paymentOption.name}" height="22" id="alipaycn_thumb" src="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID).image.URL}"/>
+        </isif>
+        <img alt="Alipay+" height="22" id="alipayplus_logo" src="${URLUtils.staticURL('/images/thumbs/alipayplus.png')}"/>
+        ${paymentOption.name}
+    </a>
+</li>

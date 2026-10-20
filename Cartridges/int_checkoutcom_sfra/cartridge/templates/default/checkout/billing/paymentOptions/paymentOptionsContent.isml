@@ -60,6 +60,21 @@
         <isinclude template="checkout/billing/paymentOptions/contents/achContent" />
     </isif>
 
+    <iscomment> Tamara </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_TAMARA'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/tamaraContent" />
+    </isif>
+
+    <iscomment> AlipayHK </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYHK'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/alipayHkContent" />
+    </isif>
+
+    <iscomment> AlipayCN </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYCN'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/alipayCnContent" />
+    </isif>
+
     <iscomment> Checkout.com Flow </iscomment>
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_FLOW'}">
         <isinclude template="checkout/billing/paymentOptions/contents/flowContent" />

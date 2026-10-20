@@ -67,9 +67,24 @@ function remoteCall() {
                 response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for Alma payments.' }));
                 return;
             }
+            if (paymentMethod === 'CHECKOUTCOM_TAMARA') {
+                // eslint-disable-next-line
+                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for Tamara payments.' }));
+                return;
+            }
             if (paymentMethod === 'CHECKOUTCOM_ACH') {
                 // eslint-disable-next-line
                 response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for ACH Direct Debit payments.' }));
+                return;
+            }
+            if (paymentMethod === 'CHECKOUTCOM_ALIPAYHK') {
+                // eslint-disable-next-line
+                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for AlipayHK payments.' }));
+                return;
+            }
+            if (paymentMethod === 'CHECKOUTCOM_ALIPAYCN') {
+                // eslint-disable-next-line
+                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for AlipayCN payments.' }));
                 return;
             }
         }

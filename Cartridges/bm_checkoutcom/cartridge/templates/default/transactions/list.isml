@@ -75,3 +75,6 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 <script src="${URLUtils.staticURL('/js/core/sequraActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/bizumActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/achActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/tamaraActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/alipayHkActions.js')}"></script>
+<script src="${URLUtils.staticURL('/js/core/alipayCnActions.js')}"></script>

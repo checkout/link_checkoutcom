@@ -59,6 +59,21 @@
         <isinclude template="checkout/billing/paymentOptions/tabs/achTab"/>
     </isif>
 
+    <iscomment> Tamara - country validation handled by BM (applicablePaymentMethods) </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_TAMARA' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoTamaraEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/tamaraTab"/>
+    </isif>
+
+    <iscomment> AlipayHK - country (HK) and currency (HKD/SGD) validation handled by BM (applicablePaymentMethods) </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYHK' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAlipayHKEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/alipayHkTab"/>
+    </isif>
+
+    <iscomment> AlipayCN - country (CN) and currency (HKD/SGD/CNY) validation handled by BM (applicablePaymentMethods) </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYCN' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAlipayCNEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/alipayCnTab"/>
+    </isif>
+
     <iscomment> Checkout.com Flow - countries and currencies are restricted on the payment method in BM </iscomment>
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_FLOW' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoFlowEnabled')}">
         <isinclude template="checkout/billing/paymentOptions/tabs/flowTab"/>
