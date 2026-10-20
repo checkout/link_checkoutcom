@@ -132,6 +132,18 @@
         <password/>
     </service-credential>
 
+    <service-credential service-credential-id="cko.flow.sessions.live.credential">
+        <url>https://api.checkout.com/payment-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.sessions.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payment-sessions</url>
+        <user-id/>
+        <password/>
+    </service-credential>
+
     <service-profile service-profile-id="CheckoutCom">
         <timeout-millis>10000</timeout-millis>
         <rate-limit-enabled>false</rate-limit-enabled>
@@ -344,6 +356,28 @@
         <comm-log-enabled>false</comm-log-enabled>
         <profile-id>CheckoutCom</profile-id>
         <credential-id>cko.plaid.live.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.sessions.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.sessions.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.sessions.live.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix/>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.sessions.live.credential</credential-id>
     </service>
 
 </services>

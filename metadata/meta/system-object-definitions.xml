@@ -360,15 +360,15 @@
             </attribute-definition>
             <attribute-definition attribute-id="ckoSgPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Site Genesis Cartridge - Version: 26.3.0</default-value>
+                <default-value>Checkout.com Site Genesis Cartridge - Version: 26.4.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoSfraPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com SFRA Cartridge - Version: 26.3.0</default-value>
+                <default-value>Checkout.com SFRA Cartridge - Version: 26.4.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBmPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Business Manager Cartridge - Version: 26.3.0</default-value>
+                <default-value>Checkout.com Business Manager Cartridge - Version: 26.4.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBillingDescriptor1">
                 <display-name xml:lang="x-default">Billing Descriptor 1</display-name>
@@ -983,6 +983,46 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowEnabled">
+                <display-name xml:lang="x-default">Enable Flow</display-name>
+                <description xml:lang="x-default">Enable the Checkout.com Flow component (Checkout Web Components). Flow renders every payment method enabled on the Checkout.com account in a single embedded form, so it is normally used instead of the individual Checkout.com payment methods rather than alongside them.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowCapture">
+                <display-name xml:lang="x-default">Flow Auto Capture</display-name>
+                <description xml:lang="x-default">Capture Flow payments automatically. When not set, the cartridge wide Auto Capture preference is used. The Auto Capture Time preference also applies.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowPaymentMethods">
+                <display-name xml:lang="x-default">Flow Payment Methods</display-name>
+                <description xml:lang="x-default">Optional comma separated list of the payment methods Flow may offer, for example "card,googlepay,klarna". Leave empty to offer every method enabled on the Checkout.com account.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowAppearance">
+                <display-name xml:lang="x-default">Flow Appearance</display-name>
+                <description xml:lang="x-default">Optional JSON passed to the Flow appearance option to match the storefront branding, for example {"colorAction":"#000000"}. Invalid JSON is ignored and the Flow default styling is used.</description>
+                <type>text</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowSavePaymentDetails">
+                <display-name xml:lang="x-default">Flow Save Payment Details</display-name>
+                <description xml:lang="x-default">Let registered shoppers choose to store their payment details with Checkout.com for future purchases.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
         </custom-attribute-definitions>
 
         <group-definitions>
@@ -1115,6 +1155,14 @@
 			<attribute-group group-id="CKO [18] AlipayCN Settings">
                 <display-name xml:lang="x-default">Checkout.com AlipayCN Payment Settings</display-name>
                 <attribute attribute-id="ckoAlipayCNEnabled"/>
+            </attribute-group>
+			<attribute-group group-id="CKO [19] Flow Settings">
+                <display-name xml:lang="x-default">Checkout.com Flow Settings</display-name>
+                <attribute attribute-id="ckoFlowEnabled"/>
+                <attribute attribute-id="ckoFlowCapture"/>
+                <attribute attribute-id="ckoFlowPaymentMethods"/>
+                <attribute attribute-id="ckoFlowAppearance"/>
+                <attribute attribute-id="ckoFlowSavePaymentDetails"/>
             </attribute-group>
        </group-definitions>
        

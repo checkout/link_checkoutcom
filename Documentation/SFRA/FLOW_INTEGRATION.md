@@ -89,9 +89,13 @@ to be modified.
 | `.../paymentOptions/paymentOptionsContent.isml` | One new `isif` block |
 | `cartridge/templates/resources/cko.properties` | New `cko.flow.*` keys |
 | `metadata/services.xml` | `cko.flow.sessions.{sandbox,live}` credentials and services |
-| `metadata/meta/system-object-definitions.xml` | `ckoFlow*` site preferences and the "CKO [16] Flow Settings" group |
+| `metadata/meta/system-object-definitions.xml` | `ckoFlow*` site preferences and the "CKO [19] Flow Settings" group |
 | `metadata/sites/{RefArch,RefArchGlobal}/payment-processors.xml` | `CHECKOUTCOM_FLOW` processor |
-| `metadata/sites/{RefArch,RefArchGlobal}/payment-methods.xml` | `CHECKOUTCOM_FLOW` method |
+| `metadata/sites/{RefArch,RefArchGlobal}/payment-methods.xml` | `CHECKOUTCOM_FLOW` method, disabled by default |
+
+The same Flow entries are also kept on their own in `metadata-flow/` (and
+`metadata-flow.zip`) for adding Flow to an instance that is already configured. Keep the
+two copies in sync when changing Flow metadata.
 
 The SiteGenesis site metadata (`metadata/sites/SiteGenesis*`) is deliberately untouched —
 Flow is SFRA only.
@@ -113,10 +117,14 @@ Flow is SFRA only.
 2. **Import the metadata** in Business Manager
    (_Administration → Site Development → Site Import & Export_).
 
-   On an instance that is **already configured**, import `metadata-flow.zip` from the
-   repository root. It contains only the Flow preferences, services, processor and
-   payment method. Payment settings import merges by id, so it adds Flow without
-   touching anything else.
+   On a **brand new instance**, import `metadata.zip` from the repository root. It
+   installs the whole cartridge in one pass — Flow and every individual Checkout.com
+   payment method — so no second import is needed. `CHECKOUTCOM_FLOW` is imported
+   disabled; step 3 is where you choose between Flow and the individual methods.
+
+   On an instance that is **already configured**, import `metadata-flow.zip` instead. It
+   contains only the Flow preferences, services, processor and payment method. Payment
+   settings import merges by id, so it adds Flow without touching anything else.
 
    > ⚠️ Do **not** import the full `metadata.zip` on a configured instance. Its
    > `metadata/sites/<site>/payment-methods.xml` ships with `enabled-flag=false` for
@@ -125,9 +133,6 @@ Flow is SFRA only.
    > valid. Please re-enter payment information." at the place order step, because
    > `COHelpers.validatePayment()` no longer finds the basket's payment method in
    > `PaymentMgr.getApplicablePaymentMethods()`.
-
-   On a **brand new instance** the full `metadata.zip` is fine and preferable — there is
-   no prior configuration to overwrite, and it installs the whole cartridge in one pass.
 
    To rebuild either archive:
 
@@ -138,10 +143,16 @@ Flow is SFRA only.
 
    The archive's root folder name must match the zip file name or BM rejects the import.
 
-3. **Enable the payment method**
-   (_Merchant Tools → Ordering → Payment Methods → `CHECKOUTCOM_FLOW`_).
-   Set it to enabled and, optionally, upload a thumbnail; the billing tab renders without
-   one. Restrict countries and currencies here if you need to.
+3. **Choose Flow or the individual payment methods**
+   (_Merchant Tools → Ordering → Payment Methods_).
+   - **Flow:** enable `CHECKOUTCOM_FLOW` and leave the individual Checkout.com methods
+     (`CHECKOUTCOM_CARD`, `CHECKOUTCOM_APM`, `CHECKOUTCOM_KLARNA`, …) disabled.
+     Optionally upload a thumbnail; the billing tab renders without one. Restrict
+     countries and currencies here if you need to.
+   - **Individual methods:** leave `CHECKOUTCOM_FLOW` disabled and enable the methods
+     you want, as in previous releases.
+
+   Switching later is just a matter of flipping these flags; no re-import is needed.
 
 4. **Configure the preferences**
    (_Merchant Tools → Site Preferences → Custom Preferences → Checkout.com Flow Settings_):

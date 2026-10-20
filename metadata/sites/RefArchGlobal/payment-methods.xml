@@ -155,4 +155,9 @@
             <currency>CNY</currency>
         </currencies>
     </payment-method>
+    <payment-method method-id="CHECKOUTCOM_FLOW">
+        <name xml:lang="x-default">Checkout.com Flow</name>
+        <enabled-flag>false</enabled-flag>
+        <processor-id>CHECKOUTCOM_FLOW</processor-id>
+    </payment-method>
 </payment-settings>

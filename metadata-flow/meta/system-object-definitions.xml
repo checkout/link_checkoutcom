@@ -49,7 +49,7 @@
             </attribute-definition>
         </custom-attribute-definitions>
         <group-definitions>
-			<attribute-group group-id="CKO [16] Flow Settings">
+			<attribute-group group-id="CKO [19] Flow Settings">
                 <display-name xml:lang="x-default">Checkout.com Flow Settings</display-name>
                 <attribute attribute-id="ckoFlowEnabled"/>
                 <attribute attribute-id="ckoFlowCapture"/>
