@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+
+    <!-- Processed Checkout.com webhook events, keyed by event id, so repeated
+         deliveries are acknowledged without being applied twice. -->
+    <custom-type type-id="ckoWebhookEvent">
+        <display-name xml:lang="x-default">Checkout.com Webhook Event</display-name>
+        <staging-mode>no-staging</staging-mode>
+        <storage-scope>site</storage-scope>
+        <retention-days>30</retention-days>
+        <key-definition attribute-id="eventId">
+            <display-name xml:lang="x-default">Event ID</display-name>
+            <type>string</type>
+            <min-length>0</min-length>
+        </key-definition>
+        <attribute-definitions>
+            <attribute-definition attribute-id="eventType">
+                <display-name xml:lang="x-default">Event Type</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="default">
+                <display-name xml:lang="x-default">Default</display-name>
+                <attribute attribute-id="eventId"/>
+                <attribute attribute-id="eventType"/>
+                <attribute attribute-id="creationDate" system="true"/>
+            </attribute-group>
+        </group-definitions>
+    </custom-type>
+
+    <!-- Binds a Checkout.com payment id to its order (number and token). Webhooks
+         arrive without a shopper session, and with Limit Storefront Order Access
+         enabled an order can then only be loaded with OrderMgr.getOrder(no, token). -->
+    <custom-type type-id="ckoPayment">
+        <display-name xml:lang="x-default">Checkout.com Payment</display-name>
+        <staging-mode>no-staging</staging-mode>
+        <storage-scope>site</storage-scope>
+        <retention-days>365</retention-days>
+        <key-definition attribute-id="paymentId">
+            <display-name xml:lang="x-default">Payment ID</display-name>
+            <type>string</type>
+            <min-length>0</min-length>
+        </key-definition>
+        <attribute-definitions>
+            <attribute-definition attribute-id="orderNo">
+                <display-name xml:lang="x-default">Order Number</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="orderToken">
+                <display-name xml:lang="x-default">Order Token</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="default">
+                <display-name xml:lang="x-default">Default</display-name>
+                <attribute attribute-id="paymentId"/>
+                <attribute attribute-id="orderNo"/>
+                <attribute attribute-id="orderToken"/>
+                <attribute attribute-id="creationDate" system="true"/>
+            </attribute-group>
+        </group-definitions>
+    </custom-type>
+
+</metadata>

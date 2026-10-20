@@ -1,0 +1,11 @@
+{
+    "loading": "Loading payment methods…",
+    "errors": {
+        "unavailable": "Payment methods could not be loaded. Refresh the page or try again later.",
+        "incomplete": "Complete your payment details before placing the order.",
+        "payment": "Your payment could not be completed. Try again or choose another payment method.",
+        "placeOrder": "Your order could not be placed. Check your details and try again.",
+        "timeout": "Your payment is taking too long. Check your order history before trying again.",
+        "returnFailed": "Your payment was not completed: the card authentication failed or was cancelled, or the payment was declined. You have not been charged. Please try again or choose another payment method."
+    }
+}

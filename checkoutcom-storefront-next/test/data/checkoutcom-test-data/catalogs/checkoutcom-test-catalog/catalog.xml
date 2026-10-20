@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="http://www.demandware.com/xml/impex/catalog/2006-10-31" catalog-id="checkoutcom-test-catalog">
+    <header>
+        <image-settings>
+            <internal-location base-path="/images"/>
+            <view-types>
+                <view-type>large</view-type>
+                <view-type>medium</view-type>
+                <view-type>small</view-type>
+            </view-types>
+            <alt-pattern>${productname}</alt-pattern>
+            <title-pattern>${productname}</title-pattern>
+        </image-settings>
+    </header>
+
+    <category category-id="root">
+        <display-name xml:lang="x-default">Storefront Catalog</display-name>
+        <online-flag>true</online-flag>
+    </category>
+
+    <category category-id="checkoutcom-test">
+        <display-name xml:lang="x-default">Checkout.com Test</display-name>
+        <online-flag>true</online-flag>
+        <parent>root</parent>
+    </category>
+
+    <product product-id="CKO-TEST-TSHIRT">
+        <ean/>
+        <upc/>
+        <unit/>
+        <min-order-quantity>1</min-order-quantity>
+        <step-quantity>1</step-quantity>
+        <display-name xml:lang="x-default">Test T-Shirt</display-name>
+        <short-description xml:lang="x-default">A test product for Checkout.com payments.</short-description>
+        <online-flag>true</online-flag>
+        <available-flag>true</available-flag>
+        <searchable-flag>true</searchable-flag>
+    </product>
+
+    <product product-id="CKO-TEST-MUG">
+        <ean/>
+        <upc/>
+        <unit/>
+        <min-order-quantity>1</min-order-quantity>
+        <step-quantity>1</step-quantity>
+        <display-name xml:lang="x-default">Test Mug</display-name>
+        <short-description xml:lang="x-default">A second test product for Checkout.com payments.</short-description>
+        <online-flag>true</online-flag>
+        <available-flag>true</available-flag>
+        <searchable-flag>true</searchable-flag>
+    </product>
+
+    <category-assignment category-id="checkoutcom-test" product-id="CKO-TEST-TSHIRT">
+        <primary-flag>true</primary-flag>
+    </category-assignment>
+    <category-assignment category-id="checkoutcom-test" product-id="CKO-TEST-MUG">
+        <primary-flag>true</primary-flag>
+    </category-assignment>
+</catalog>

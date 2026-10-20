@@ -1,0 +1,9 @@
+{
+    "components": [
+        {
+            "targetId": "sfcc.checkout.payment.paymentMethods",
+            "path": "extensions/checkoutcom/components/flow-payment/index.tsx",
+            "order": 0
+        }
+    ]
+}

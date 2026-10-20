@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+
+    <!-- Credentials carry no user-id or password: the secret key is read from the
+         site preferences at runtime, so re-importing never blanks anything. -->
+    <service-credential service-credential-id="cko.flow.sessions.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payment-sessions</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.submit.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payment-sessions/{id}/submit</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.payments.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/{id}</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.voids.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/{id}/voids</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.refunds.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/{id}/refunds</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.transaction.capture.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/chargeId/captures</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.transaction.void.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/chargeId/voids</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.transaction.refund.sandbox.credential">
+        <url>https://api.sandbox.checkout.com/payments/chargeId/refunds</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.sessions.production.credential">
+        <url>https://api.checkout.com/payment-sessions</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.submit.production.credential">
+        <url>https://api.checkout.com/payment-sessions/{id}/submit</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.payments.production.credential">
+        <url>https://api.checkout.com/payments/{id}</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.voids.production.credential">
+        <url>https://api.checkout.com/payments/{id}/voids</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.flow.refunds.production.credential">
+        <url>https://api.checkout.com/payments/{id}/refunds</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.transaction.capture.production.credential">
+        <url>https://api.checkout.com/payments/chargeId/captures</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.transaction.void.production.credential">
+        <url>https://api.checkout.com/payments/chargeId/voids</url>
+    </service-credential>
+
+    <service-credential service-credential-id="cko.transaction.refund.production.credential">
+        <url>https://api.checkout.com/payments/chargeId/refunds</url>
+    </service-credential>
+
+    <service-profile service-profile-id="CheckoutCom">
+        <timeout-millis>15000</timeout-millis>
+        <rate-limit-enabled>false</rate-limit-enabled>
+        <rate-limit-calls>0</rate-limit-calls>
+        <rate-limit-millis>0</rate-limit-millis>
+        <cb-enabled>true</cb-enabled>
+        <cb-calls>10</cb-calls>
+        <cb-millis>60000</cb-millis>
+    </service-profile>
+
+    <service service-id="cko.flow.sessions.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.sessions.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.submit.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.submit.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.payments.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.payments.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.voids.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.voids.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.refunds.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.refunds.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.transaction.capture.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-bm</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.transaction.capture.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.transaction.void.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-bm</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.transaction.void.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.transaction.refund.sandbox.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-bm</log-prefix>
+        <comm-log-enabled>true</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.transaction.refund.sandbox.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.sessions.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.sessions.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.submit.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.submit.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.payments.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.payments.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.voids.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.voids.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.flow.refunds.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-flow</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.flow.refunds.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.transaction.capture.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-bm</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.transaction.capture.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.transaction.void.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-bm</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.transaction.void.production.credential</credential-id>
+    </service>
+
+    <service service-id="cko.transaction.refund.production.service">
+        <service-type>HTTP</service-type>
+        <enabled>true</enabled>
+        <log-prefix>cko-bm</log-prefix>
+        <comm-log-enabled>false</comm-log-enabled>
+        <force-prd-enabled>true</force-prd-enabled>
+        <mock-mode-enabled>false</mock-mode-enabled>
+        <profile-id>CheckoutCom</profile-id>
+        <credential-id>cko.transaction.refund.production.credential</credential-id>
+    </service>
+
+</services>

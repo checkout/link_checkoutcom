@@ -1,0 +1,1 @@
+"use strict";function setNavigationstate(t){var e=t.split("/");document.cookie="ckoTabs="+e[e.length-1]}

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shipping xmlns="http://www.demandware.com/xml/impex/shipping/2007-03-31">
+    <shipping-method method-id="checkoutcom-test-standard-usd" default="true">
+        <display-name xml:lang="x-default">Standard</display-name>
+        <description xml:lang="x-default">Test shipping, 3-5 days</description>
+        <online-flag>true</online-flag>
+        <price-table>
+            <amount order-value="0">5.00</amount>
+        </price-table>
+        <currency>USD</currency>
+    </shipping-method>
+
+    <shipping-method method-id="checkoutcom-test-standard-gbp" default="true">
+        <display-name xml:lang="x-default">Standard</display-name>
+        <description xml:lang="x-default">Test shipping, 3-5 days</description>
+        <online-flag>true</online-flag>
+        <price-table>
+            <amount order-value="0">5.00</amount>
+        </price-table>
+        <currency>GBP</currency>
+    </shipping-method>
+
+    <shipping-method method-id="checkoutcom-test-standard-eur" default="true">
+        <display-name xml:lang="x-default">Standard</display-name>
+        <description xml:lang="x-default">Test shipping, 3-5 days</description>
+        <online-flag>true</online-flag>
+        <price-table>
+            <amount order-value="0">5.00</amount>
+        </price-table>
+        <currency>EUR</currency>
+    </shipping-method>
+</shipping>

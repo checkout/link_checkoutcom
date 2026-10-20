@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pricebooks xmlns="http://www.demandware.com/xml/impex/pricebook/2006-10-31">
+    <pricebook>
+        <header pricebook-id="checkoutcom-test-gbp">
+            <currency>GBP</currency>
+            <display-name xml:lang="x-default">Checkout.com Test (GBP)</display-name>
+            <online-flag>true</online-flag>
+        </header>
+        <price-tables>
+            <price-table product-id="CKO-TEST-TSHIRT">
+                <amount quantity="1">25.00</amount>
+            </price-table>
+            <price-table product-id="CKO-TEST-MUG">
+                <amount quantity="1">12.50</amount>
+            </price-table>
+        </price-tables>
+    </pricebook>
+</pricebooks>

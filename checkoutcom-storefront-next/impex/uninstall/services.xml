@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services xmlns="http://www.demandware.com/xml/impex/services/2014-09-26">
+    <service service-id="cko.flow.sessions.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.submit.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.payments.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.voids.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.refunds.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.transaction.capture.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.transaction.void.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.transaction.refund.sandbox.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.sessions.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.submit.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.payments.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.voids.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.flow.refunds.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.transaction.capture.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.transaction.void.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+    <service service-id="cko.transaction.refund.production.service" mode="delete">
+        <service-type>HTTP</service-type>
+    </service>
+</services>

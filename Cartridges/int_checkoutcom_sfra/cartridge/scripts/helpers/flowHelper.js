@@ -351,7 +351,8 @@ var flowHelper = {
             && orderCustomer
             && orderCustomer.isRegistered()
             && requestData.customer.email) {
-            requestData.store_payment_details = 'enabled';
+            // Nested under the card: a top-level store_payment_details is not a payment session field
+            requestData.payment_method_configuration = { card: { store_payment_details: 'collect_consent' } };
         }
 
         // Strip the optional fields the shopper left blank before sending

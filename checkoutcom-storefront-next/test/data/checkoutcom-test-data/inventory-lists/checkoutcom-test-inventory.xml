@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inventory xmlns="http://www.demandware.com/xml/impex/inventory/2007-05-31">
+    <inventory-list>
+        <header list-id="checkoutcom-test-inventory">
+            <default-instock>false</default-instock>
+            <description>Checkout.com test inventory</description>
+            <use-bundle-inventory-only>false</use-bundle-inventory-only>
+            <on-order>false</on-order>
+        </header>
+        <records>
+            <record product-id="CKO-TEST-TSHIRT">
+                <allocation>10000</allocation>
+                <perpetual>true</perpetual>
+                <preorder-backorder-handling>none</preorder-backorder-handling>
+            </record>
+            <record product-id="CKO-TEST-MUG">
+                <allocation>10000</allocation>
+                <perpetual>true</perpetual>
+                <preorder-backorder-handling>none</preorder-backorder-handling>
+            </record>
+        </records>
+    </inventory-list>
+</inventory>

@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: checkoutcom
+  description: >-
+    Checkout.com Flow payments for Storefront Next. The storefront creates a
+    payment session for the shopper's basket, submits the payment once the
+    order exists (reference = order number), and completes the order after the
+    gateway confirms the payment. The secret key never leaves the instance.
+components:
+  securitySchemes:
+    ShopperToken:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://{shortCode}.api.commercecloud.salesforce.com/shopper/auth/v1/organizations/{organizationId}/oauth2/token
+          scopes:
+            c_checkoutcom: Create, submit and complete Checkout.com payments
+  schemas:
+    Error:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+paths:
+  /payment-sessions:
+    post:
+      summary: Create a payment session for the shopper's basket
+      description: >-
+        Builds the payment session from the shopper's basket, sent by the
+        storefront as Shopper Baskets JSON (a Custom API script cannot load the
+        basket itself), and returns it with the public key and environment
+        Checkout Web Components needs. The basket only shapes what Flow shows:
+        the amount charged is taken from the order at submission. The return
+        URLs must use an origin listed in the ckoFlowAllowedReturnOrigins site
+        preference.
+      operationId: createPaymentSession
+      parameters:
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - basket
+                - successUrl
+                - failureUrl
+              properties:
+                basket:
+                  type: object
+                  description: The Shopper Baskets basket (basketId, currency, orderTotal, productItems, addresses)
+                  additionalProperties: true
+                successUrl:
+                  type: string
+                failureUrl:
+                  type: string
+                locale:
+                  type: string
+      responses:
+        '200':
+          description: The payment session and the Flow configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentSession:
+                    type: object
+                    additionalProperties: true
+                  publicKey:
+                    type: string
+                  environment:
+                    type: string
+                    enum:
+                      - sandbox
+                      - production
+                  appearance:
+                    type: object
+                    nullable: true
+                    description: The Flow appearance overrides from the ckoFlowAppearance site preference
+                    additionalProperties: true
+                  componentOptions:
+                    type: object
+                    nullable: true
+                    description: The Flow componentOptions from the ckoFlowComponentOptions site preference
+                    additionalProperties: true
+                  translations:
+                    type: object
+                    nullable: true
+                    description: The Flow translations from the ckoFlowTranslations site preference
+                    additionalProperties: true
+        '422':
+          description: The session could not be created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - ShopperToken: ['c_checkoutcom']
+  /payments/submit:
+    post:
+      summary: Submit the payment collected by Flow for an order
+      description: >-
+        Called from Flow's handleSubmit once the storefront has created the
+        order. Submits the payment with the order number as reference and the
+        order's final amount, and returns the gateway response unmodified, as
+        Flow requires.
+      operationId: submitPayment
+      parameters:
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - sessionData
+                - orderNo
+              properties:
+                sessionId:
+                  type: string
+                sessionData:
+                  type: string
+                orderNo:
+                  type: string
+      responses:
+        '200':
+          description: The gateway response, to be returned to Flow unmodified
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '422':
+          description: The payment could not be submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - ShopperToken: ['c_checkoutcom']
+  /payments/complete:
+    post:
+      summary: Verify a payment and place its order
+      description: >-
+        Verifies the payment with the gateway (status, reference, amount and
+        currency) and places the order. Idempotent. Declined or mismatching
+        payments fail the order and give the shopper their basket back; a
+        payment that cannot be applied is voided or refunded automatically.
+      operationId: completePayment
+      parameters:
+        - in: query
+          name: siteId
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentId
+              properties:
+                paymentId:
+                  type: string
+                orderNo:
+                  type: string
+                  description: The order the payment is for; defaults to the payment's reference
+                basketId:
+                  type: string
+                  description: >-
+                    The basket the order was created from, for a payment made before
+                    the order existed (a wallet paying directly)
+      responses:
+        '200':
+          description: The completion outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - complete
+                      - failed
+                  pending:
+                    type: boolean
+                  orderNo:
+                    type: string
+                  orderToken:
+                    type: string
+                  errorMessage:
+                    type: string
+        '422':
+          description: The payment could not be verified or applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - ShopperToken: ['c_checkoutcom']

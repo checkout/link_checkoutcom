@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+
+    <type-extension type-id="SitePreferences">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="ckoMode">
+                <display-name xml:lang="x-default">Mode</display-name>
+                <description xml:lang="x-default">The Checkout.com environment the keys below belong to.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <select-multiple-flag>false</select-multiple-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">Sandbox</display>
+                        <value>sandbox</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Production</display>
+                        <value>production</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoSecretKey">
+                <display-name xml:lang="x-default">Secret API Key</display-name>
+                <description xml:lang="x-default">Your Checkout.com secret key (sk_...) for the selected mode, with the payment-sessions scope.</description>
+                <type>password</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPublicKey">
+                <display-name xml:lang="x-default">Public Key</display-name>
+                <description xml:lang="x-default">Your Checkout.com public key (pk_...) for the selected mode, with the payment-sessions:pay and vault-tokenization scopes.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoPrivateSharedKey">
+                <display-name xml:lang="x-default">Private Shared Key</display-name>
+                <description xml:lang="x-default">The key Checkout.com signs webhooks with: use the same value as the webhook signature key on the Checkout.com Dashboard.</description>
+                <type>password</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoProcessingChannelId">
+                <display-name xml:lang="x-default">Processing Channel ID</display-name>
+                <description xml:lang="x-default">Holds processing channel ID</description>
+                <type>string</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoServiceEndpoint">
+                <display-name xml:lang="x-default">Service Endpoint</display-name>
+                <description xml:lang="x-default">Optional base URL for Checkout.com API calls, for example a regional endpoint. When set, all requests are routed to this endpoint.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoDebugEnabled">
+                <display-name xml:lang="x-default">Enable Debug Mode</display-name>
+                <description xml:lang="x-default">Log every Checkout.com API call (method, URL and result) in the checkoutcom log category.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowAllowedReturnOrigins">
+                <display-name xml:lang="x-default">Allowed Storefront Origins</display-name>
+                <description xml:lang="x-default">Comma separated storefront origins Flow may send shoppers back to after 3DS or a redirect payment method, for example https://www.example.com,https://my-env.mobify-storefront.com,http://localhost:5173. Requests with any other return URL are rejected.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowCapture">
+                <display-name xml:lang="x-default">Flow Auto Capture</display-name>
+                <description xml:lang="x-default">Capture Flow payments automatically. When not set, the cartridge wide Auto Capture preference is used. The Auto Capture Time preference also applies.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="cko3ds">
+                <display-name xml:lang="x-default">3D Secure</display-name>
+                <description xml:lang="x-default">If set to yes, 3D Secure verification will be enabled for all transactions.</description>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="cko3dsChallengeIndicator">
+                <display-name xml:lang="x-default">3DS Challenge Indicator</display-name>
+                <description xml:lang="x-default">The 3DS challenge preference sent to the card issuer (3ds.challenge_indicator).</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <select-multiple-flag>false</select-multiple-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">no_preference</display>
+                        <value>no_preference</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">no_challenge_requested</display>
+                        <value>no_challenge_requested</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">challenge_requested</display>
+                        <value>challenge_requested</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">challenge_requested_mandate</display>
+                        <value>challenge_requested_mandate</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="cko3dsAttemptN3d">
+                <display-name xml:lang="x-default">Attempt Non-3DS</display-name>
+                <description xml:lang="x-default">When 3DS is not available for the card, attempt the payment without it (3ds.attempt_n3d).</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <select-multiple-flag>false</select-multiple-flag>
+                <value-definitions>
+                    <value-definition>
+                        <display xml:lang="x-default">true</display>
+                        <value>true</value>
+                    </value-definition>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">false</display>
+                        <value>false</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoEnableRiskFlag">
+                <display-name xml:lang="x-default">Risk Assessment</display-name>
+                <description xml:lang="x-default">Configures the risk assessment performed during the processing of the payment</description>
+                <type>boolean</type>
+                <mandatory-flag>true</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowPaymentMethods">
+                <display-name xml:lang="x-default">Flow Payment Methods</display-name>
+                <description xml:lang="x-default">Optional comma separated list of the payment methods Flow may offer, for example "card,googlepay,klarna". Leave empty to offer every method enabled on the Checkout.com account.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowSavePaymentDetails">
+                <display-name xml:lang="x-default">Flow Save Payment Details</display-name>
+                <description xml:lang="x-default">Shows a "save card details" checkbox on the Flow card form to registered shoppers (payment_method_configuration.card.store_payment_details = collect_consent). Unrelated to Checkout.com Remember Me, which is enabled or disabled on the Checkout.com account.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowAppearance">
+                <display-name xml:lang="x-default">Flow Appearance</display-name>
+                <description xml:lang="x-default">Optional JSON for the Flow appearance option (colours, fonts, borders), for example {"colorAction":"#000000","borderRadius":["8px","8px"]}. By default Flow follows the storefront theme; these values override it. Invalid JSON is ignored.</description>
+                <type>text</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowComponentOptions">
+                <display-name xml:lang="x-default">Flow Component Options</display-name>
+                <description xml:lang="x-default">Optional JSON for the Flow componentOptions option (per payment method settings), for example {"card":{"displayCardholderName":"top"},"flow":{"expandFirstPaymentMethod":false}}. amount, currency, items and showPayButton are ignored. Invalid JSON is ignored.</description>
+                <type>text</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowTranslations">
+                <display-name xml:lang="x-default">Flow Translations</display-name>
+                <description xml:lang="x-default">Optional JSON for the Flow translations option: custom text per locale, for example {"en-US":{"pay_button.pay":"Pay now"}}. Invalid JSON is ignored.</description>
+                <type>text</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </custom-attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="CKO Flow">
+                <display-name xml:lang="x-default">CKO Flow</display-name>
+                <attribute attribute-id="ckoMode"/>
+                <attribute attribute-id="ckoSecretKey"/>
+                <attribute attribute-id="ckoPublicKey"/>
+                <attribute attribute-id="ckoPrivateSharedKey"/>
+                <attribute attribute-id="ckoProcessingChannelId"/>
+                <attribute attribute-id="ckoServiceEndpoint"/>
+                <attribute attribute-id="ckoDebugEnabled"/>
+                <attribute attribute-id="ckoFlowAllowedReturnOrigins"/>
+                <attribute attribute-id="ckoFlowCapture"/>
+                <attribute attribute-id="cko3ds"/>
+                <attribute attribute-id="cko3dsChallengeIndicator"/>
+                <attribute attribute-id="cko3dsAttemptN3d"/>
+                <attribute attribute-id="ckoEnableRiskFlag"/>
+                <attribute attribute-id="ckoFlowPaymentMethods"/>
+                <attribute attribute-id="ckoFlowSavePaymentDetails"/>
+                <attribute attribute-id="ckoFlowAppearance"/>
+                <attribute attribute-id="ckoFlowComponentOptions"/>
+                <attribute attribute-id="ckoFlowTranslations"/>
+            </attribute-group>
+        </group-definitions>
+    </type-extension>
+
+    <type-extension type-id="PaymentTransaction">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="ckoActionId">
+                <display-name xml:lang="x-default">Checkout.com Action ID</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoTransactionOpened">
+                <display-name xml:lang="x-default">Checkout.com Transaction Opened</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoTransactionType">
+                <display-name xml:lang="x-default">Checkout.com Transaction Type</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoParentTransactionId">
+                <display-name xml:lang="x-default">Checkout.com Parent Transaction ID</display-name>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </custom-attribute-definitions>
+    </type-extension>
+
+    <type-extension type-id="Order">
+        <custom-attribute-definitions>
+            <attribute-definition attribute-id="ckoPaymentId">
+                <display-name xml:lang="x-default">Checkout.com Payment ID</display-name>
+                <description xml:lang="x-default">The Checkout.com payment id (pay_...) that paid this order.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </custom-attribute-definitions>
+    </type-extension>
+
+</metadata>
