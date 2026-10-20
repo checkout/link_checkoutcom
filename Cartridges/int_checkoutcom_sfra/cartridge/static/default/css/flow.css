@@ -1,17 +1,36 @@
 /* Checkout.com Flow component styles. */
 
+/* The SFRA checkout header positions the logo absolutely, so the header takes no
+   height and the logo would sit on top of the Flow page title. On the Flow page only,
+   put the logo back in the normal flow so the title always starts below it, whatever
+   the height of the merchant's logo. */
+.page:has(.cko-flow-page) .brand {
+    position: static;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .cko-flow-page {
     padding-top: 1.5rem;
     padding-bottom: 3rem;
 }
 
+@supports not selector(:has(*)) {
+    /* Browsers without :has() support keep the absolute logo; reserve room for it. */
+    .cko-flow-page {
+        padding-top: 5rem;
+    }
+}
+
 .cko-flow-title {
     font-size: 1.5rem;
+    text-align: center;
     margin-bottom: 0.25rem;
 }
 
 .cko-flow-subtitle {
     color: #6c757d;
+    text-align: center;
     font-size: 0.875rem;
     margin-bottom: 1.5rem;
 }
