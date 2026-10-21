@@ -13,6 +13,7 @@
         "validate:impex": "node scripts/validate-impex.mjs",
         "impex": "node scripts/prepare-impex.mjs",
         "deploy:cartridges": "b2c code deploy cartridges -r",
-        "verify": "npm run check:syntax && npm test && npm run validate:impex"
+        "verify": "npm run check:syntax && npm test && npm run validate:impex",
+        "package:app": "node scripts/build-commerce-app.mjs"
     }
 }

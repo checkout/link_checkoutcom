@@ -69,9 +69,9 @@
 
     <service-profile service-profile-id="CheckoutCom">
         <timeout-millis>15000</timeout-millis>
-        <rate-limit-enabled>false</rate-limit-enabled>
-        <rate-limit-calls>0</rate-limit-calls>
-        <rate-limit-millis>0</rate-limit-millis>
+        <rate-limit-enabled>true</rate-limit-enabled>
+        <rate-limit-calls>50</rate-limit-calls>
+        <rate-limit-millis>1000</rate-limit-millis>
         <cb-enabled>true</cb-enabled>
         <cb-calls>10</cb-calls>
         <cb-millis>60000</cb-millis>

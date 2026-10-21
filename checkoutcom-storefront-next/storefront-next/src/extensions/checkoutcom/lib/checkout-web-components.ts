@@ -7,7 +7,8 @@
  * classic script: the CDN sends no CORS headers, so an ES module import fails.
  * The bundle is UMD and registers `window.CheckoutWebComponents`.
  *
- * CSP: allow https://*.checkout.com for script-src, connect-src, frame-src and img-src.
+ * CSP: the hosts Flow needs come from lib/csp-contributor.ts (register it in
+ * src/middlewares/security-headers.server.ts).
  */
 
 export interface FlowComponent {

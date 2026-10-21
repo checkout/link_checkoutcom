@@ -356,13 +356,21 @@ var CKOHelper = {
      */
     getService: function(serviceId) {
         var parts = serviceId.split('.');
-        var entity = parts[1];
         var action = parts[2];
         var mode = parts[3];
-        var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
-        var svcClass = require('*/cartridge/scripts/services/' + svcFile);
+        // Static module paths (no require() built from input); loaded on use, as
+        // the service modules require this helper
+        var services = {
+            capture: function() { return require('*/cartridge/scripts/services/transactionCapture'); },
+            refund: function() { return require('*/cartridge/scripts/services/transactionRefund'); },
+            void: function() { return require('*/cartridge/scripts/services/transactionVoid'); },
+        };
 
-        return svcClass[mode]();
+        if (parts[1] !== 'transaction' || !Object.prototype.hasOwnProperty.call(services, action)) {
+            throw new Error('Unknown Checkout.com service ' + serviceId);
+        }
+
+        return services[action]()[mode]();
     },
 
     /**

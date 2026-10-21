@@ -392,21 +392,7 @@ ls src/extensions/checkoutcom
 # components  config.ts  flow-options.ts  lib  locales  routes  target-config.json
 ```
 
-### 12.2 Generate the API client
-
-This creates the typed client the extension uses to call the `checkoutcom` Custom API, from
-the cartridge's API description:
-
-```bash
-cd ~/Projects/my-storefront
-npx sfnext scapi add \
-    --schema ~/Projects/link_checkoutcom/checkoutcom-storefront-next/cartridges/int_checkoutcom_next/cartridge/rest-apis/checkoutcom/schema.yaml \
-    --name checkoutcom --base-path /custom/checkoutcom/v1 --no-supports-locale
-```
-
-Expected: `Done! Custom client "checkoutcom" is ready.` It updates `src/scapi/`.
-
-### 12.3 Register the extension
+### 12.2 Register the extension
 
 Open `src/extensions/config.json` and add this entry at the top of `"extensions"`:
 
@@ -419,13 +405,16 @@ Open `src/extensions/config.json` and add this entry at the top of `"extensions"
 },
 ```
 
-### 12.4 Build the translations and check the code
+### 12.3 Build the translations and check the code
 
 ```bash
 cd ~/Projects/my-storefront
 pnpm locales:aggregate-extensions
 pnpm typecheck                         # must finish without errors
 ```
+
+The extension calls the cartridge's `checkoutcom` Custom API with its own client
+(`lib/checkoutcom-api.server.ts`), so you don't need to generate one with `sfnext scapi add`.
 
 The extension shows Flow in the checkout's payment section (UI target
 `sfcc.checkout.payment.paymentMethods`) and adds these routes:
@@ -442,49 +431,68 @@ The extension shows Flow in the checkout's payment section (UI target
 
 ## 13. Allow Checkout​.com in the Content Security Policy
 
-Storefront Next sends a strict Content Security Policy that blocks the Flow script unless
-Checkout​.com is allowed. In the storefront repository, edit **`config.server.ts`**:
+Storefront Next sends a strict Content Security Policy that blocks Flow unless the
+Checkout​.com hosts are allowed. The extension includes a *CSP contributor* with the exact hosts
+Flow needs (`lib/csp-contributor.ts`); you only register it.
 
-1. After the existing line
-   `import { defineConfig, defaultSecurityHeaders } from '@salesforce/storefront-next-runtime/config';`
-   add:
+In the storefront repository, edit **`src/middlewares/security-headers.server.ts`**:
+
+1. Below the last `import` line, add:
 
    ```ts
-   // @sfdc-extension-block-start SFDC_EXT_CHECKOUTCOM
-   import { defaultCspDirectives } from '@salesforce/storefront-next-runtime/security';
-
-   const CHECKOUTCOM_ORIGIN = 'https://*.checkout.com';
-   const checkoutcomCspDirectives = {
-       ...defaultCspDirectives,
-       'script-src': [...(defaultCspDirectives['script-src'] ?? []), CHECKOUTCOM_ORIGIN],
-       'connect-src': [...(defaultCspDirectives['connect-src'] ?? []), CHECKOUTCOM_ORIGIN],
-       'frame-src': [...(defaultCspDirectives['frame-src'] ?? []), CHECKOUTCOM_ORIGIN],
-       'img-src': [...(defaultCspDirectives['img-src'] ?? []), CHECKOUTCOM_ORIGIN],
-   };
-   // @sfdc-extension-block-end SFDC_EXT_CHECKOUTCOM
+   // @sfdc-extension-line SFDC_EXT_CHECKOUTCOM
+   import { createCheckoutcomCspContributor } from '@/extensions/checkoutcom/lib/csp-contributor';
    ```
 
-2. In the `security` section, replace `headers: defaultSecurityHeaders,` with:
+2. At the end of the `contributors` list, add:
 
    ```ts
-   headers: {
-       ...defaultSecurityHeaders,
+   const contributors = [
+       // ... the existing contributors
        // @sfdc-extension-line SFDC_EXT_CHECKOUTCOM
-       csp: { ...defaultSecurityHeaders.csp, directives: checkoutcomCspDirectives },
-   },
+       createCheckoutcomCspContributor(),
+   ];
    ```
 
-3. Run `pnpm typecheck` again.
+3. Check, and start the storefront:
 
-> Do not use a *CSP contributor* for this: contributors may not use wildcard origins, and the
-> storefront then fails on **every** page with error 500.
+   ```bash
+   cd ~/Projects/my-storefront
+   pnpm typecheck                         # must finish without errors
+   pnpm dev                               # http://localhost:5173
+   ```
 
-Start the storefront:
+4. Confirm the hosts are in the policy, in a second terminal:
 
-```bash
-cd ~/Projects/my-storefront
-pnpm dev                               # http://localhost:5173
-```
+   ```bash
+   curl -sI http://localhost:5173/ | grep -i content-security-policy | grep -o 'https://[a-z.-]*checkout.com' | sort -u
+   ```
+
+   Expected: the hosts in the table below, production and sandbox.
+
+The contributor adds both the production and the sandbox hosts, because the policy is built
+when the storefront starts while **Mode** (step 8) can change at any time:
+
+| Directive | Production | Sandbox |
+| --- | --- | --- |
+| `script-src` | `checkout-web-components.checkout.com`, `risk.checkout.com` | `checkout-web-components.sandbox.checkout.com`, `risk.sandbox.checkout.com` |
+| `connect-src` | `api.checkout.com`, `devices.api.checkout.com`, `checkout-web-components-events.checkout.com`, `risk.checkout.com` | the same with `.sandbox.checkout.com` |
+| `frame-src` | `authentication-devices.checkout.com` | `authentication-devices.sandbox.checkout.com` |
+| `img-src` | `risk.checkout.com` | `risk.sandbox.checkout.com` |
+
+All hosts use `https://`. Don't add `https://*.checkout.com` yourself: contributors may not
+use wildcard origins, and the storefront then fails on **every** page with error 500.
+
+Wallets and some payment methods load content from their own providers (for example Apple
+Pay or Google Pay). If the browser console reports a blocked host while you test one of them
+(step 15), add that host to the `security.headers.csp.directives` of `config.server.ts`.
+
+**Firewalls.** If your network restricts outbound traffic, allow these hostnames (or their
+`.sandbox.checkout.com` equivalents in Sandbox): `checkout-web-components.checkout.com`,
+`api.checkout.com`, `devices.api.checkout.com`,
+`checkout-web-components-events.checkout.com`, `risk.checkout.com`,
+`authentication-devices.checkout.com`. Use hostname rules, not IP addresses: Checkout​.com's CDN
+addresses change.
 
 ---
 
@@ -751,7 +759,7 @@ webhook arrives.
 ## 19. Upgrading, and uninstalling
 
 **Upgrade:** get the new version of the integration folder (step 3), then repeat step 5
-(cartridges), step 7 (metadata, safe to re-import) and step 12.2 (regenerate the client).
+(cartridges) and step 7 (metadata, safe to re-import).
 Business Manager settings (step 16.2) are kept.
 
 Copy the new extension **without replacing your `flow-options.ts`** (step 16.3). In your
@@ -771,10 +779,9 @@ it keeps your version of `src/extensions/checkoutcom/flow-options.ts`.
 **Uninstall:**
 
 1. Disable `CHECKOUTCOM_FLOW` (step 9).
-2. Storefront repository: delete `src/extensions/checkoutcom`, run
-   `npx sfnext scapi remove checkoutcom`, remove the `SFDC_EXT_CHECKOUTCOM` entry from
-   `src/extensions/config.json` and the lines marked `SFDC_EXT_CHECKOUTCOM` from
-   `config.server.ts`.
+2. Storefront repository: delete `src/extensions/checkoutcom`, and
+   remove the `SFDC_EXT_CHECKOUTCOM` entry from `src/extensions/config.json` and the
+   lines marked `SFDC_EXT_CHECKOUTCOM` from `src/middlewares/security-headers.server.ts`.
 3. Remove `int_checkoutcom_next` and `bm_checkoutcom` from the cartridge paths.
 4. Remove the services: in the integration folder, `b2c job import impex/uninstall`.
 5. Delete the webhook on the Checkout​.com Dashboard.
@@ -794,8 +801,9 @@ or from the integration folder: `b2c logs tail`. The integration logs under the
 | Log: `Payment session creation failed … HTTP 401` | Checkout​.com rejected the secret key | Check **Secret API Key** and **Mode** match; the key needs the `payment-sessions` scope |
 | Log: `The return URLs are not allowed` | The storefront address is not in **Allowed Storefront Origins** | Add it (scheme + host) |
 | Log: `Checkout.com Flow is switched off` | `CHECKOUTCOM_FLOW` disabled | Step 9 |
-| Browser console: *Loading the script … checkout-web-components … violates the Content Security Policy* | CSP not extended | Step 13 |
-| Every storefront page returns 500: *wildcard not allowed in contributor origin* | Checkout​.com added through a CSP contributor | Use `config.server.ts` instead (step 13) |
+| Browser console: *Loading the script … checkout-web-components … violates the Content Security Policy* | CSP contributor not registered | Step 13 |
+| Every storefront page returns 500: *wildcard not allowed in contributor origin* | A wildcard such as `https://*.checkout.com` was added to a CSP contributor | Remove it; the extension's contributor already lists the exact hosts (step 13) |
+| Browser console: a wallet or payment method host is blocked by the Content Security Policy | That provider's host is not in the policy | Add it in `config.server.ts` (step 13) |
 | *Payment methods could not be loaded* right away, HTTP 403 | SLAS client lacks `c_checkoutcom` | Step 11, then clear cookies |
 | `b2c scapi custom status`: *No Custom API endpoints found* | Cartridge not uploaded or code version not reloaded | Step 5 |
 | Webhook delivery 404 | Wrong URL | Step 14 |

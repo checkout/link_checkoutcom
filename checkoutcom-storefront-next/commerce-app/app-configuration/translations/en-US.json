@@ -1,0 +1,32 @@
+{
+    "tasks": {
+        "configure_cko_flow": {
+            "name": "Enter your Checkout.com keys",
+            "description": "In Merchant Tools > Site Preferences > Custom Preferences > CKO Flow, set Mode (Sandbox or Production) and enter the Secret API Key, Public Key, Private Shared Key and Processing Channel ID from your Checkout.com Dashboard. The keys must belong to the selected mode."
+        },
+        "allow_storefront_origins": {
+            "name": "Allow your storefront address",
+            "description": "In the same CKO Flow group, set Allowed Storefront Origins to the addresses of your storefront, comma separated, scheme and host only (for example https://www.example.com). Checkout.com only returns shoppers to these addresses after 3D Secure or a redirect payment method."
+        },
+        "enable_payment_method": {
+            "name": "Enable the Checkout.com Flow payment method",
+            "description": "In Merchant Tools > Ordering > Payment Methods, enable CHECKOUTCOM_FLOW. This switches Checkout.com Flow on at the payment step of checkout."
+        },
+        "add_slas_scope": {
+            "name": "Allow the storefront to call the Checkout.com API",
+            "description": "In the SLAS Admin UI (or Account Manager), add the scope c_checkoutcom to the SLAS client used by your Storefront Next storefront. Shoppers need a new session afterwards: clear the site cookies when testing."
+        },
+        "allow_checkout_csp": {
+            "name": "Allow Checkout.com in the storefront Content Security Policy",
+            "description": "In your Storefront Next repository, register the extension's Content Security Policy contributor: in src/middlewares/security-headers.server.ts, import createCheckoutcomCspContributor from @/extensions/checkoutcom/lib/csp-contributor and add createCheckoutcomCspContributor() to the contributors list, then deploy. It allows the exact Checkout.com hosts Flow needs. See the app README."
+        },
+        "register_webhook": {
+            "name": "Register the webhook on the Checkout.com Dashboard",
+            "description": "On the Checkout.com Dashboard, create a webhook to https://<your-instance-host>/on/demandware.store/Sites-<your-site-id>-Site/default/CKOWebhook-Handle for the payment events, with the same signature key as the Private Shared Key preference. Payment updates (captures, refunds, voids) then reach your orders."
+        },
+        "place_test_order": {
+            "name": "Place a test order",
+            "description": "With Mode set to Sandbox, place an order on the storefront with a Checkout.com test card (for example 4242 4242 4242 4242). Check the order in Merchant Tools > Ordering > Orders and in Merchant Tools > Checkout.com Manager > Checkout Transactions, where you can capture, void and refund."
+        }
+    }
+}

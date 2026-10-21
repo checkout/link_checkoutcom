@@ -189,12 +189,10 @@ From the storefront repo:
 
 ```bash
 cp -R <this folder>/storefront-next/src/extensions/checkoutcom src/extensions/
-
-# Typed client for the Custom API, generated from the cartridge's schema
-npx sfnext scapi add \
-    --schema <this folder>/cartridges/int_checkoutcom_next/cartridge/rest-apis/checkoutcom/schema.yaml \
-    --name checkoutcom --base-path /custom/checkoutcom/v1 --no-supports-locale
 ```
+
+The extension calls the Custom API with its own client (`lib/checkoutcom-api.server.ts`); no
+`sfnext scapi add` is needed.
 
 Register it at the top of `src/extensions/config.json`:
 
@@ -213,33 +211,27 @@ Then:
 pnpm locales:aggregate-extensions && pnpm typecheck
 ```
 
-Allow Checkout.com in the storefront's Content Security Policy. The template ships a strict CSP
-that blocks the Flow script otherwise. Add this to `config.server.ts`; it is the template's own
-recipe for extending the CSP. A CSP *contributor* cannot be used, because contributors may not
-use wildcard origins, and Checkout.com documents `https://*.checkout.com`:
+Register the extension's Content Security Policy contributor, which lists the exact
+Checkout.com hosts Flow needs (production and sandbox; see `lib/csp-contributor.ts`). In
+`src/middlewares/security-headers.server.ts`:
 
 ```ts
-// after the existing import of defaultSecurityHeaders
-// @sfdc-extension-block-start SFDC_EXT_CHECKOUTCOM
-import { defaultCspDirectives } from '@salesforce/storefront-next-runtime/security';
+// below the last import
+// @sfdc-extension-line SFDC_EXT_CHECKOUTCOM
+import { createCheckoutcomCspContributor } from '@/extensions/checkoutcom/lib/csp-contributor';
 
-const CHECKOUTCOM_ORIGIN = 'https://*.checkout.com';
-const checkoutcomCspDirectives = {
-    ...defaultCspDirectives,
-    'script-src': [...(defaultCspDirectives['script-src'] ?? []), CHECKOUTCOM_ORIGIN],
-    'connect-src': [...(defaultCspDirectives['connect-src'] ?? []), CHECKOUTCOM_ORIGIN],
-    'frame-src': [...(defaultCspDirectives['frame-src'] ?? []), CHECKOUTCOM_ORIGIN],
-    'img-src': [...(defaultCspDirectives['img-src'] ?? []), CHECKOUTCOM_ORIGIN],
-};
-// @sfdc-extension-block-end SFDC_EXT_CHECKOUTCOM
-
-// and in app.security, replace `headers: defaultSecurityHeaders,` with:
-headers: {
-    ...defaultSecurityHeaders,
-    // @sfdc-extension-line SFDC_EXT_CHECKOUTCOM
-    csp: { ...defaultSecurityHeaders.csp, directives: checkoutcomCspDirectives },
-},
+// at the end of the contributors list
+// @sfdc-extension-line SFDC_EXT_CHECKOUTCOM
+createCheckoutcomCspContributor(),
 ```
+
+Don't add `https://*.checkout.com`: contributors reject wildcards (every page returns 500).
+
+### Commerce App package
+
+`npm run package:app` builds `dist/checkoutcom-v<version>.zip` for the commerce-apps registry
+from `commerce-app/` (manifest, setup tasks, icon, README), the cartridges, `impex/` and the
+extension, and prints its SHA-256.
 
 ### 9. Register the webhook
 

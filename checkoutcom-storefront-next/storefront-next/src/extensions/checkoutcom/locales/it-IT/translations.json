@@ -1,0 +1,11 @@
+{
+    "loading": "Caricamento dei metodi di pagamento…",
+    "errors": {
+        "unavailable": "Non è stato possibile caricare i metodi di pagamento. Aggiorna la pagina o riprova più tardi.",
+        "incomplete": "Completa i dati di pagamento prima di effettuare l'ordine.",
+        "payment": "Non è stato possibile completare il pagamento. Riprova o scegli un altro metodo di pagamento.",
+        "placeOrder": "Non è stato possibile effettuare l'ordine. Controlla i tuoi dati e riprova.",
+        "timeout": "Il pagamento sta richiedendo troppo tempo. Controlla lo storico degli ordini prima di riprovare.",
+        "returnFailed": "Il pagamento non è stato completato: l'autenticazione della carta non è riuscita o è stata annullata, oppure il pagamento è stato rifiutato. Non ti è stato addebitato nulla. Riprova o scegli un altro metodo di pagamento."
+    }
+}

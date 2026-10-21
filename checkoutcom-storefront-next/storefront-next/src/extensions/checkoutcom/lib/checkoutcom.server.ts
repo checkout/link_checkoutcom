@@ -9,6 +9,7 @@ import type { RouterContextProvider } from 'react-router';
 import { createApiClients } from '@/lib/api-clients.server';
 import { addPaymentInstrumentToBasket, removePaymentInstrumentFromBasket } from '@/lib/api/basket.server';
 import { buildUrlFromContext } from '@/lib/url.server';
+import { postCheckoutcomApi } from '@/extensions/checkoutcom/lib/checkoutcom-api.server';
 import type { ShopperBasketsV2, ShopperOrders } from '@/scapi';
 
 type Basket = ShopperBasketsV2.schemas['Basket'];
@@ -19,6 +20,16 @@ export const PAYMENT_METHOD_ID = 'CHECKOUTCOM_FLOW';
 
 /** Storefront path of the gateway return route (routes/_empty.cko-return.tsx). */
 export const RETURN_PATH = '/cko-return';
+
+/** Response of `POST /payment-sessions`. */
+export interface PaymentSessionResult {
+    paymentSession: { id: string } & Record<string, unknown>;
+    publicKey: string;
+    environment: 'sandbox' | 'production';
+    appearance?: Record<string, unknown> | null;
+    componentOptions?: Record<string, unknown> | null;
+    translations?: Record<string, Record<string, string>> | null;
+}
 
 /** Outcome of `POST /payments/complete`. */
 export interface CompletionResult {
@@ -129,22 +140,17 @@ export async function failOrder(context: Context, orderNo: string): Promise<bool
 export async function createPaymentSession(
     context: Context,
     body: { basket: Basket; successUrl: string; failureUrl: string; locale?: string }
-) {
-    const clients = createApiClients(context);
-    const { data } = await clients.checkoutcom.createPaymentSession({ params: {}, body });
-
-    return data;
+): Promise<PaymentSessionResult> {
+    return postCheckoutcomApi<PaymentSessionResult>(context, '/payment-sessions', body);
 }
 
 /** Custom API: submit the payment Flow collected, for an order. */
 export async function submitPayment(
     context: Context,
     body: { sessionId: string; sessionData: string; orderNo: string }
-) {
-    const clients = createApiClients(context);
-    const { data } = await clients.checkoutcom.submitPayment({ params: {}, body });
-
-    return data;
+): Promise<unknown> {
+    // The gateway's submit response, returned to Flow unmodified
+    return postCheckoutcomApi<unknown>(context, '/payments/submit', body);
 }
 
 /** Custom API: verify the payment and place its order. */
@@ -152,8 +158,5 @@ export async function completePayment(
     context: Context,
     body: { paymentId: string; orderNo?: string; basketId?: string }
 ): Promise<CompletionResult> {
-    const clients = createApiClients(context);
-    const { data } = await clients.checkoutcom.completePayment({ params: {}, body });
-
-    return data as CompletionResult;
+    return postCheckoutcomApi<CompletionResult>(context, '/payments/complete', body);
 }
