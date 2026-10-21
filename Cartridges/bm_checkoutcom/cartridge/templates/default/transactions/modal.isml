@@ -125,5 +125,8 @@
 <!-- Transaction action controller URL -->
 <input type="hidden" id="actionControllerUrl" value="${URLUtils.url('CKOTransactions-RemoteCall')}">
 
+<!-- CSRF token, sent with every capture, void and refund -->
+<input type="hidden" id="csrfToken" name="${dw.web.CSRFProtection.getTokenName()}" value="${dw.web.CSRFProtection.generateToken()}">
+
 <!-- Scripts-->
 <script src="${URLUtils.staticURL('/js/core/actions.js')}"></script>

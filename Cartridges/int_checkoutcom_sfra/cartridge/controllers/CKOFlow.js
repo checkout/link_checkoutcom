@@ -74,6 +74,36 @@ function getPaymentErrorPayload() {
 }
 
 /**
+ * The payload for a payment that could not be confirmed (Checkout.com
+ * unreachable): never a decline, the shopper must not pay again.
+ * @returns {Object} The error response payload
+ */
+function getPaymentUnverifiedPayload() {
+    var message = Resource.msg('cko.payment.unverified', 'cko', null);
+
+    return {
+        error: true,
+        errorMessage: message,
+        redirectUrl: URLUtils.url('Checkout-Begin', 'stage', 'payment', 'paymentError', message).toString(),
+    };
+}
+
+/**
+ * Finish a settled Flow order: the confirmation email (only for the request
+ * that placed it) and the session clean-up.
+ * @param {Object} req The request
+ * @param {Object} result The completeOrder result
+ */
+function finishOrder(req, result) {
+    if (!result.alreadyPlaced) {
+        flowPaymentHelper.sendConfirmationEmail(result.order, req.locale.id);
+    }
+
+    flowPaymentHelper.clearSession();
+    req.session.privacyCache.set('usingMultiShipping', false);
+}
+
+/**
  * Create the Flow payment session for an order reserved in the shopper session.
  * Shared by Show and Session so the page and the inline mount behave the same.
  * The order is failed, and the basket restored, when it cannot be paid for.
@@ -170,16 +200,28 @@ server.post('Session', server.middleware.https, csrfProtection.validateAjaxReque
  */
 server.post('Complete', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
     var order = flowPaymentHelper.getSessionOrder(req.form.orderNo);
+    var result;
 
-    if (!order) {
-        res.json(getPaymentErrorPayload());
+    if (order) {
+        result = flowPaymentHelper.completeOrder(order, req.form.paymentId);
+    } else {
+        // eslint-disable-next-line no-undef
+        var placed = req.form.orderNo === session.privacy.ckoFlowOrderNo
+            ? flowPaymentHelper.getPlacedFlowOrder(req.form.orderNo)
+            : null;
 
-        return next();
+        // HandleReturn (or a refresh) placed it first: the same confirmation
+        result = placed ? { error: false, alreadyPlaced: true, order: placed } : { error: true };
     }
 
-    var result = flowPaymentHelper.completeOrder(order, req.form.paymentId);
-
     if (result.error) {
+        if (result.unverified) {
+            // Kept open: checked again by the abandoned-order check
+            res.json(getPaymentUnverifiedPayload());
+
+            return next();
+        }
+
         flowPaymentHelper.clearSession();
 
         res.json(getPaymentErrorPayload());
@@ -187,18 +229,16 @@ server.post('Complete', server.middleware.https, csrfProtection.validateAjaxRequ
         return next();
     }
 
-    flowPaymentHelper.sendConfirmationEmail(order, req.locale.id);
-    flowPaymentHelper.clearSession();
-    req.session.privacyCache.set('usingMultiShipping', false);
+    finishOrder(req, result);
 
     res.json({
         error: false,
         redirectUrl: URLUtils.url(
             'Order-Confirm',
             'ID',
-            order.getOrderNo(),
+            result.order.getOrderNo(),
             'token',
-            order.getOrderToken()
+            result.order.getOrderToken()
         ).toString(),
     });
 
@@ -215,30 +255,48 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
         ? flowPaymentHelper.resolveReturnOrder(paymentId)
         : { order: null, payment: null };
     var order = resolved.order;
+    var result;
 
-    if (!order) {
+    if (order) {
+        result = flowPaymentHelper.completeOrder(order, paymentId, resolved.payment);
+    } else {
+        // Placed first by Complete (or an earlier visit of this URL)
+        var placed = resolved.payment ? flowPaymentHelper.getPlacedFlowOrder(resolved.payment.reference) : null;
+
+        result = placed ? flowPaymentHelper.settlePlacedOrder(placed, resolved.payment) : null;
+    }
+
+    if (!result) {
         Logger.getLogger('checkoutcom').warn(
             'Flow return received without a resolvable order or payment id.'
         );
-        paymentHelper.getFailurePageRedirect(res);
+
+        if (paymentId && !resolved.payment) {
+            // The payment could not be read back: not a decline
+            paymentHelper.getUnverifiedPageRedirect(res);
+        } else {
+            paymentHelper.getFailurePageRedirect(res);
+        }
 
         return next();
     }
 
-    var result = flowPaymentHelper.completeOrder(order, paymentId, resolved.payment);
-
     if (result.error) {
+        if (result.unverified) {
+            paymentHelper.getUnverifiedPageRedirect(res);
+
+            return next();
+        }
+
         flowPaymentHelper.clearSession();
         paymentHelper.getFailurePageRedirect(res);
 
         return next();
     }
 
-    flowPaymentHelper.sendConfirmationEmail(order, req.locale.id);
-    flowPaymentHelper.clearSession();
-    req.session.privacyCache.set('usingMultiShipping', false);
+    finishOrder(req, result);
 
-    paymentHelper.getConfirmationPageRedirect(res, order);
+    paymentHelper.getConfirmationPageRedirect(res, result.order);
 
     return next();
 });
@@ -253,8 +311,21 @@ server.get('HandleFail', server.middleware.https, function(req, res, next) {
     var orderNo = req.querystring.ref || session.privacy.ckoFlowOrderNo;
     var order = flowPaymentHelper.getSessionOrder(orderNo);
 
-    if (order) {
-        flowPaymentHelper.failOrder(order);
+    // The failure URL (or going back) proves nothing about the payment: a
+    // payment that went through completes the order instead of failing it
+    var released = order ? flowPaymentHelper.releaseOrder(order) : { status: 'failed' };
+
+    if (released.status === 'complete') {
+        finishOrder(req, { order: released.order, alreadyPlaced: released.alreadyPlaced });
+        paymentHelper.getConfirmationPageRedirect(res, released.order);
+
+        return next();
+    }
+
+    if (released.status === 'unverified') {
+        paymentHelper.getUnverifiedPageRedirect(res);
+
+        return next();
     }
 
     flowPaymentHelper.clearSession();

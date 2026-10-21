@@ -1,6 +1,7 @@
 'use strict';
 
 /* API Includes */
+var CSRFProtection = require('dw/web/CSRFProtection');
 var ISML = require('dw/template/ISML');
 var currentSite = require('dw/system/Site').getCurrent();
 
@@ -31,16 +32,54 @@ function getTransactionsData() {
     response.writer.println(JSON.stringify(data));
 }
 
+/** The actions the console may request. */
+var TASKS = ['capture', 'refund', 'void'];
+
 /**
- * Perform a remote Hub Call
+ * Answer an action request.
+ * @param {number} status The HTTP status
+ * @param {*} body The JSON body: the accepted gateway response, or false
+ */
+function respond(status, body) {
+    // eslint-disable-next-line
+    response.setStatus(status);
+    // eslint-disable-next-line
+    response.writer.println(JSON.stringify(body));
+}
+
+/**
+ * Perform a capture, void or refund for the console. Money moves, so the request
+ * must be a POST from the console page itself (CSRF token).
  */
 function remoteCall() {
+    // eslint-disable-next-line
+    if (request.getHttpMethod() !== 'POST' || !CSRFProtection.validateRequest()) {
+        respond(403, false);
+
+        return;
+    }
+
     // Get the operating mode
     var mode = CKOHelper.getValue(constants.CKO_MODE);
 
     // Get the transaction task
     // eslint-disable-next-line
     var task = request.httpParameterMap.get('task');
+
+    if (TASKS.indexOf(task.stringValue) === -1) {
+        respond(400, false);
+
+        return;
+    }
+
+    // eslint-disable-next-line
+    var requestedAmount = parseFloat(request.httpParameterMap.get('amount').stringValue);
+
+    if (task.stringValue !== 'void' && !(requestedAmount > 0)) {
+        respond(400, false);
+
+        return;
+    }
 
     // Get the transaction currency
     // eslint-disable-next-line
@@ -150,7 +189,7 @@ function remoteCall() {
                 service: order ? order.custom.orderProcessedByABCorNAS : '',
                 klarna: {
                     description: CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== '' && CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== 'undefined' // eslint-disable-next-line
-                        ? CKOHelper.getValue(constants.CKO_BUSINESS_NAME) : Site.getCurrent().httpHostName,
+                        ? CKOHelper.getValue(constants.CKO_BUSINESS_NAME) : currentSite.httpHostName,
                 },
             };
         }
@@ -167,9 +206,11 @@ function remoteCall() {
         );
     }
 
-    // Return the response
-    // eslint-disable-next-line
-    response.writer.println(JSON.stringify(gResponse));
+    // Accepted only with an action id: a failure returns an error code (or an
+    // { error } object), which must not read as success in the console
+    var accepted = !!gResponse && typeof gResponse === 'object' && !!gResponse.action_id;
+
+    respond(200, accepted ? gResponse : false);
 }
 /*
 * Web exposed methods

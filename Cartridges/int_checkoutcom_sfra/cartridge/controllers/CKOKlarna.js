@@ -13,6 +13,7 @@ var Resource = require('dw/web/Resource');
 
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 
 /** Checkout Data Configuration File **/
@@ -128,13 +129,38 @@ server.post('CreateContext', server.middleware.https, csrfProtection.validateAja
 server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
     var addressHelpers = require('*/cartridge/scripts/helpers/addressHelpers');
-    var Transaction = require('dw/system/Transaction');
     var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
     var orderId = req.form.orderID;
     var OrderMgr = require('dw/order/OrderMgr');
     var URLUtils = require('dw/web/URLUtils');
     var order = OrderMgr.getOrder(orderId);
     var authorizeKlarna = true;
+
+    // Only the shopper's own order, and only once: a repeated approval (double
+    // click, retry) must not authorize or place it again
+    var shopper = req.currentCustomer && req.currentCustomer.raw;
+    var isShopperOrder = !!order && !!shopper && !!order.getCustomer() && order.getCustomer().getID() === shopper.getID();
+
+    if (!isShopperOrder) {
+        res.json({ error: true, errorMessage: Resource.msg('error.technical', 'checkout', null) });
+        return next();
+    }
+
+    var klarnaInstruments = order.getPaymentInstruments().toArray().filter(function(instrument) {
+        return !!instrument.paymentTransaction.transactionID && instrument.paymentTransaction.transactionID !== order.orderNo;
+    });
+
+    if (orderGuard.isPlaced(orderGuard.reload(order))) {
+        res.json({ error: false, orderID: order.orderNo, orderToken: order.orderToken, continueUrl: URLUtils.url('Order-Confirm').toString() });
+        return next();
+    }
+
+    if (!orderGuard.isOpen(orderGuard.reload(order)) || klarnaInstruments.length > 0) {
+        // Failed already, or authorized by a concurrent approval still being placed
+        res.json({ error: true, errorMessage: Resource.msg('error.technical', 'checkout', null) });
+        return next();
+    }
+
     var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo, authorizeKlarna);
     if (handlePaymentResult.error) {
         res.json({
@@ -146,7 +172,8 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
 
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', order, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
     if (fraudDetectionStatus.status === 'fail') {
-        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+        orderGuard.reverseStrayPayments(order.orderNo);
+        orderGuard.failOrder(order);
 
         // fraud detection failed
         req.session.privacyCache.set('fraudDetectionStatus', true);
@@ -162,9 +189,11 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
         return;
     }
 
-    // Places the order
-    var placeOrderResult = COHelpers.placeOrder(order, fraudDetectionStatus);
+    // Places the order (once: a concurrent approval placing it first is a success)
+    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus);
     if (placeOrderResult.error) {
+        orderGuard.reverseStrayPayments(order.orderNo);
+        orderGuard.failOrder(order);
         res.json({
             error: true,
             errorMessage: Resource.msg('error.technical', 'checkout', null),
@@ -183,7 +212,7 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
         });
     }
 
-    if (order.getCustomerEmail()) {
+    if (order.getCustomerEmail() && !placeOrderResult.alreadyPlaced) {
         COHelpers.sendConfirmationEmail(order, req.locale.id);
     }
 

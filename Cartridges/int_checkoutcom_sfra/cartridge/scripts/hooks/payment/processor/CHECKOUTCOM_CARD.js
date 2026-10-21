@@ -11,6 +11,7 @@ var Transaction = require('dw/system/Transaction');
 
 /** CKO Util */
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var cardHelper = require('*/cartridge/scripts/helpers/cardHelper');
 var Site = require('dw/system/Site');
 
@@ -217,8 +218,10 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var fieldErrors = {};
     var error = false;
 
+    var ckoPaymentRequest = null;
+
     try {
-        var ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
+        ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
 
         // Handle errors
         if (ckoPaymentRequest.error) {
@@ -226,20 +229,11 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             serverErrors.push(
                 ckoHelper.getPaymentFailureMessage()
             );
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
-                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                // eslint-disable-next-line
-                paymentInstrument.custom.ckoPaymentData = '';
-            });
-        } else {
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
-                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                // eslint-disable-next-line
-                paymentInstrument.custom.ckoPaymentData = '';
-            });
         }
+
+        // A webhook may update the order at the same moment: a write conflict here
+        // must not turn an approved payment into a failed order
+        orderGuard.recordTransaction(orderNumber, paymentInstrument, paymentProcessor, ckoPaymentRequest.transactionID);
     } catch (e) {
         error = true;
         serverErrors.push(
@@ -247,8 +241,9 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
+    // On error the caller fails the order, after releasing any payment Checkout.com took for it
     // eslint-disable-next-line
-    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
+    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest ? ckoPaymentRequest.redirectUrl : null };
 }
 
 exports.Handle = Handle;

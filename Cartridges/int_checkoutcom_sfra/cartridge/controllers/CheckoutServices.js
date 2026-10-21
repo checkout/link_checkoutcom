@@ -213,9 +213,12 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
         return;
     }
 
+    var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
     if (fraudDetectionStatus.status === 'fail') {
-        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+        // The payment was already authorized: release it with the order
+        orderGuard.reverseStrayPayments(order.orderNo);
+        orderGuard.failOrder(order);
 
         // fraud detection failed
         req.session.privacyCache.set('fraudDetectionStatus', true);
@@ -261,9 +264,12 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
         return;
     }
 
-    // Places the order
-    var placeOrderResult = COHelpers.placeOrder(order, fraudDetectionStatus);
+    // Places the order, once: a webhook committing at the same moment, or the
+    // 3DS return, placing it first is a success rather than a failed order
+    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus);
     if (placeOrderResult.error) {
+        orderGuard.reverseStrayPayments(order.orderNo);
+        orderGuard.failOrder(order);
         res.json({
             error: true,
             errorMessage: Resource.msg('error.technical', 'checkout', null),
@@ -282,7 +288,7 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
         });
     }
 
-    if (order.getCustomerEmail()) {
+    if (order.getCustomerEmail() && !placeOrderResult.alreadyPlaced) {
         COHelpers.sendConfirmationEmail(order, req.locale.id);
     }
 

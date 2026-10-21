@@ -8,6 +8,7 @@ var PaymentInstrument = require('dw/order/PaymentInstrument');
 var PaymentMgr = require('dw/order/PaymentMgr');
 var Transaction = require('dw/system/Transaction');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var constants = require('*/cartridge/config/constants');
 
 // static functions needed for Checkout Controller logic
@@ -68,7 +69,11 @@ function handlePayments(order, orderNumber, authorizeKlarna) {
                     }
 
                     if (authorizationResult.error) {
-                        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+                        // An error does not prove nothing was charged (a timeout, a lost
+                        // response): release whatever Checkout.com holds for this order
+                        // before failing it, so the retry from the basket cannot charge twice
+                        orderGuard.reverseStrayPayments(orderNumber);
+                        orderGuard.failOrder(order);
                         result.error = true;
                         break;
                     } else {

@@ -89,6 +89,7 @@ describe('eventsHelper paymentCaptured - Tamara branch', function () {
             '*/cartridge/scripts/helpers/savedCardHelper': savedCardHelperStub,
             '*/cartridge/scripts/helpers/transactionHelper': transactionHelperStub,
             '*/cartridge/config/constants': constants,
+            '*/cartridge/config/ckoFlowConfig': require('../../Cartridges/int_checkoutcom_sfra/cartridge/config/ckoFlowConfig'),
         });
     });
 

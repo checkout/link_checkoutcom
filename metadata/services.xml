@@ -98,12 +98,12 @@
 
     <service-profile service-profile-id="CheckoutCom">
         <timeout-millis>10000</timeout-millis>
-        <rate-limit-enabled>false</rate-limit-enabled>
-        <rate-limit-calls>0</rate-limit-calls>
-        <rate-limit-millis>0</rate-limit-millis>
-        <cb-enabled>false</cb-enabled>
-        <cb-calls>0</cb-calls>
-        <cb-millis>0</cb-millis>
+        <rate-limit-enabled>true</rate-limit-enabled>
+        <rate-limit-calls>50</rate-limit-calls>
+        <rate-limit-millis>1000</rate-limit-millis>
+        <cb-enabled>true</cb-enabled>
+        <cb-calls>10</cb-calls>
+        <cb-millis>60000</cb-millis>
     </service-profile>
 
     <service service-id="cko.card.charge.sandbox.service">

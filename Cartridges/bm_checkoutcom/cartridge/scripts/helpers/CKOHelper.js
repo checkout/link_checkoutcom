@@ -360,10 +360,22 @@ var CKOHelper = {
         var entity = parts[1];
         var action = parts[2];
         var mode = parts[3];
+        // Static module paths (no require() built from input); loaded on use, as
+        // the service modules require this helper
+        var services = {
+            transactionCapture: function() { return require('*/cartridge/scripts/services/transactionCapture'); },
+            transactionRefund: function() { return require('*/cartridge/scripts/services/transactionRefund'); },
+            transactionVoid: function() { return require('*/cartridge/scripts/services/transactionVoid'); },
+            klarna_transactionCapture: function() { return require('*/cartridge/scripts/services/klarna_transactionCapture'); },
+            klarna_transactionVoid: function() { return require('*/cartridge/scripts/services/klarna_transactionVoid'); },
+        };
         var svcFile = entity + action.charAt(0).toUpperCase() + action.slice(1);
-        var svcClass = require('*/cartridge/scripts/services/' + svcFile);
 
-        return svcClass[mode]();
+        if (!Object.prototype.hasOwnProperty.call(services, svcFile)) {
+            throw new Error('Unknown Checkout.com service ' + serviceId);
+        }
+
+        return services[svcFile]()[mode]();
     },
 
     /**
@@ -392,9 +404,12 @@ var CKOHelper = {
      * @returns {number} The conversion factor
      */
     getCkoFormatedValue: function(currency) {
-        if (ckoCurrencyConfig.x1.currencies.match(currency)) {
+        // Whole codes only: a substring match would accept partial codes
+        var code = String(currency || '').toUpperCase();
+
+        if (ckoCurrencyConfig.x1.currencies.split(' ').indexOf(code) !== -1) {
             return ckoCurrencyConfig.x1.multiple;
-        } else if (ckoCurrencyConfig.x1000.currencies.match(currency)) {
+        } else if (ckoCurrencyConfig.x1000.currencies.split(' ').indexOf(code) !== -1) {
             return ckoCurrencyConfig.x1000.multiple;
         }
         return 100;

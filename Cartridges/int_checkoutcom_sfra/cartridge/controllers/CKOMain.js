@@ -8,8 +8,8 @@ var OrderMgr = require('dw/order/OrderMgr');
 var BasketMgr = require('dw/order/BasketMgr');
 var Resource = require('dw/web/Resource');
 var Transaction = require('dw/system/Transaction');
+var Logger = require('dw/system/Logger');
 var Locale = require('dw/util/Locale');
-var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 
 var cartHelper = require('*/cartridge/scripts/cart/cartHelpers');
 var basketCalculationHelpers = require('*/cartridge/scripts/helpers/basketCalculationHelpers');
@@ -23,6 +23,7 @@ var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var paymentHelper = require('*/cartridge/scripts/helpers/paymentHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 
 /** Apm Filter Configuration file **/
 var ckoApmFilterConfig = require('*/cartridge/config/ckoApmFilterConfig');
@@ -34,146 +35,173 @@ var ckoMadaConfig = require('*/cartridge/config/ckoMadaConfig');
 var constants = require('*/cartridge/config/constants');
 
 /**
- * Handles responses from the Checkout.com payment gateway.
+ * Whether a verified payment counts as a success for its order. Tamara and
+ * Alipay settle as Captured or Pending; the other methods by their response
+ * code, or by their type for vouchers and redirect methods.
+ * @param {dw.order.Order} order The order
+ * @param {Object} payment The payment read back from Checkout.com
+ * @returns {boolean} True when the order may be placed
+ */
+function isReturnSuccess(order, payment) {
+    if (!order || !payment || typeof payment !== 'object' || !payment.id) {
+        return false;
+    }
+
+    var settlesAsCapturedOrPending = order.getPaymentInstruments(constants.CKO_TAMARA_PAYMENTINSTRUMENT).length > 0
+        || order.getPaymentInstruments(constants.CKO_ALIPAYHK_PAYMENTINSTRUMENT).length > 0
+        || order.getPaymentInstruments(constants.CKO_ALIPAYCN_PAYMENTINSTRUMENT).length > 0;
+
+    return settlesAsCapturedOrPending
+        ? (payment.status === 'Captured' || payment.status === 'Pending')
+        : ckoHelper.redirectPaymentSuccess(payment);
+}
+
+/**
+ * Read back the payment a gateway redirect is about, and load its order. With a
+ * cko-session-id the payment is fetched by id; without one it is found by the
+ * order reference: the query string itself is never trusted.
+ * @param {Object} querystring The redirect query string
+ * @returns {Object} payment, order, unverified (Checkout.com could not be asked)
+ */
+function verifyRedirect(querystring) {
+    var mode = ckoHelper.getValue(constants.CKO_MODE);
+    var verifyService = 'cko.verify.charges.' + mode + '.service';
+    var payment = null;
+
+    if (querystring['cko-session-id']) {
+        payment = ckoHelper.gatewayClientRequest(verifyService, { paymentToken: querystring['cko-session-id'] });
+    } else if (querystring.reference) {
+        var found = orderGuard.findPayments(querystring.reference);
+
+        if (!found.ok) {
+            return { payment: null, order: null, unverified: true };
+        }
+
+        if (found.payments.length === 0) {
+            return { payment: null, order: OrderMgr.getOrder(querystring.reference), unverified: false };
+        }
+
+        payment = ckoHelper.gatewayClientRequest(verifyService, { paymentToken: found.payments[0].id });
+    } else {
+        return { payment: null, order: null, unverified: false };
+    }
+
+    if (!payment || typeof payment !== 'object' || !payment.reference) {
+        return { payment: null, order: null, unverified: true };
+    }
+
+    return { payment: payment, order: OrderMgr.getOrder(payment.reference), unverified: false };
+}
+
+/**
+ * Settle the order behind a gateway redirect, whichever leg (success or
+ * failure URL) it arrived on. Safe to run more than once and alongside the
+ * webhooks: an order is placed once, only an open order is failed, a placed
+ * order is never downgraded, and a payment that cannot be applied is released.
+ * @param {Object} res The response
+ * @param {Object} verified The result of verifyRedirect
+ */
+function settleRedirect(res, verified) {
+    var order = verified.order;
+    var payment = verified.payment;
+
+    if (verified.unverified) {
+        // Checkout.com could not be asked: never a decline, nothing is changed
+        paymentHelper.getUnverifiedPageRedirect(res);
+
+        return;
+    }
+
+    if (!order) {
+        paymentHelper.getFailurePageRedirect(res);
+
+        return;
+    }
+
+    var success = isReturnSuccess(order, payment);
+
+    if (orderGuard.isPlaced(order)) {
+        // A refresh, a second tab or the other leg: the order is already placed
+        paymentHelper.getConfirmationPageRedirect(res, order);
+
+        return;
+    }
+
+    if (!orderGuard.isOpen(order)) {
+        // The order was already given up: a late success must not keep the money
+        if (success && orderGuard.isLive(payment)) {
+            orderGuard.reversePayment(payment, order.getOrderNo());
+        }
+
+        paymentHelper.getFailurePageRedirect(res);
+
+        return;
+    }
+
+    if (!success) {
+        if (orderGuard.failOrder(order)) {
+            ckoHelper.checkAndRestoreBasket(order);
+        }
+
+        paymentHelper.getFailurePageRedirect(res);
+
+        return;
+    }
+
+    var placed = orderGuard.placeOrder(order);
+
+    if (placed.error) {
+        // Not placed (and not by anyone else): release the payment, give the basket back
+        orderGuard.reversePayment(payment, order.getOrderNo());
+
+        if (orderGuard.failOrder(placed.order)) {
+            ckoHelper.checkAndRestoreBasket(placed.order);
+        }
+
+        paymentHelper.getFailurePageRedirect(res);
+
+        return;
+    }
+
+    var placedOrder = placed.order;
+
+    try {
+        Transaction.wrap(function() {
+            // PAID when captured; otherwise never downgrade a PAID a capture webhook already set
+            if (payment.status === 'Captured') {
+                placedOrder.setPaymentStatus(placedOrder.PAYMENT_STATUS_PAID);
+            } else if (placedOrder.getPaymentStatus().getValue() !== placedOrder.PAYMENT_STATUS_PAID) {
+                placedOrder.setPaymentStatus(placedOrder.PAYMENT_STATUS_NOTPAID);
+            }
+
+            placedOrder.setConfirmationStatus(placedOrder.CONFIRMATION_STATUS_CONFIRMED);
+        });
+    } catch (e) {
+        // A webhook updated the order at the same time; it carries the payment status
+        Logger.getLogger('checkoutcom').warn('Order {0}: payment status not updated after placement: {1}', placedOrder.getOrderNo(), e.message);
+    }
+
+    paymentHelper.getConfirmationPageRedirect(res, placedOrder);
+}
+
+/**
+ * Handles responses from the Checkout.com payment gateway (the success URL of
+ * 3DS and redirect payment methods).
  * @returns {string} The controller response
  */
 server.get('HandleReturn', server.middleware.https, function(req, res, next) {
-    // Prepare some variables
-    var order;
-    var placeOrderResult;
-    var mode = ckoHelper.getValue(constants.CKO_MODE);
-    var request = req;
-    // Check if a session id is available
-    var isQueryString = Object.prototype.hasOwnProperty.call(request, 'querystring');
-    var isCkoSessionID = Object.prototype.hasOwnProperty.call(request.querystring, 'cko-session-id');
-    if (isQueryString && isCkoSessionID) {
-        // Perform the request to the payment gateway
-        var gVerify = ckoHelper.gatewayClientRequest(
-            'cko.verify.charges.' + mode + '.service',
-            {
-                paymentToken: request.querystring['cko-session-id'],
-            }
-        );
-
-        // Load the order
-        if (Object.prototype.hasOwnProperty.call(gVerify, 'reference') && gVerify.reference) {
-            // Load the order
-            order = OrderMgr.getOrder(gVerify.reference);
-
-            var isSessionTamaraOrder = order
-                && order.getPaymentInstruments(constants.CKO_TAMARA_PAYMENTINSTRUMENT).length > 0;
-
-            var isSessionAlipayHkOrder = order
-                && order.getPaymentInstruments(constants.CKO_ALIPAYHK_PAYMENTINSTRUMENT).length > 0;
-
-            var isSessionAlipayCnOrder = order
-                && order.getPaymentInstruments(constants.CKO_ALIPAYCN_PAYMENTINSTRUMENT).length > 0;
-
-            // If there is a valid response
-            var isValidResult = order && typeof (gVerify) === 'object'
-            && Object.prototype.hasOwnProperty.call(gVerify, 'id')
-            && (((isSessionTamaraOrder || isSessionAlipayHkOrder) || isSessionAlipayCnOrder)
-                ? (gVerify.status === 'Captured' || gVerify.status === 'Pending')
-                : ckoHelper.redirectPaymentSuccess(gVerify));
-            if (isValidResult) {
-                // Place the order
-                placeOrderResult = COHelpers.placeOrder(order, { status: '' });
-                if (placeOrderResult.error) {
-                    Transaction.wrap(function() {
-                        order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
-                        order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
-                        OrderMgr.failOrder(order, true);
-                    });
-                    paymentHelper.getFailurePageRedirect(res);
-                } else {
-                    Transaction.wrap(function() {
-                        // Payment status: PAID if gateway confirms Captured, NOT PAID if Pending
-                        if (gVerify.status === 'Captured') {
-                            order.setPaymentStatus(order.PAYMENT_STATUS_PAID);
-                        } else {
-                            order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
-                        }
-                        order.setConfirmationStatus(order.CONFIRMATION_STATUS_CONFIRMED);
-                    });
-
-                    // Show the order confirmation page
-                    paymentHelper.getConfirmationPageRedirect(res, order);
-                }
-            } else {
-                Transaction.wrap(function() {
-                    order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
-                    order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
-                    OrderMgr.failOrder(order, true);
-                });
-
-                paymentHelper.getFailurePageRedirect(res);
-            }
-        }
-    } else if (isQueryString && ckoHelper.paymentSuccess(request.querystring)) {
-        // Place the order
-        order = OrderMgr.getOrder(request.querystring.reference);
-        placeOrderResult = COHelpers.placeOrder(order, { status: '' });
-        if (placeOrderResult.error) {
-            Transaction.wrap(function() {
-                OrderMgr.failOrder(order, true);
-            });
-
-            paymentHelper.getFailurePageRedirect(res);
-        }
-
-        // Show the order confirmation page
-        paymentHelper.getConfirmationPageRedirect(res, order);
-    } else {
-        paymentHelper.getFailurePageRedirect(res);
-    }
+    settleRedirect(res, verifyRedirect(req.querystring || {}));
 
     return next();
 });
 
 /**
- * Handles a failed payment from the Checkout.com payment gateway.
+ * Handles a failed payment from the Checkout.com payment gateway (the failure
+ * URL). The payment is verified like a return: the leg alone proves nothing.
  * @returns {string} The controller response
  */
 server.get('HandleFail', server.middleware.https, function(req, res, next) {
-    // Prepare some variables
-    var order;
-    var mode = ckoHelper.getValue(constants.CKO_MODE);
-    var request = req;
-
-    // Check if a session id is available
-    var isQueryString = Object.prototype.hasOwnProperty.call(request, 'querystring');
-    var isCkoSessionID = Object.prototype.hasOwnProperty.call(request.querystring, 'cko-session-id');
-    if (isQueryString && isCkoSessionID) {
-        // Perform the request to the payment gateway
-        var gVerify = ckoHelper.gatewayClientRequest(
-            'cko.verify.charges.' + mode + '.service',
-            {
-                paymentToken: request.querystring['cko-session-id'],
-            }
-        );
-
-        // Load the order
-        if (Object.prototype.hasOwnProperty.call(gVerify, 'reference') && gVerify.reference) {
-            // Load the order
-            order = OrderMgr.getOrder(gVerify.reference);
-
-            // If there is a valid response
-            if (order) {
-                // Restore the cart
-                ckoHelper.checkAndRestoreBasket(order);
-
-                // Fail the order and set payment/confirmation status explicitly
-                Transaction.wrap(function() {
-                    order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
-                    order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
-                    OrderMgr.failOrder(order, true);
-                });
-
-                // Send back to the error page
-                paymentHelper.getFailurePageRedirect(res);
-            }
-        }
-    }
+    settleRedirect(res, verifyRedirect(req.querystring || {}));
 
     return next();
 });
@@ -184,10 +212,30 @@ server.get('HandleFail', server.middleware.https, function(req, res, next) {
  */
 server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
     var request = req;
-    if (ckoHelper.isValidResponse(request)) {
-        // Get the response as JSON object
-        var hook = JSON.parse(request.body);
+    var hook = null;
 
+    if (!ckoHelper.isValidResponse(request)) {
+        // 401 so a misconfigured key shows as failed deliveries on the Dashboard
+        res.setStatusCode(401);
+        res.json({ response: Resource.msg('cko.webhook.failure', 'cko', null) });
+
+        return next();
+    }
+
+    try {
+        hook = JSON.parse(request.body);
+    } catch (e) {
+        hook = null;
+    }
+
+    if (hook && hook.id && orderGuard.isWebhookApplied(hook.id)) {
+        // A repeated delivery: applying it again would duplicate transactions
+        res.json({ response: Resource.msg('cko.webhook.success', 'cko', null) });
+
+        return next();
+    }
+
+    try {
         // Check the webhook event
         if (hook !== null && Object.prototype.hasOwnProperty.call(hook, 'type')) {
             // Get a camel case function name from event type
@@ -254,25 +302,28 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
                 }
             }
         }
+    } catch (e) {
+        // Not recorded as applied: Checkout.com delivers it again (for example
+        // after a write conflict with a shopper request on the same order)
+        Logger.getLogger('checkoutcom').error('Webhook {0} ({1}) failed: {2}', hook && hook.id, hook && hook.type, e.message);
+        res.setStatusCode(500);
+        res.json({ response: Resource.msg('cko.webhook.failure', 'cko', null) });
 
-        // Set a success response
-        res.json({
-            response: Resource.msg(
-                'cko.webhook.success',
-                'cko',
-                null
-            ),
-        });
-    } else {
-        // Set a failure response
-        res.json({
-            response: Resource.msg(
-                'cko.webhook.failure',
-                'cko',
-                null
-            ),
-        });
+        return next();
     }
+
+    if (hook && hook.id) {
+        orderGuard.markWebhookApplied(hook.id, hook.type);
+    }
+
+    // Set a success response
+    res.json({
+        response: Resource.msg(
+            'cko.webhook.success',
+            'cko',
+            null
+        ),
+    });
 
     return next();
 });
@@ -306,15 +357,13 @@ server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         // Place the order if not already placed
-        var placeOrderResult;
-        try {
-            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
-        } catch (e) {
-            // Order may already be placed (race condition on second poll)
-            placeOrderResult = { error: false };
-        }
+        // Once only: a concurrent poll (or the webhook) placing it first is a success
+        var placeOrderResult = orderGuard.placeOrder(order);
 
-        if (placeOrderResult && placeOrderResult.error) {
+        if (placeOrderResult.error) {
+            // Not placed, and not by anyone else: release the payment, fail the order
+            orderGuard.reverseStrayPayments(order.getOrderNo());
+            orderGuard.failOrder(order);
             res.json({ status: 'error' });
             return next();
         }
@@ -378,15 +427,13 @@ server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         // Place the order if not already placed
-        var placeOrderResult;
-        try {
-            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
-        } catch (e) {
-            // Order may already be placed (race condition on second poll)
-            placeOrderResult = { error: false };
-        }
+        // Once only: a concurrent poll (or the webhook) placing it first is a success
+        var placeOrderResult = orderGuard.placeOrder(order);
 
-        if (placeOrderResult && placeOrderResult.error) {
+        if (placeOrderResult.error) {
+            // Not placed, and not by anyone else: release the payment, fail the order
+            orderGuard.reverseStrayPayments(order.getOrderNo());
+            orderGuard.failOrder(order);
             res.json({ status: 'error' });
             return next();
         }
@@ -764,15 +811,13 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         // Shopper approved payment in banking portal — place the order
-        var placeOrderResult;
-        try {
-            placeOrderResult = COHelpers.placeOrder(order, { status: '' });
-        } catch (e) {
-            // Order may already be placed (race condition on second poll)
-            placeOrderResult = { error: false };
-        }
+        // Once only: a concurrent poll (or the webhook) placing it first is a success
+        var placeOrderResult = orderGuard.placeOrder(order);
 
-        if (placeOrderResult && placeOrderResult.error) {
+        if (placeOrderResult.error) {
+            // Not placed, and not by anyone else: release the payment, fail the order
+            orderGuard.reverseStrayPayments(order.getOrderNo());
+            orderGuard.failOrder(order);
             res.json({ status: 'error' });
             return next();
         }
@@ -851,7 +896,7 @@ server.post('GetPlaidLinkToken', server.middleware.https, csrfProtection.validat
 
         if (!plaidClientId || !plaidSecret || !plaidClientName) {
             ckoHelper.log('GetPlaidLinkToken', 'Plaid credentials not configured in Site Preferences.');
-            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            orderGuard.failOrder(order);
             res.json({ error: true, failureUrl: failureUrl });
             return next();
         }
@@ -877,12 +922,12 @@ server.post('GetPlaidLinkToken', server.middleware.https, csrfProtection.validat
             res.json({ error: false, linkToken: plaidResponse.link_token });
         } else {
             ckoHelper.log('GetPlaidLinkToken error', resp.errorMessage || (resp.object && resp.object.text));
-            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            orderGuard.failOrder(order);
             res.json({ error: true, failureUrl: failureUrl });
         }
     } catch (e) {
         ckoHelper.log('GetPlaidLinkToken exception', e.message);
-        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+        orderGuard.failOrder(order);
         res.json({ error: true, failureUrl: failureUrl });
     }
 
@@ -921,6 +966,18 @@ server.post('ProcessAchPayment', server.middleware.https, csrfProtection.validat
         return next();
     }
 
+    // Submitted once: a repeated request (double callback, refresh) must not
+    // charge the account again
+    var achInstruments = order.getPaymentInstruments('CHECKOUTCOM_ACH').toArray();
+    var alreadySubmitted = achInstruments.length > 0 && !!achInstruments[0].paymentTransaction.transactionID;
+
+    if (!orderGuard.isOpen(orderGuard.reload(order)) || alreadySubmitted) {
+        res.json(orderGuard.isPlaced(orderGuard.reload(order)) || alreadySubmitted
+            ? { error: false, pending: true }
+            : { error: true, failureUrl: failureUrl });
+        return next();
+    }
+
     try {
         var plaidClientId = Site.getCurrent().getCustomPreferenceValue('ckoPlaidClientId');
         var plaidSecret = Site.getCurrent().getCustomPreferenceValue('ckoPlaidSecret');
@@ -939,7 +996,7 @@ server.post('ProcessAchPayment', server.middleware.https, csrfProtection.validat
 
         if (exchangeResp.status !== 'OK' || !exchangeResp.object || exchangeResp.object.statusCode !== 200) {
             ckoHelper.log('ProcessAchPayment exchange error', exchangeResp.errorMessage || (exchangeResp.object && exchangeResp.object.text));
-            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            orderGuard.failOrder(order);
             res.json({ error: true, failureUrl: failureUrl });
             return next();
         }
@@ -961,7 +1018,7 @@ server.post('ProcessAchPayment', server.middleware.https, csrfProtection.validat
 
         if (processorResp.status !== 'OK' || !processorResp.object || processorResp.object.statusCode !== 200) {
             ckoHelper.log('ProcessAchPayment processor token error', processorResp.errorMessage || (processorResp.object && processorResp.object.text));
-            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            orderGuard.failOrder(order);
             res.json({ error: true, failureUrl: failureUrl });
             return next();
         }
@@ -979,25 +1036,30 @@ server.post('ProcessAchPayment', server.middleware.https, csrfProtection.validat
         var paymentResult = achPaymentHelper.handleRequest('CHECKOUTCOM_ACH', orderNo, processorToken);
 
         if (paymentResult.error) {
-            Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+            // A failure (or a timeout) may still have created the payment
+            orderGuard.reverseStrayPayments(orderNo);
+            orderGuard.failOrder(order);
             res.json({ error: true, failureUrl: failureUrl });
             return next();
         }
 
-        // Record the transaction ID on the payment instrument
-        Transaction.wrap(function() {
-            var paymentInstruments = order.getPaymentInstruments('CHECKOUTCOM_ACH');
-            if (paymentInstruments && paymentInstruments.length > 0) {
-                var paymentProcessor = PaymentMgr.getPaymentMethod('CHECKOUTCOM_ACH').getPaymentProcessor();
-                paymentInstruments[0].paymentTransaction.setTransactionID(paymentResult.transactionID);
-                paymentInstruments[0].paymentTransaction.setPaymentProcessor(paymentProcessor);
-            }
-        });
+        // Record the transaction ID on the payment instrument; a write conflict
+        // with a webhook is retried and never fails an order that was charged
+        var paymentInstruments = order.getPaymentInstruments('CHECKOUTCOM_ACH').toArray();
+        if (paymentInstruments.length > 0) {
+            orderGuard.recordTransaction(
+                orderNo,
+                paymentInstruments[0],
+                PaymentMgr.getPaymentMethod('CHECKOUTCOM_ACH').getPaymentProcessor(),
+                paymentResult.transactionID
+            );
+        }
 
         res.json({ error: false, pending: true });
     } catch (e) {
         ckoHelper.log('ProcessAchPayment exception', e.message);
-        Transaction.wrap(function() { OrderMgr.failOrder(order, true); });
+        orderGuard.reverseStrayPayments(orderNo);
+        orderGuard.failOrder(order);
         res.json({ error: true, failureUrl: failureUrl });
     }
 

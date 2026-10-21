@@ -15,6 +15,7 @@ var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 /* Utility */
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var flowHelper = require('*/cartridge/scripts/helpers/flowHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 
 /* Configuration */
 var flowConfig = require('*/cartridge/config/ckoFlowConfig');
@@ -164,20 +165,31 @@ var flowPaymentHelper = {
         var payment = prefetchedPayment || flowHelper.getPaymentDetails(paymentId);
 
         if (!payment) {
+            // Not knowing is not a decline: the order stays open for a retry, the
+            // webhooks or the abandoned-order check, and the shopper is told so
             Logger.getLogger('checkoutcom').error(
-                'Flow payment {0} for order {1} could not be read back from the gateway.',
+                'Flow payment {0} for order {1} could not be read back from the gateway; the order is kept.',
                 paymentId,
                 order.getOrderNo()
             );
 
-            this.failOrder(order);
-
-            return { error: true, order: null };
+            return { error: true, unverified: true, order: null };
         }
 
         ckoHelper.log(flowConfig.PAYMENT_PROCESSOR_ID + ' payment verification', payment);
 
+        // Placed already by a concurrent request (Complete and HandleReturn, a refresh)
+        var current = orderGuard.reload(order);
+
+        if (orderGuard.isPlaced(current)) {
+            return this.settlePlacedOrder(current, payment);
+        }
+
         if (!flowHelper.matchesOrder(payment, order)) {
+            if (orderGuard.isLive(payment)) {
+                orderGuard.reversePayment(payment, order.getOrderNo());
+            }
+
             this.failOrder(order);
 
             return { error: true, order: null };
@@ -192,34 +204,130 @@ var flowPaymentHelper = {
             return { error: true, order: null };
         }
 
-        this.updateTransaction(order, payment);
+        try {
+            this.updateTransaction(order, payment);
+        } catch (e) {
+            // A webhook wrote the order at the same moment; placement re-reads it
+            Logger.getLogger('checkoutcom').warn('Flow payment {0} not recorded on order {1} before placement: {2}', payment.id, order.getOrderNo(), e.message);
+        }
 
-        var placeOrderResult = COHelpers.placeOrder(order, { status: '' });
+        var placed = orderGuard.placeOrder(order);
 
-        if (placeOrderResult.error) {
-            // The shopper has already paid, so the authorization is released
-            // before the order is failed to avoid stranding their funds.
-            flowHelper.voidPayment(payment.id, order.getOrderNo());
-            this.failOrder(order);
+        if (placed.error) {
+            // Not placed, and not by anyone else: release the shopper's funds
+            // (void, or refund when captured), then fail the order
+            orderGuard.reversePayment(payment, order.getOrderNo());
+            this.failOrder(placed.order);
 
             return { error: true, order: null };
         }
 
-        Transaction.wrap(function() {
-            // Pending methods such as Multibanco settle later through the
-            // existing Checkout.com webhook handlers.
-            order.setPaymentStatus(payment.status === 'Captured'
-                ? Order.PAYMENT_STATUS_PAID
-                : Order.PAYMENT_STATUS_NOTPAID);
-            order.setConfirmationStatus(Order.CONFIRMATION_STATUS_CONFIRMED);
-        });
+        if (placed.alreadyPlaced) {
+            return this.settlePlacedOrder(placed.order, payment);
+        }
+
+        var placedOrder = placed.order;
+
+        try {
+            Transaction.wrap(function() {
+                // Pending methods such as Multibanco settle later through the
+                // existing Checkout.com webhook handlers. A PAID set by a capture
+                // webhook in the meantime is never downgraded.
+                if (payment.status === 'Captured') {
+                    placedOrder.setPaymentStatus(Order.PAYMENT_STATUS_PAID);
+                } else if (placedOrder.getPaymentStatus().getValue() !== Order.PAYMENT_STATUS_PAID) {
+                    placedOrder.setPaymentStatus(Order.PAYMENT_STATUS_NOTPAID);
+                }
+                placedOrder.setConfirmationStatus(Order.CONFIRMATION_STATUS_CONFIRMED);
+            });
+        } catch (e) {
+            Logger.getLogger('checkoutcom').warn('Flow order {0}: payment status not updated after placement: {1}', placedOrder.getOrderNo(), e.message);
+        }
 
         return {
             error: false,
-            order: order,
+            order: placedOrder,
             payment: payment,
             pending: isPending,
         };
+    },
+
+    /**
+     * A payment completing an order that another request already placed. Its
+     * own payment: the same success again. A second payment that took money
+     * for it: released, and the order is still complete.
+     * @param {dw.order.Order} order The placed order
+     * @param {Object} payment The payment read back from the gateway
+     * @returns {Object} The result
+     */
+    settlePlacedOrder: function(order, payment) {
+        var instruments = order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).toArray();
+        var recorded = instruments.length > 0 ? instruments[0].getPaymentTransaction().getTransactionID() : null;
+
+        if (recorded && recorded !== payment.id && orderGuard.isLive(payment)) {
+            Logger.getLogger('checkoutcom').warn('Flow payment {0} is a second payment for order {1}, paid with {2}: releasing it.', payment.id, order.getOrderNo(), recorded);
+            orderGuard.reversePayment(payment, order.getOrderNo());
+        }
+
+        return {
+            error: false,
+            alreadyPlaced: true,
+            order: order,
+            payment: payment,
+            pending: flowHelper.isPending(payment),
+        };
+    },
+
+    /**
+     * The Flow order of this session (or named by the payment's reference) when
+     * it has already been placed, by a concurrent Complete or HandleReturn.
+     * @param {string} orderNo The order number
+     * @returns {dw.order.Order|null} The placed order, or null
+     */
+    getPlacedFlowOrder: function(orderNo) {
+        var order = orderNo ? OrderMgr.getOrder(orderNo) : null;
+
+        if (!orderGuard.isPlaced(order) || order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).size() === 0) {
+            return null;
+        }
+
+        return order;
+    },
+
+    /**
+     * Give up on an order's Flow payment: fail it and give the basket back,
+     * unless Checkout.com has a payment for it, which then completes it. Used
+     * whenever the shopper leaves the payment page without a result, because
+     * leaving proves nothing about the payment.
+     * @param {dw.order.Order} order The order, still waiting for its payment
+     * @returns {Object} complete (placed instead), failed, or unverified (kept open)
+     */
+    releaseOrder: function(order) {
+        var found = orderGuard.findPayments(order.getOrderNo());
+
+        if (!found.ok) {
+            Logger.getLogger('checkoutcom').warn('Flow order {0} kept open: its payments could not be checked.', order.getOrderNo());
+
+            return { status: 'unverified' };
+        }
+
+        var live = found.payments.filter(function(payment) {
+            return flowHelper.isApproved(payment) || flowHelper.isPending(payment);
+        });
+
+        if (live.length > 0) {
+            var result = this.completeOrder(order, live[0].id);
+
+            return {
+                status: result.error ? (result.unverified ? 'unverified' : 'failed') : 'complete',
+                order: result.order,
+                alreadyPlaced: !!result.alreadyPlaced,
+            };
+        }
+
+        this.failOrder(order);
+
+        return { status: 'failed' };
     },
 
     /**
@@ -232,16 +340,10 @@ var flowPaymentHelper = {
             return;
         }
 
-        // OrderMgr.failOrder() only accepts orders that have not been placed yet.
-        // COHelpers.placeOrder() fails the order itself when it cannot place it,
-        // so the transition is skipped when it has already happened.
-        if (order.getStatus().getValue() === Order.ORDER_STATUS_CREATED) {
-            Transaction.wrap(function() {
-                order.setPaymentStatus(Order.PAYMENT_STATUS_NOTPAID);
-                order.setConfirmationStatus(Order.CONFIRMATION_STATUS_NOTCONFIRMED);
-                OrderMgr.failOrder(order, true);
-            });
-        }
+        // Only an order still waiting for its payment is failed, re-read first:
+        // one placed by a concurrent request is left alone
+        orderGuard.failOrder(order);
+        order = orderGuard.reload(order); // eslint-disable-line no-param-reassign
 
         if (order.getStatus().getValue() === Order.ORDER_STATUS_FAILED) {
             // No-op when the shopper already has a basket, so calling this more
@@ -343,15 +445,24 @@ var flowPaymentHelper = {
             return false;
         }
 
+        // The shopper left the payment page, which proves nothing about the
+        // payment: one that went through completes the order instead
+        var released = this.releaseOrder(order);
+
         Logger.getLogger('checkoutcom').info(
-            'Reclaiming abandoned Flow order {0} and restoring the shopper basket.',
-            orderNo
+            'Abandoned Flow order {0}: {1}.',
+            orderNo,
+            released.status
         );
 
-        this.failOrder(order);
+        if (released.status === 'unverified') {
+            // Kept open; checked again on the next visit
+            return false;
+        }
+
         this.clearSession();
 
-        return true;
+        return released.status === 'failed';
     },
 
     /**

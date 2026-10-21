@@ -35,4 +35,33 @@
         </group-definitions>
     </custom-type>
 
+    <custom-type type-id="ckoWebhookEvent">
+        <display-name xml:lang="x-default">Checkout.com processed webhook events</display-name>
+        <description xml:lang="x-default">One record per webhook event applied, so a repeated delivery (Checkout.com retries) is not applied twice.</description>
+        <staging-mode>no-staging</staging-mode>
+        <storage-scope>site</storage-scope>
+        <retention-days>30</retention-days>
+        <key-definition attribute-id="eventId">
+            <display-name xml:lang="x-default">Event ID</display-name>
+            <type>string</type>
+            <min-length>0</min-length>
+        </key-definition>
+        <attribute-definitions>
+            <attribute-definition attribute-id="eventType">
+                <display-name xml:lang="x-default">Event type</display-name>
+                <type>string</type>
+                <localizable-flag>false</localizable-flag>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="ckoWebhookEvent">
+                <display-name xml:lang="x-default">Webhook Event</display-name>
+                <attribute attribute-id="eventType"/>
+            </attribute-group>
+        </group-definitions>
+    </custom-type>
+
 </metadata>

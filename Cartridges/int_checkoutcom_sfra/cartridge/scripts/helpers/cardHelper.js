@@ -54,7 +54,7 @@ var cardHelper = {
         var result = {
             error: !ckoHelper.paymentSuccess(gatewayResponse),
             redirectUrl: false,
-            transactionID: gatewayResponse.id,
+            transactionID: gatewayResponse ? gatewayResponse.id : null,
         };
 
         // Handle the response
