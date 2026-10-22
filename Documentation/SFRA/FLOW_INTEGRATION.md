@@ -178,7 +178,6 @@ Flow is SFRA only.
    | `ckoFlowCapture` | boolean | `true` | Auto capture. The cartridge-wide `ckoAutoCaptureTime` also applies. |
    | `ckoFlowPaymentMethods` | string | empty | Optional comma separated allow-list, e.g. `card,googlepay,klarna`. Empty means "everything enabled on the account". |
    | `ckoFlowAppearance` | text | empty | Optional JSON for the Flow `appearance` option, e.g. `{"colorAction":"#000000"}`. Invalid JSON is logged and ignored. |
-   | `ckoFlowSavePaymentDetails` | boolean | `false` | Offer registered shoppers the option to store their details with Checkout.com. |
    | `ckoFlowDisplayMode` | enum | `inline` | `inline` shows Flow in the checkout place order step, below the payment summary; `page` redirects to the separate Flow page. |
 
    Flow reuses the existing cartridge configuration for everything else: `ckoMode`,

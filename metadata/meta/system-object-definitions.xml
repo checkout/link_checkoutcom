@@ -1015,14 +1015,6 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoFlowSavePaymentDetails">
-                <display-name xml:lang="x-default">Flow Save Payment Details</display-name>
-                <description xml:lang="x-default">Let registered shoppers choose to store their payment details with Checkout.com for future purchases.</description>
-                <type>boolean</type>
-                <mandatory-flag>false</mandatory-flag>
-                <externally-managed-flag>false</externally-managed-flag>
-                <default-value>false</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoFlowDisplayMode">
                 <display-name xml:lang="x-default">Flow Display Mode</display-name>
                 <description xml:lang="x-default">Where Flow is shown after the shopper places the order. Inline: in the place order step of the checkout page, below the payment summary. Separate page: on a dedicated Checkout.com Flow page. The separate page is also used as a fallback when Flow cannot be shown inline.</description>
@@ -1180,7 +1172,6 @@
                 <attribute attribute-id="ckoFlowCapture"/>
                 <attribute attribute-id="ckoFlowPaymentMethods"/>
                 <attribute attribute-id="ckoFlowAppearance"/>
-                <attribute attribute-id="ckoFlowSavePaymentDetails"/>
                 <attribute attribute-id="ckoFlowDisplayMode"/>
             </attribute-group>
        </group-definitions>

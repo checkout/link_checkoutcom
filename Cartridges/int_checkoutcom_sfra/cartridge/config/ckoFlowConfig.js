@@ -17,7 +17,6 @@ var ckoFlowConfig = {
     CKO_FLOW_CAPTURE: 'ckoFlowCapture',
     CKO_FLOW_APPEARANCE: 'ckoFlowAppearance',
     CKO_FLOW_PAYMENT_METHODS: 'ckoFlowPaymentMethods',
-    CKO_FLOW_SAVE_PAYMENT_DETAILS: 'ckoFlowSavePaymentDetails',
     CKO_FLOW_DISPLAY_MODE: 'ckoFlowDisplayMode',
 
     /* Values of the ckoFlowDisplayMode preference */

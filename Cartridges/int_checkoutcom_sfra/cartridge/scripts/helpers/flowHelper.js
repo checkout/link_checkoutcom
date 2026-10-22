@@ -137,14 +137,6 @@ var flowHelper = {
     },
 
     /**
-     * Check whether Flow may offer to store the shopper's payment details.
-     * @returns {boolean} True when the "save payment details" toggle is shown
-     */
-    isSavePaymentDetailsEnabled: function() {
-        return ckoHelper.getValue(flowConfig.CKO_FLOW_SAVE_PAYMENT_DETAILS) === true;
-    },
-
-    /**
      * Build the line items sent with the payment session.
      * Buy Now Pay Later methods rendered by Flow require them to reconcile the
      * basket, so shipping and tax are added as their own items to keep the sum
@@ -343,15 +335,6 @@ var flowHelper = {
         var enabledPaymentMethods = this.getEnabledPaymentMethods();
         if (enabledPaymentMethods) {
             requestData.enabled_payment_methods = enabledPaymentMethods;
-        }
-
-        // Only offer to store payment details to identifiable, registered shoppers
-        var orderCustomer = order.getCustomer();
-        if (this.isSavePaymentDetailsEnabled()
-            && orderCustomer
-            && orderCustomer.isRegistered()
-            && requestData.customer.email) {
-            requestData.store_payment_details = 'enabled';
         }
 
         // Strip the optional fields the shopper left blank before sending
