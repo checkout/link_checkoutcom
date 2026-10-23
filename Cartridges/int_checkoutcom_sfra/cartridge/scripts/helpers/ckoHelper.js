@@ -131,15 +131,74 @@ var ckoHelper = {
     },
 
     /**
-     * Check if the gateway response is valid.
-     * @param {Object} req The HTTP response data
-     * @returns {boolean} Is the private shared key valid
+     * Check that a webhook comes from Checkout.com, as set in the Webhook
+     * Authentication preference: the Authorization header key (the default),
+     * the cko-signature HMAC of the body, or both.
+     * @param {Object} req The webhook request
+     * @returns {boolean} True when the webhook is authentic
      */
     isValidResponse: function(req) {
-        var requestKey = req.httpHeaders.authorization;
-        var privateSharedKey = this.getAccountKeys().privateSharedKey;
+        var setting = this.getValue(constants.CKO_WEBHOOK_AUTHENTICATION);
+        var method = (setting && setting.value) || setting || 'authorization_header';
+        var keys = this.getAccountKeys();
+        var headers = req.httpHeaders || {};
 
-        return requestKey === privateSharedKey;
+        var headerValid = function() {
+            return !!keys.privateSharedKey && headers.authorization === keys.privateSharedKey;
+        };
+        var signatureValid = function() {
+            return ckoHelper.isValidSignature(req.body, headers['cko-signature'], keys.webhookSignatureKey);
+        };
+
+        if (method === 'signature') {
+            return signatureValid();
+        }
+
+        if (method === 'both') {
+            return headerValid() && signatureValid();
+        }
+
+        return headerValid();
+    },
+
+    /**
+     * Check the cko-signature header: the HMAC-SHA256 of the raw body, in hex.
+     * @param {string} body The raw request body
+     * @param {string} signature The cko-signature header
+     * @param {string} signatureKeys The webhook signature key; several, comma-separated, while rotating
+     * @returns {boolean} True when the signature matches one of the keys
+     */
+    isValidSignature: function(body, signature, signatureKeys) {
+        if (!body || !signature || !signatureKeys) {
+            return false;
+        }
+
+        var Mac = require('dw/crypto/Mac');
+        var Encoding = require('dw/crypto/Encoding');
+        var expected = String(signature).toLowerCase();
+
+        return String(signatureKeys).split(',').some(function(key) {
+            var trimmed = key.trim();
+
+            if (!trimmed) {
+                return false;
+            }
+
+            var computed = Encoding.toHex(new Mac(Mac.HMAC_SHA_256).digest(body, trimmed)).toLowerCase();
+
+            if (computed.length !== expected.length) {
+                return false;
+            }
+
+            // Compare every character, so the time taken does not reveal a prefix
+            var difference = 0;
+
+            for (var i = 0; i < computed.length; i += 1) {
+                difference |= computed.charCodeAt(i) ^ expected.charCodeAt(i); // eslint-disable-line no-bitwise
+            }
+
+            return difference === 0;
+        });
     },
 
     /**
@@ -377,6 +436,7 @@ var ckoHelper = {
         keys.publicKey = this.getValue('cko' + str + nasEnabled + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + nasEnabled + 'SecretKey');
         keys.privateSharedKey = this.getValue('cko' + str + nasEnabled + 'PrivateSharedKey');
+        keys.webhookSignatureKey = this.getValue('cko' + str + 'WebhookSignatureKey');
 
         return keys;
     },

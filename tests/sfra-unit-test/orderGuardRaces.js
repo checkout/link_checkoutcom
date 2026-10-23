@@ -26,6 +26,7 @@ var ORDER = {
     PAYMENT_STATUS_PAID: 2,
     CONFIRMATION_STATUS_NOTCONFIRMED: 0,
     CONFIRMATION_STATUS_CONFIRMED: 2,
+    EXPORT_STATUS_NOTEXPORTED: 0,
     EXPORT_STATUS_READY: 2,
 };
 
@@ -58,7 +59,7 @@ function makeOrder(opts) {
         status: options.status === undefined ? ORDER.ORDER_STATUS_CREATED : options.status,
         paymentStatus: options.paymentStatus === undefined ? ORDER.PAYMENT_STATUS_NOTPAID : options.paymentStatus,
         confirmationStatus: null,
-        exportStatus: null,
+        exportStatus: options.exportStatus === undefined ? null : options.exportStatus,
         notes: [],
         custom: {},
         orderNo: options.orderNo || '00001',
@@ -74,6 +75,7 @@ function makeOrder(opts) {
         setPaymentStatus: function(value) { this.paymentStatus = value; },
         setConfirmationStatus: function(value) { this.confirmationStatus = value; },
         setExportStatus: function(value) { this.exportStatus = value; },
+        getExportStatus: function() { var self = this; return { getValue: function() { return self.exportStatus; } }; },
         addNote: function(subject, text) { this.notes.push(text); },
         getPaymentInstruments: function(method) {
             var list = method ? instruments.filter(function(instrument) { return instrument.method === method; }) : instruments;
@@ -93,7 +95,7 @@ function makeOrder(opts) {
  */
 function fakes(ordersByNo, overrides) {
     var options = overrides || {};
-    var calls = { placed: [], failed: [], gateway: [] };
+    var calls = { placed: [], failed: [], cancelled: [], gateway: [] };
     var objects = {};
 
     var OrderMgr = {
@@ -107,6 +109,12 @@ function fakes(ordersByNo, overrides) {
         failOrder: function(order) {
             calls.failed.push(order.getOrderNo());
             order.status = ORDER.ORDER_STATUS_FAILED; // eslint-disable-line no-param-reassign
+
+            return { isError: function() { return false; } };
+        },
+        cancelOrder: function(order) {
+            calls.cancelled.push(order.getOrderNo());
+            order.status = ORDER.ORDER_STATUS_CANCELLED; // eslint-disable-line no-param-reassign
 
             return { isError: function() { return false; } };
         },
@@ -383,6 +391,61 @@ describe('Flow: completion races (flowPaymentHelper)', function() {
         assert.deepEqual(env.calls.gateway.map(function(call) { return call.data.chargeId; }), ['pay_2']);
     });
 
+    // Exploit: a shopper posts another shopper's payment id with their own
+    // order. The payment does not match, but it is not theirs to release.
+    it('a payment id of another order posted with an open order never refunds or voids it', function() {
+        var order = flowOrder();
+        var env = fakes({ '00001': order }, { gateway: function() { return { action_id: 'x' }; } });
+        var victimPayment = { id: 'pay_victim', status: 'Captured', reference: '00002', amount: 5000 };
+        var result = loadFlow(env, { matchesOrder: sinon.stub().returns(false) }).helper.completeOrder(order, 'pay_victim', victimPayment);
+
+        assert.isTrue(result.error);
+        assert.deepEqual(env.calls.failed, ['00001']);
+        assert.lengthOf(env.calls.gateway.filter(function(call) { return call.data.chargeId; }), 0);
+    });
+
+    it('the order\'s own payment for the wrong amount is still released', function() {
+        var order = flowOrder();
+        var env = fakes({ '00001': order }, { gateway: function() { return { action_id: 'x' }; } });
+        var payment = { id: 'pay_1', status: 'Authorized', reference: '00001', amount: 1 };
+
+        loadFlow(env, { matchesOrder: sinon.stub().returns(false) }).helper.completeOrder(order, 'pay_1', payment);
+
+        assert.deepEqual(env.calls.gateway.map(function(call) { return call.data.chargeId; }), ['pay_1']);
+    });
+
+    it('a payment id of another order posted with a placed order never refunds or voids it', function() {
+        var order = flowOrder({ status: ORDER.ORDER_STATUS_NEW });
+
+        order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).toArray()[0].paymentTransaction.transactionID = 'pay_1';
+
+        var env = fakes({ '00001': order }, { gateway: function() { return { action_id: 'x' }; } });
+        var result = loadFlow(env).helper.completeOrder(order, 'pay_victim', { id: 'pay_victim', status: 'Captured', reference: '00002' });
+
+        assert.isFalse(result.error);
+        assert.lengthOf(env.calls.gateway.filter(function(call) { return call.data.chargeId; }), 0);
+    });
+
+    it('an order paid with a pending payment is placed but not exported until it is paid', function() {
+        var order = flowOrder();
+        var env = fakes({ '00001': order });
+        var result = loadFlow(env).helper.completeOrder(order, 'pay_1', { id: 'pay_1', status: 'Pending', reference: '00001' });
+
+        assert.isFalse(result.error);
+        assert.isTrue(result.pending);
+        assert.equal(order.status, ORDER.ORDER_STATUS_NEW);
+        assert.equal(order.exportStatus, ORDER.EXPORT_STATUS_NOTEXPORTED);
+    });
+
+    it('an order paid with an authorized payment is exported', function() {
+        var order = flowOrder();
+        var env = fakes({ '00001': order });
+
+        loadFlow(env).helper.completeOrder(order, 'pay_1', { id: 'pay_1', status: 'Authorized', reference: '00001' });
+
+        assert.equal(order.exportStatus, ORDER.EXPORT_STATUS_READY);
+    });
+
     it('a payment that cannot be read back keeps the order open (unverified, not failed)', function() {
         var order = flowOrder();
         var env = fakes({ '00001': order });
@@ -472,5 +535,54 @@ describe('Webhooks: stale and out-of-order events (eventsHelper)', function() {
         loadEvents(env).paymentApproved(hook('payment_approved', 'pay_1'));
 
         assert.equal(order.paymentStatus, ORDER.PAYMENT_STATUS_PAID);
+    });
+
+    var awaiting = function() {
+        return makeOrder({
+            status: ORDER.ORDER_STATUS_NEW,
+            exportStatus: ORDER.EXPORT_STATUS_NOTEXPORTED,
+            instruments: [{ method: flowConfig.PAYMENT_METHOD_ID, transactionID: 'pay_1' }],
+        });
+    };
+
+    it('the capture of a pending payment releases its order for export', function() {
+        var order = awaiting();
+
+        loadEvents(fakes({ '00001': order })).settleAwaitingOrder(hook('payment_captured', 'pay_1'));
+
+        assert.equal(order.exportStatus, ORDER.EXPORT_STATUS_READY);
+    });
+
+    it('an expired pending payment cancels its order, which is never exported', function() {
+        var order = awaiting();
+        var env = fakes({ '00001': order });
+
+        loadEvents(env).settleAwaitingOrder(hook('payment_expired', 'pay_1'));
+
+        assert.deepEqual(env.calls.cancelled, ['00001']);
+        assert.equal(order.exportStatus, ORDER.EXPORT_STATUS_NOTEXPORTED);
+        assert.equal(order.confirmationStatus, ORDER.CONFIRMATION_STATUS_NOTCONFIRMED);
+    });
+
+    it('an event for another payment neither releases nor cancels the order', function() {
+        var order = awaiting();
+        var env = fakes({ '00001': order });
+        var events = loadEvents(env);
+
+        events.settleAwaitingOrder(hook('payment_captured', 'pay_other'));
+        events.settleAwaitingOrder(hook('payment_expired', 'pay_other'));
+
+        assert.equal(order.exportStatus, ORDER.EXPORT_STATUS_NOTEXPORTED);
+        assert.deepEqual(env.calls.cancelled, []);
+    });
+
+    it('an order already exported is never cancelled by a late event', function() {
+        var order = awaiting();
+        var env = fakes({ '00001': order });
+
+        order.exportStatus = ORDER.EXPORT_STATUS_READY;
+        loadEvents(env).settleAwaitingOrder(hook('payment_expired', 'pay_1'));
+
+        assert.deepEqual(env.calls.cancelled, []);
     });
 });

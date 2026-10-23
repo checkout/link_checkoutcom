@@ -728,6 +728,41 @@
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoSandboxWebhookSignatureKey">
+                <display-name xml:lang="x-default">Webhook Signature Key</display-name>
+                <description xml:lang="x-default">Sandbox key that signs Checkout.com webhooks (the cko-signature header), shown on the webhook in the Checkout.com Dashboard. Needed when Webhook Authentication uses the signature. Several keys, comma-separated, while rotating.</description>
+                <type>password</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveWebhookSignatureKey">
+                <display-name xml:lang="x-default">Webhook Signature Key</display-name>
+                <description xml:lang="x-default">Live key that signs Checkout.com webhooks (the cko-signature header), shown on the webhook in the Checkout.com Dashboard. Needed when Webhook Authentication uses the signature. Several keys, comma-separated, while rotating.</description>
+                <type>password</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoWebhookAuthentication">
+                <display-name xml:lang="x-default">Webhook Authentication</display-name>
+                <description xml:lang="x-default">How webhooks are checked. Authorization header: the header must equal the Private Shared Key. Signature: the cko-signature HMAC of the body must match the Webhook Signature Key, which a copied header value cannot forge (recommended). Both: both checks must pass.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">Authorization header</display>
+                        <value>authorization_header</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Signature (recommended)</display>
+                        <value>signature</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Authorization header and signature</display>
+                        <value>both</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxNASPrivateSharedKey">
                 <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
                 <description xml:lang="x-default">NAS Sandbox private shared key provided by Checkout.com.</description>
@@ -1042,6 +1077,7 @@
                 <attribute attribute-id="ckoSandboxNASPublicKey"/>
                 <attribute attribute-id="ckoSandboxNASSecretKey"/>
                 <attribute attribute-id="ckoSandboxNASPrivateSharedKey"/>
+                <attribute attribute-id="ckoSandboxWebhookSignatureKey"/>
                 <attribute attribute-id="ckoSandboxABCPrivateSharedKey"/>
                 <attribute attribute-id="ckoSandboxABCSecretKey"/>
             </attribute-group>
@@ -1051,6 +1087,7 @@
                 <attribute attribute-id="ckoLiveNASPublicKey"/>
                 <attribute attribute-id="ckoLiveNASSecretKey"/>
                 <attribute attribute-id="ckoLiveNASPrivateSharedKey"/>
+                <attribute attribute-id="ckoLiveWebhookSignatureKey"/>
                 <attribute attribute-id="ckoLiveABCPrivateSharedKey"/>
                 <attribute attribute-id="ckoLiveABCSecretKey"/>
             </attribute-group>
@@ -1078,6 +1115,7 @@
                 <attribute attribute-id="ckoMADABins"/>
                 <attribute attribute-id="ckoProcessingChannelId"/>
                 <attribute attribute-id="ckoRegionEndPoint"/>
+                <attribute attribute-id="ckoWebhookAuthentication"/>
 				<attribute attribute-id="riskJsEnabled"/>
             </attribute-group>
             <attribute-group group-id="CKO [5] APM Settings">

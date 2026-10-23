@@ -9,6 +9,7 @@ var constants = {
     CKO_BUSINESS_CITY: 'ckoBusinessCity',
     CKO_BUSINESS_COUNTRY: 'ckoBusinessCountry',
     CKO_MODE: 'ckoMode',
+    CKO_WEBHOOK_AUTHENTICATION: 'ckoWebhookAuthentication',
     CKO_DEBUG_ENABLED: 'ckoDebugEnabled',
     CKO_AUTO_CAPTURE: 'ckoAutoCapture',
     CKO_AUTO_CAPTURE_TIME: 'ckoAutoCaptureTime',

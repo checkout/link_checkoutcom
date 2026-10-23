@@ -148,7 +148,9 @@ function settleRedirect(res, verified) {
         return;
     }
 
-    var placed = orderGuard.placeOrder(order);
+    // A pending payment (Tamara, Alipay+) has not paid yet: the order is not
+    // exported until a webhook confirms it
+    var placed = orderGuard.placeOrder(order, null, { awaitingPayment: payment.status === 'Pending' });
 
     if (placed.error) {
         // Not placed (and not by anyone else): release the payment, give the basket back
@@ -249,6 +251,9 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
             if (typeof eventsHelper[func] === 'function') {
                 eventsHelper[func](hook);
             }
+
+            // An order placed with a pending payment: exported once paid, cancelled if not
+            eventsHelper.settleAwaitingOrder(hook);
 
             // MB WAY: store capture/error webhook events in the webhookNotification custom object
             // so the client-side polling loop can detect them and act accordingly.

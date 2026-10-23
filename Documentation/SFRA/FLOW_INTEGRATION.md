@@ -192,7 +192,20 @@ Flow is SFRA only.
 
 6. **Keep the webhook configured.** Flow payments use the same
    `CKOMain-HandleWebhook` endpoint as the rest of the cartridge; no additional webhook
-   is needed.
+   is needed. *Webhook Authentication* (CKO [4] Payment Settings) decides how a webhook
+   is checked:
+   - **Authorization header** (the default, the behaviour of earlier versions): the
+     `Authorization` header must equal the Private Shared Key. Anyone who learns that
+     value can send webhooks of their own.
+   - **Signature** (recommended): the `cko-signature` header must be the HMAC-SHA256 of
+     the body with the *Webhook Signature Key* (CKO [1] Sandbox Keys / CKO [2] Live Keys),
+     the signature key shown on the webhook in the Checkout.com Dashboard. A webhook body
+     cannot be forged or altered without that key. Several keys, comma-separated, are
+     accepted while you rotate it.
+   - **Authorization header and signature**: both checks must pass.
+
+   Set the signature key before switching to *Signature*: until it is set, every webhook
+   is refused (401, shown as failed deliveries on the Dashboard).
 
 ---
 
@@ -217,8 +230,11 @@ Flow is SFRA only.
   item under a net taxation policy, so the items always add up to the session amount.
   BNPL methods rendered by Flow require this.
 - **Pending methods.** Delayed notification methods (Multibanco, Fawry, …) return
-  `Pending`. The order is placed with payment status *Not Paid* and the existing webhook
-  handlers mark it paid when the shopper settles the voucher.
+  `Pending`. The order is placed with payment status *Not Paid* and export status
+  *Not exported*, so it is not fulfilled before it is paid. The existing webhook handlers
+  mark it paid when the shopper settles the voucher, and its approval or capture makes it
+  ready for export; a decline, expiry or cancellation cancels the order. Redirect methods
+  that return `Pending` (Tamara, Alipay+) are handled the same way.
 - **Saved cards.** Flow stores credentials on the Checkout.com side, not in the SFCC
   customer wallet. The cartridge's own saved-card feature (`CHECKOUTCOM_CARD`) is
   unchanged and continues to use the SFCC wallet.

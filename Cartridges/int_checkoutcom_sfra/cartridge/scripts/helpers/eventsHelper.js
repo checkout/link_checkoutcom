@@ -453,6 +453,44 @@ var eventsHelper = {
             achHelper.deleteProcessorToken(order.getCustomer());
         }
     },
+
+    /**
+     * An order placed with a pending payment is not exported until it is paid.
+     * Its approval or capture releases it for export; a decline, expiry or
+     * cancellation cancels it, so it is never fulfilled without payment.
+     * Runs after the event's own handler.
+     * @param {Object} hook The gateway webhook data
+     */
+    settleAwaitingOrder: function(hook) {
+        var order = hook && hook.data && hook.data.reference ? OrderMgr.getOrder(hook.data.reference) : null;
+
+        if (!order || order.getExportStatus().getValue() !== Order.EXPORT_STATUS_NOTEXPORTED) {
+            return;
+        }
+
+        var status = order.getStatus().getValue();
+
+        if ((status !== Order.ORDER_STATUS_NEW && status !== Order.ORDER_STATUS_OPEN) || !isOrderPayment(order, hook)) {
+            return;
+        }
+
+        if (hook.type === 'payment_approved' || hook.type === 'payment_captured') {
+            Transaction.wrap(function() {
+                order.setExportStatus(Order.EXPORT_STATUS_READY);
+            });
+
+            return;
+        }
+
+        var failed = ['payment_declined', 'payment_expired', 'payment_canceled', 'payment_voided'];
+
+        if (failed.indexOf(hook.type) !== -1 && order.paymentStatus !== Order.PAYMENT_STATUS_PAID) {
+            Transaction.wrap(function() {
+                OrderMgr.cancelOrder(order);
+                order.setConfirmationStatus(Order.CONFIRMATION_STATUS_NOTCONFIRMED);
+            });
+        }
+    },
 };
 
 /**

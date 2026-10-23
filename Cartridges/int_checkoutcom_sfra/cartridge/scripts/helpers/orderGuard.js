@@ -71,9 +71,10 @@ var orderGuard = {
      * failure means (it usually releases the payment and fails the order).
      * @param {dw.order.Order} order The order
      * @param {Object} [fraudDetectionStatus] The fraud hook result: 'flag' leaves the order not confirmed
+     * @param {Object} [options] awaitingPayment: the payment is pending, so the order is not exported until it is paid
      * @returns {Object} error, alreadyPlaced (placed by another request), closed (failed or cancelled)
      */
-    placeOrder: function(order, fraudDetectionStatus) {
+    placeOrder: function(order, fraudDetectionStatus, options) {
         var current = this.reload(order);
 
         if (this.isPlaced(current)) {
@@ -97,7 +98,9 @@ var orderGuard = {
             current.setConfirmationStatus(fraudDetectionStatus && fraudDetectionStatus.status === 'flag'
                 ? Order.CONFIRMATION_STATUS_NOTCONFIRMED
                 : Order.CONFIRMATION_STATUS_CONFIRMED);
-            current.setExportStatus(Order.EXPORT_STATUS_READY);
+            current.setExportStatus(options && options.awaitingPayment
+                ? Order.EXPORT_STATUS_NOTEXPORTED
+                : Order.EXPORT_STATUS_READY);
             Transaction.commit();
 
             return { error: false, alreadyPlaced: false, order: current };

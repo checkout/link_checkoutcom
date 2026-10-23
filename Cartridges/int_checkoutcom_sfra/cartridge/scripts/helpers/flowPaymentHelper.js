@@ -186,7 +186,9 @@ var flowPaymentHelper = {
         }
 
         if (!flowHelper.matchesOrder(payment, order)) {
-            if (orderGuard.isLive(payment)) {
+            // Only a payment made for this order is released: a payment id
+            // posted with the wrong order may belong to another shopper's order
+            if (orderGuard.isLive(payment) && payment.reference === order.getOrderNo()) {
                 orderGuard.reversePayment(payment, order.getOrderNo());
             }
 
@@ -211,7 +213,9 @@ var flowPaymentHelper = {
             Logger.getLogger('checkoutcom').warn('Flow payment {0} not recorded on order {1} before placement: {2}', payment.id, order.getOrderNo(), e.message);
         }
 
-        var placed = orderGuard.placeOrder(order);
+        // A pending payment (Multibanco, a bank transfer) has not paid yet: the
+        // order is not exported until a webhook confirms the capture
+        var placed = orderGuard.placeOrder(order, null, { awaitingPayment: isPending });
 
         if (placed.error) {
             // Not placed, and not by anyone else: release the shopper's funds
@@ -264,7 +268,9 @@ var flowPaymentHelper = {
         var instruments = order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).toArray();
         var recorded = instruments.length > 0 ? instruments[0].getPaymentTransaction().getTransactionID() : null;
 
-        if (recorded && recorded !== payment.id && orderGuard.isLive(payment)) {
+        // Only a payment made for this order is released: a payment id posted
+        // with the wrong order may belong to another shopper's order
+        if (recorded && recorded !== payment.id && payment.reference === order.getOrderNo() && orderGuard.isLive(payment)) {
             Logger.getLogger('checkoutcom').warn('Flow payment {0} is a second payment for order {1}, paid with {2}: releasing it.', payment.id, order.getOrderNo(), recorded);
             orderGuard.reversePayment(payment, order.getOrderNo());
         }
