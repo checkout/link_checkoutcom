@@ -84,6 +84,7 @@ an order can always still be paid for.
 | `cartridge/scripts/services/flowSessions.js` | `POST /payment-sessions` service wrapper (sandbox + live) |
 | `cartridge/scripts/helpers/flowHelper.js` | Builds the payment session, reads payments back, voids |
 | `cartridge/scripts/helpers/flowPaymentHelper.js` | Turns a confirmed payment into a placed order |
+| `cartridge/scripts/helpers/phoneHelper.js` | Phones as `{ country_code, number }` for Checkout.com requests |
 | `cartridge/scripts/hooks/payment/processor/CHECKOUTCOM_FLOW.js` | `Handle` / `Authorize` |
 | `cartridge/scripts/hooks/payment/processor/CHECKOUTCOM_FLOW_form_processor.js` | `processForm` |
 | `cartridge/controllers/CKOFlow.js` | `Session`, `Show`, `Complete`, `HandleReturn`, `HandleFail` |
@@ -207,6 +208,11 @@ Flow is SFRA only.
    Set the signature key before switching to *Signature*: until it is set, every webhook
    is refused (401, shown as failed deliveries on the Dashboard).
 
+   A webhook that arrives while the shopper's request is still updating the same order
+   can fail with *ORMOptimisticLockingException*. The handler applies it once more,
+   reading the order again; if it still conflicts it answers 500, and Checkout.com
+   delivers it again later.
+
 ---
 
 ## Notes and limitations
@@ -224,11 +230,38 @@ Flow is SFRA only.
   `/payment-sessions` rejects those keys rather than ignoring them. `flowHelper.pruneEmpty()`
   strips them from the request; `false` and `0` are preserved. The customer, billing and
   shipping projections themselves are the same `ckoHelper` helpers the direct card
-  integration uses, with the phone built as a bare `{ number }` exactly as
-  `cardHelper.buildRequest()` does.
+  integration uses.
+- **Phone numbers.** SFCC stores a phone as one string; `phoneHelper.js` sends it as
+  `{ country_code, number }` when the calling code can be told, and as a bare `{ number }`
+  otherwise (`/payment-sessions` rejects a null `country_code`):
+  - `+49 30123456`, `+4930123456` and `0049 30123456` all become `+49` / `30123456`;
+  - a national number gets the calling code of its address's country only where the
+    national (trunk) prefix is known: `030 123456` in Germany becomes `+49` / `30123456`,
+    `06 1 234 5678` in Hungary `+36` / `12345678`; Italian numbers keep their leading 0;
+  - any other national number is sent as it is (in Côte d'Ivoire, for one, the leading 0
+    is part of the number).
+
+  The billing phone is the customer's and the billing address's; the shipping phone is the
+  shipping address's own, or the billing phone when it has none.
 - **Line items.** Shipping is always sent as its own item, and tax is sent as its own
   item under a net taxation policy, so the items always add up to the session amount.
   BNPL methods rendered by Flow require this.
+- **Visa and Mastercard Level 2 / Level 3 data.** Corporate and purchasing cards can
+  qualify for lower interchange when the payment carries enhanced data. Only the values
+  the order has are sent:
+
+  | Field | Sent | From |
+  | --- | --- | --- |
+  | `processing.order_id` | With the payment session (the order exists when it is created) and Business Manager captures of card payments | The order number, up to 15 characters |
+  | `processing.tax_amount`, `processing.shipping_amount` | With the payment session, and a Business Manager capture of the whole order for a card payment | The order's tax and shipping totals |
+  | `items[].tax_amount` | Net taxation only (item prices exclude tax) | Each product line's tax |
+  | `items[].unit_of_measure` | When the product has one | The product's **Unit** in the catalog, as a measure code such as `EACH`, `KILO` or `LITR`; other values are left out |
+
+  The data is on the session, so payments captured at once (*Flow Auto Capture*) carry it.
+  A partial capture sends the order number only, because the order's tax and shipping
+  wouldn't be true for part of it. Captures of other methods (Klarna, PayPal, APMs) send no
+  Level 2 data. `commodity_code` and `duty_amount` aren't sent: B2C Commerce has no
+  standard field for them.
 - **Pending methods.** Delayed notification methods (Multibanco, Fawry, …) return
   `Pending`. The order is placed with payment status *Not Paid* and export status
   *Not exported*, so it is not fulfilled before it is paid. The existing webhook handlers

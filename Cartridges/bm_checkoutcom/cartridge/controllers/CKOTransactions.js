@@ -48,6 +48,73 @@ function respond(status, body) {
 }
 
 /**
+ * Whether the order was paid with a card: the card, Apple Pay and Google Pay
+ * methods, or a Flow payment whose recorded source is a card.
+ * @param {dw.order.Order} order The order
+ * @returns {boolean} True for a card payment; false when unknown
+ */
+function isCardOrder(order) {
+    var instruments = order.getPaymentInstruments().toArray();
+
+    return instruments.some(function(instrument) {
+        var method = instrument.getPaymentMethod();
+
+        if (method === 'CHECKOUTCOM_CARD' || method === 'CHECKOUTCOM_APPLE_PAY' || method === 'CHECKOUTCOM_GOOGLE_PAY') {
+            return true;
+        }
+
+        if (method === 'CHECKOUTCOM_FLOW' && instrument.custom.ckoPaymentData) {
+            try {
+                return JSON.parse(instrument.custom.ckoPaymentData).type === 'card';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        return false;
+    });
+}
+
+/**
+ * Visa and Mastercard Level 2 data for a capture of a card payment: the order
+ * number, and the order's tax and shipping when the whole order is captured
+ * (they would not be true for part of it). Other methods get none.
+ * @param {dw.order.Order} order The order
+ * @param {string|number} amount The capture amount, in Checkout.com's format
+ * @param {string} currency The currency
+ * @returns {Object|null} processing.order_id, tax_amount and shipping_amount
+ */
+function levelTwoProcessing(order, amount, currency) {
+    if (!order || !isCardOrder(order)) {
+        return null;
+    }
+
+    var processing = {};
+    var minor = function(money) {
+        return money && money.isAvailable() ? Number(CKOHelper.getFormattedPrice(String(money.getValue()), currency)) : null;
+    };
+
+    if (String(order.getOrderNo()).length <= 15) {
+        processing.order_id = String(order.getOrderNo());
+    }
+
+    if (minor(order.getTotalGrossPrice()) === Number(amount)) {
+        var tax = minor(order.getTotalTax());
+        var shipping = minor(order.getAdjustedShippingTotalPrice());
+
+        if (tax !== null) {
+            processing.tax_amount = tax;
+        }
+
+        if (shipping !== null) {
+            processing.shipping_amount = shipping;
+        }
+    }
+
+    return Object.keys(processing).length > 0 ? processing : null;
+}
+
+/**
  * Perform a capture, void or refund for the console. Money moves, so the request
  * must be a POST from the console page itself (CSRF token).
  */
@@ -150,6 +217,12 @@ function remoteCall() {
 
     if (CKOHelper.getNasEnabled().value === 'NAS' && task.value === 'capture') {
         gRequest.capture_type = 'NonFinal';
+
+        var processing = levelTwoProcessing(order, formatedAmount, currency);
+
+        if (processing) {
+            gRequest.processing = processing;
+        }
     }
 
     // Set the service parameter

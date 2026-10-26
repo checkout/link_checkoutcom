@@ -16,6 +16,7 @@ var flowConfig = require('*/cartridge/config/ckoFlowConfig');
 
 /* Services */
 var flowSessions = require('*/cartridge/scripts/services/flowSessions');
+var phoneHelper = require('*/cartridge/scripts/helpers/phoneHelper');
 
 /**
  * Checkout.com Flow helper.
@@ -143,6 +144,11 @@ var flowHelper = {
      * of the items equal to the session amount. The name/quantity/unit_price/
      * total_amount/reference/type shape matches the one the Sequra and Tabby
      * helpers already send to the gateway.
+     *
+     * Visa and Mastercard Level 3 data is added when the order has it: each
+     * product line's tax_amount under net taxation (where total_amount excludes
+     * tax) and unit_of_measure from the product's sales unit. The item amounts
+     * are unchanged, so the items still add up to the session amount.
      * @param {dw.order.Order} order The order instance
      * @returns {Array} The list of items
      */
@@ -150,6 +156,7 @@ var flowHelper = {
         var currency = order.getCurrencyCode();
         var items = [];
         var iterator = order.getProductLineItems().iterator();
+        var isNet = TaxMgr.getTaxationPolicy() === TaxMgr.TAX_POLICY_NET;
 
         while (iterator.hasNext()) {
             var lineItem = iterator.next();
@@ -159,14 +166,27 @@ var flowHelper = {
                 10
             );
 
-            items.push({
+            var item = {
                 name: lineItem.getProductName(),
                 quantity: quantity,
                 unit_price: quantity > 0 ? Math.round(totalAmount / quantity) : totalAmount,
                 total_amount: totalAmount,
                 reference: lineItem.getProductID(),
                 type: 'physical',
-            });
+            };
+            var lineTax = isNet ? lineItem.getTax() : null;
+            var product = lineItem.getProduct();
+            var unit = product ? this.getUnitOfMeasure(product.getUnit()) : null;
+
+            if (lineTax && lineTax.available) {
+                item.tax_amount = parseInt(ckoHelper.getFormattedPrice(lineTax.getValue().toFixed(2), currency), 10);
+            }
+
+            if (unit) {
+                item.unit_of_measure = unit;
+            }
+
+            items.push(item);
         }
 
         // Shipping is a separate item so the items add up to the session amount
@@ -208,6 +228,49 @@ var flowHelper = {
         }
 
         return items;
+    },
+
+    /**
+     * @param {string} unit A product's sales unit (Product.unit)
+     * @returns {string|null} The unit of measure code, upper case, or null when it isn't one
+     */
+    getUnitOfMeasure: function(unit) {
+        var value = unit ? String(unit).trim() : '';
+
+        return /^[A-Za-z]{1,12}$/.test(value) ? value.toUpperCase() : null;
+    },
+
+    /**
+     * Visa and Mastercard Level 2 data for the session: the order number (the
+     * order exists when the session is created), and the order's tax and
+     * shipping totals. Sent on the session so payments captured at once carry it.
+     * @param {dw.order.Order} order The order instance
+     * @returns {Object|null} processing.order_id, tax_amount and shipping_amount
+     */
+    getLevelTwoProcessing: function(order) {
+        var currency = order.getCurrencyCode();
+        var processing = {};
+        var toMinor = function(money) {
+            return money && money.available
+                ? parseInt(ckoHelper.getFormattedPrice(money.getValue().toFixed(2), currency), 10)
+                : null;
+        };
+        var tax = toMinor(order.getTotalTax());
+        var shipping = toMinor(order.getAdjustedShippingTotalPrice());
+
+        if (order.getOrderNo() && String(order.getOrderNo()).length <= 15) {
+            processing.order_id = String(order.getOrderNo());
+        }
+
+        if (tax !== null) {
+            processing.tax_amount = tax;
+        }
+
+        if (shipping !== null) {
+            processing.shipping_amount = shipping;
+        }
+
+        return Object.keys(processing).length > 0 ? processing : null;
     },
 
     /**
@@ -266,16 +329,15 @@ var flowHelper = {
         var billingAddress = order.getBillingAddress();
 
         // Mirror cardHelper.buildRequest(): the customer is the shared
-        // ckoHelper.getCustomer() object, and the phone is attached as a bare
-        // { number } only when the order actually carries one. The direct
-        // integration deliberately does not use ckoHelper.getPhone() here
-        // because that helper hardcodes country_code: null, which this endpoint
-        // rejects with "*_phone_country_code_invalid".
+        // ckoHelper.getCustomer() object, with the billing phone when the order
+        // carries one. ckoHelper.getPhone() is not used: it hardcodes
+        // country_code: null, which this endpoint rejects with
+        // "*_phone_country_code_invalid". phoneHelper sends the calling code
+        // only when it can be told, else a bare { number }.
         var customer = ckoHelper.getCustomer(order);
-        var phone = null;
+        var phone = phoneHelper.fromAddress(billingAddress);
 
-        if (billingAddress && billingAddress.getPhone()) {
-            phone = { number: billingAddress.getPhone() };
+        if (phone) {
             customer.phone = phone;
         }
 
@@ -296,6 +358,8 @@ var flowHelper = {
                 phone: phone,
             },
             items: this.getItems(order),
+            // Level 2 data, so payments captured at once (auto capture) carry it
+            processing: this.getLevelTwoProcessing(order),
             metadata: ckoHelper.getMetadata({}, flowConfig.PAYMENT_PROCESSOR_ID),
             // Only "enabled" is sent. The Flow component gathers the device and
             // network signals itself on the storefront, so the server has nothing
@@ -313,10 +377,11 @@ var flowHelper = {
 
         // The shipment is optional: digital only baskets have no shipping address.
         // ckoHelper.getShipping() is the same projection the direct integration
-        // sends, except that its phone is rebuilt without the null country code.
+        // sends, except that its phone is the shipping address's own (the billing
+        // phone when it has none), without the null country code.
         if (order.getDefaultShipment() && order.getDefaultShipment().getShippingAddress()) {
             var shipping = ckoHelper.getShipping(order);
-            shipping.phone = phone;
+            shipping.phone = phoneHelper.fromAddress(order.getDefaultShipment().getShippingAddress()) || phone;
             requestData.shipping = shipping;
         }
 

@@ -237,7 +237,9 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
         return next();
     }
 
-    try {
+    // Apply the event; once more when it lost a race with another update of
+    // the order (ORMOptimisticLockingException), reading the order again
+    var applyHook = function() {
         // Check the webhook event
         if (hook !== null && Object.prototype.hasOwnProperty.call(hook, 'type')) {
             // Get a camel case function name from event type
@@ -305,6 +307,21 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
                     var achHelperInst = require('*/cartridge/scripts/helpers/achHelper');
                     achHelperInst.storeWebhookNotification(hook.data.reference, hook);
                 }
+            }
+        }
+    };
+
+    try {
+        for (var attempt = 1; attempt <= 2; attempt++) {
+            try {
+                applyHook();
+                break;
+            } catch (raceError) {
+                if (attempt === 2 || !/OptimisticLocking/i.test(String(raceError && (raceError.javaName || raceError.name)) + ' ' + String(raceError && raceError.message))) {
+                    throw raceError;
+                }
+
+                Logger.getLogger('checkoutcom').warn('Webhook {0} ({1}): the order was updated at the same time; applying it again.', hook && hook.id, hook && hook.type);
             }
         }
     } catch (e) {
