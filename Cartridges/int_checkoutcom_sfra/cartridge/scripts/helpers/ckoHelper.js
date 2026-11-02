@@ -131,6 +131,27 @@ var ckoHelper = {
     },
 
     /**
+     * Compare two secrets character by character, so the time taken does not
+     * reveal how much of a guess was right.
+     * @param {string} a A string
+     * @param {string} b Another string
+     * @returns {boolean} True when they are equal
+     */
+    safeEquals: function(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) {
+            return false;
+        }
+
+        var difference = 0;
+
+        for (var i = 0; i < a.length; i += 1) {
+            difference |= a.charCodeAt(i) ^ b.charCodeAt(i); // eslint-disable-line no-bitwise
+        }
+
+        return difference === 0;
+    },
+
+    /**
      * Check that a webhook comes from Checkout.com, as set in the Webhook
      * Authentication preference: the Authorization header key (the default),
      * the cko-signature HMAC of the body, or both.
@@ -144,7 +165,8 @@ var ckoHelper = {
         var headers = req.httpHeaders || {};
 
         var headerValid = function() {
-            return !!keys.privateSharedKey && headers.authorization === keys.privateSharedKey;
+            return !!keys.privateSharedKey && !!headers.authorization
+                && ckoHelper.safeEquals(String(headers.authorization), String(keys.privateSharedKey));
         };
         var signatureValid = function() {
             return ckoHelper.isValidSignature(req.body, headers['cko-signature'], keys.webhookSignatureKey);
@@ -186,18 +208,7 @@ var ckoHelper = {
 
             var computed = Encoding.toHex(new Mac(Mac.HMAC_SHA_256).digest(body, trimmed)).toLowerCase();
 
-            if (computed.length !== expected.length) {
-                return false;
-            }
-
-            // Compare every character, so the time taken does not reveal a prefix
-            var difference = 0;
-
-            for (var i = 0; i < computed.length; i += 1) {
-                difference |= computed.charCodeAt(i) ^ expected.charCodeAt(i); // eslint-disable-line no-bitwise
-            }
-
-            return difference === 0;
+            return ckoHelper.safeEquals(computed, expected);
         });
     },
 
@@ -242,7 +253,8 @@ var ckoHelper = {
         }
         var trimmed = endpoint.trim();
         // Must start with https:// and contain no whitespace or path/query characters in the host
-        var pattern = /^https:\/\/[A-Za-z0-9.\-]+(:\d+)?\/?$/;
+        // Checkout.com hosts only: the secret key is sent to this host
+        var pattern = /^https:\/\/([a-z0-9-]+\.)*checkout\.com(:443)?\/?$/i;
         return pattern.test(trimmed);
     },
 
@@ -728,9 +740,18 @@ var ckoHelper = {
           || gatewayResponse.actions[0].response_code === '10200');
         }
 
-        if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'alipay' || gatewayResponse.source.type === 'oxxo' || gatewayResponse.source.type === 'boleto' || gatewayResponse.source.type === 'bancontact' || gatewayResponse.source.type === 'tabby')) {
-                return true;
+        if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source') && gatewayResponse.source) {
+            var type = gatewayResponse.source.type;
+
+            // Tabby and Bancontact are paid once authorized or captured, never on a
+            // decline, a cancellation or an expired session
+            if (type === 'tabby' || type === 'bancontact') {
+                return ['Authorized', 'Captured', 'Partially Captured'].indexOf(gatewayResponse.status) !== -1;
+            }
+
+            // Vouchers (OXXO, Boleto) and Alipay are pending until the shopper pays
+            if (type === 'alipay' || type === 'oxxo' || type === 'boleto') {
+                return ['Pending', 'Authorized', 'Captured', 'Partially Captured'].indexOf(gatewayResponse.status) !== -1;
             }
         }
 

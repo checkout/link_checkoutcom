@@ -35,6 +35,37 @@ var ckoMadaConfig = require('*/cartridge/config/ckoMadaConfig');
 var constants = require('*/cartridge/config/constants');
 
 /**
+ * Whether the payment is for the order's currency and amount: the order total,
+ * or the Checkout.com payment instrument's amount (the rest paid by gift
+ * certificate). A payment for less never places the order.
+ * @param {dw.order.Order} order The order
+ * @param {Object} payment The payment read back from Checkout.com
+ * @returns {boolean} True when the amounts match
+ */
+function isPaidAmount(order, payment) {
+    var currency = String(order.getCurrencyCode());
+
+    if (String(payment.currency || '').toUpperCase() !== currency.toUpperCase()) {
+        return false;
+    }
+
+    var amounts = [Number(ckoHelper.getAmount(order))];
+    var instruments = order.getPaymentInstruments();
+    var list = instruments && typeof instruments.toArray === 'function' ? instruments.toArray() : (instruments || []);
+
+    list.forEach(function(instrument) {
+        var transaction = instrument.getPaymentTransaction ? instrument.getPaymentTransaction() : null;
+        var amount = transaction ? transaction.getAmount() : null;
+
+        if (instrument.getPaymentMethod() !== 'GIFT_CERTIFICATE' && amount && amount.isAvailable()) {
+            amounts.push(Number(ckoHelper.getFormattedPrice(amount.getValue().toFixed(2), currency)));
+        }
+    });
+
+    return amounts.indexOf(Number(payment.amount)) !== -1;
+}
+
+/**
  * Whether a verified payment counts as a success for its order. Tamara and
  * Alipay settle as Captured or Pending; the other methods by their response
  * code, or by their type for vouchers and redirect methods.
@@ -43,7 +74,7 @@ var constants = require('*/cartridge/config/constants');
  * @returns {boolean} True when the order may be placed
  */
 function isReturnSuccess(order, payment) {
-    if (!order || !payment || typeof payment !== 'object' || !payment.id) {
+    if (!order || !payment || typeof payment !== 'object' || !payment.id || !isPaidAmount(order, payment)) {
         return false;
     }
 
@@ -94,14 +125,36 @@ function verifyRedirect(querystring) {
 }
 
 /**
+ * Whether the order is the current shopper's: its customer is the session's
+ * customer (a guest keeps the same customer for the session). A redirect URL
+ * is only a link, which anyone can send to anyone: who the order belongs to
+ * decides whether it may be failed, its basket restored or its confirmation
+ * page (and its token) shown.
+ * @param {Object} req The request
+ * @param {dw.order.Order} order The order
+ * @returns {boolean} True for the shopper's own order
+ */
+function isShoppersOrder(req, order) {
+    var customer = order ? order.getCustomer() : null;
+    var current = req && req.currentCustomer ? req.currentCustomer.raw : null;
+
+    return !!customer && !!current && customer.getID() === current.ID;
+}
+
+/**
  * Settle the order behind a gateway redirect, whichever leg (success or
  * failure URL) it arrived on. Safe to run more than once and alongside the
  * webhooks: an order is placed once, only an open order is failed, a placed
  * order is never downgraded, and a payment that cannot be applied is released.
+ *
+ * Another shopper's order (a link opened elsewhere) is placed when its payment
+ * went through, but never failed nor its basket restored, and its confirmation
+ * page is not shown: the webhooks and the abandoned-order check settle it.
+ * @param {Object} req The request
  * @param {Object} res The response
  * @param {Object} verified The result of verifyRedirect
  */
-function settleRedirect(res, verified) {
+function settleRedirect(req, res, verified) {
     var order = verified.order;
     var payment = verified.payment;
 
@@ -119,10 +172,18 @@ function settleRedirect(res, verified) {
     }
 
     var success = isReturnSuccess(order, payment);
+    var owned = isShoppersOrder(req, order);
+    var confirm = function(placedOrder) {
+        if (owned) {
+            paymentHelper.getConfirmationPageRedirect(res, placedOrder);
+        } else {
+            paymentHelper.getUnverifiedPageRedirect(res);
+        }
+    };
 
     if (orderGuard.isPlaced(order)) {
         // A refresh, a second tab or the other leg: the order is already placed
-        paymentHelper.getConfirmationPageRedirect(res, order);
+        confirm(order);
 
         return;
     }
@@ -139,7 +200,12 @@ function settleRedirect(res, verified) {
     }
 
     if (!success) {
-        if (orderGuard.failOrder(order)) {
+        // A live payment for another amount or currency is not the order's: release it
+        if (payment && payment.id && orderGuard.isLive(payment) && !isPaidAmount(order, payment)) {
+            orderGuard.reversePayment(payment, order.getOrderNo());
+        }
+
+        if (owned && orderGuard.failOrder(order)) {
             ckoHelper.checkAndRestoreBasket(order);
         }
 
@@ -156,7 +222,7 @@ function settleRedirect(res, verified) {
         // Not placed (and not by anyone else): release the payment, give the basket back
         orderGuard.reversePayment(payment, order.getOrderNo());
 
-        if (orderGuard.failOrder(placed.order)) {
+        if (owned && orderGuard.failOrder(placed.order)) {
             ckoHelper.checkAndRestoreBasket(placed.order);
         }
 
@@ -183,7 +249,7 @@ function settleRedirect(res, verified) {
         Logger.getLogger('checkoutcom').warn('Order {0}: payment status not updated after placement: {1}', placedOrder.getOrderNo(), e.message);
     }
 
-    paymentHelper.getConfirmationPageRedirect(res, placedOrder);
+    confirm(placedOrder);
 }
 
 /**
@@ -192,7 +258,7 @@ function settleRedirect(res, verified) {
  * @returns {string} The controller response
  */
 server.get('HandleReturn', server.middleware.https, function(req, res, next) {
-    settleRedirect(res, verifyRedirect(req.querystring || {}));
+    settleRedirect(req, res, verifyRedirect(req.querystring || {}));
 
     return next();
 });
@@ -203,7 +269,7 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
  * @returns {string} The controller response
  */
 server.get('HandleFail', server.middleware.https, function(req, res, next) {
-    settleRedirect(res, verifyRedirect(req.querystring || {}));
+    settleRedirect(req, res, verifyRedirect(req.querystring || {}));
 
     return next();
 });
@@ -379,8 +445,9 @@ server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         // Place the order if not already placed
-        // Once only: a concurrent poll (or the webhook) placing it first is a success
-        var placeOrderResult = orderGuard.placeOrder(order);
+        // Once only: a concurrent poll (or the webhook) placing it first is a success.
+        // Capture pending is not paid yet: not exported until payment_captured
+        var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: eventType === 'payment_capture_pending' });
 
         if (placeOrderResult.error) {
             // Not placed, and not by anyone else: release the payment, fail the order
@@ -449,8 +516,9 @@ server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         // Place the order if not already placed
-        // Once only: a concurrent poll (or the webhook) placing it first is a success
-        var placeOrderResult = orderGuard.placeOrder(order);
+        // Once only: a concurrent poll (or the webhook) placing it first is a success.
+        // Capture pending is not paid yet: not exported until payment_captured
+        var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: eventType === 'payment_capture_pending' });
 
         if (placeOrderResult.error) {
             // Not placed, and not by anyone else: release the payment, fail the order
@@ -833,8 +901,9 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         // Shopper approved payment in banking portal — place the order
-        // Once only: a concurrent poll (or the webhook) placing it first is a success
-        var placeOrderResult = orderGuard.placeOrder(order);
+        // Once only: a concurrent poll (or the webhook) placing it first is a success.
+        // Capture pending is not paid yet: not exported until payment_captured
+        var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: eventType === 'payment_capture_pending' });
 
         if (placeOrderResult.error) {
             // Not placed, and not by anyone else: release the payment, fail the order

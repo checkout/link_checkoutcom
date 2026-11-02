@@ -23,6 +23,14 @@ var wrapper = {
 
                 // eslint-disable-next-line no-param-reassign
                 delete args.service;
+
+                // One action per console request: Checkout.com processes a retry once
+                if (args && args.idempotencyKey) {
+                    svc.addHeader('Cko-Idempotency-Key', args.idempotencyKey);
+                }
+
+                // eslint-disable-next-line no-param-reassign
+                delete args.idempotencyKey;
                 return (args) ? JSON.stringify(args) : null;
             },
 
@@ -57,6 +65,14 @@ var wrapper = {
 
                 // eslint-disable-next-line no-param-reassign
                 delete args.service;
+
+                // One action per console request: Checkout.com processes a retry once
+                if (args && args.idempotencyKey) {
+                    svc.addHeader('Cko-Idempotency-Key', args.idempotencyKey);
+                }
+
+                // eslint-disable-next-line no-param-reassign
+                delete args.idempotencyKey;
 
                 return (args) ? JSON.stringify(args) : null;
             },

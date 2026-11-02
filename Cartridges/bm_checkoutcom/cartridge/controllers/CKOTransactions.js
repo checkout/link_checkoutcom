@@ -30,6 +30,8 @@ function getTransactionsData() {
 
     // Send the AJAX response
     // eslint-disable-next-line
+    response.setContentType('application/json');
+    // eslint-disable-next-line
     response.writer.println(JSON.stringify(data));
 }
 

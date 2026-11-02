@@ -35,7 +35,35 @@ function respond(status, body) {
     // eslint-disable-next-line
     response.setStatus(status);
     // eslint-disable-next-line
+    response.setContentType('application/json');
+    // eslint-disable-next-line
     response.writer.println(JSON.stringify(body));
+}
+
+/** Capture and void are not supported for these methods; void not for Sequra. */
+var NO_CAPTURE_OR_VOID = {
+    CHECKOUTCOM_ALMA: 'Alma',
+    CHECKOUTCOM_TAMARA: 'Tamara',
+    CHECKOUTCOM_ACH: 'ACH Direct Debit',
+    CHECKOUTCOM_ALIPAYHK: 'AlipayHK',
+    CHECKOUTCOM_ALIPAYCN: 'AlipayCN',
+};
+
+/**
+ * Whether the console's amount is a plain decimal ("12.34") of at least one
+ * minor unit: never "5abc", "1e-9", "-1" or "1,5".
+ * @param {string} value The amount from the console, in major units
+ * @param {string} currency The order's currency
+ * @returns {number|null} The amount in minor units, or null when invalid
+ */
+function parseAmount(value, currency) {
+    if (!/^\d{1,10}(\.\d{1,3})?$/.test(String(value || ''))) {
+        return null;
+    }
+
+    var minor = Number(CKOHelper.getFormattedPrice(String(value), currency));
+
+    return Number.isInteger(minor) && minor >= 1 ? minor : null;
 }
 
 /**
@@ -132,15 +160,6 @@ function remoteCall() {
         return;
     }
 
-    // eslint-disable-next-line
-    var requestedAmount = parseFloat(request.httpParameterMap.get('amount').stringValue);
-
-    if (task.stringValue !== 'void' && !(requestedAmount > 0)) {
-        respond(400, false);
-
-        return;
-    }
-
     // Get the order number
     // eslint-disable-next-line
     var orderNumber = request.httpParameterMap.get('orderNo');
@@ -164,9 +183,15 @@ function remoteCall() {
         return;
     }
 
-    // Get the transaction formated amount
+    // The amount in minor units (a void releases what remains: no amount)
     // eslint-disable-next-line
-    var formatedAmount = CKOHelper.getFormattedPrice(request.httpParameterMap.get('amount').stringValue, currency);
+    var formatedAmount = parseAmount(request.httpParameterMap.get('amount').stringValue, currency);
+
+    if (task.stringValue !== 'void' && formatedAmount === null) {
+        respond(400, { error: 'invalid_amount' });
+
+        return;
+    }
 
     // What can still be captured, refunded or voided, in minor units
     var limit = CKOHelper.getAvailableAmount(order, paymentId, task.stringValue);
@@ -184,59 +209,42 @@ function remoteCall() {
         return;
     }
 
-    // Block capture and void for Alma and ACH orders
-    if (order && (task.value === 'capture' || task.value === 'void')) {
-        var instruments = order.getPaymentInstruments().toArray();
-        if (instruments.length > 0) {
-            var paymentMethod = instruments[0].getPaymentMethod();
-            if (paymentMethod === 'CHECKOUTCOM_ALMA') {
-                // eslint-disable-next-line
-                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for Alma payments.' }));
-                return;
-            }
-            if (paymentMethod === 'CHECKOUTCOM_TAMARA') {
-                // eslint-disable-next-line
-                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for Tamara payments.' }));
-                return;
-            }
-            if (paymentMethod === 'CHECKOUTCOM_ACH') {
-                // eslint-disable-next-line
-                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for ACH Direct Debit payments.' }));
-                return;
-            }
-            if (paymentMethod === 'CHECKOUTCOM_ALIPAYHK') {
-                // eslint-disable-next-line
-                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for AlipayHK payments.' }));
-                return;
-            }
-            if (paymentMethod === 'CHECKOUTCOM_ALIPAYCN') {
-                // eslint-disable-next-line
-                response.writer.println(JSON.stringify({ error: true, message: 'Capture and Void are not supported for AlipayCN payments.' }));
-                return;
-            }
-        }
+    // Methods that don't support the action, by the order's Checkout.com payment
+    var ckoInstrument = CKOHelper.getCkoInstrument(order);
+    var paymentMethod = ckoInstrument ? ckoInstrument.getPaymentMethod() : null;
+
+    if ((task.stringValue === 'capture' || task.stringValue === 'void') && Object.prototype.hasOwnProperty.call(NO_CAPTURE_OR_VOID, paymentMethod)) {
+        respond(200, { error: true, message: 'Capture and Void are not supported for ' + NO_CAPTURE_OR_VOID[paymentMethod] + ' payments.' });
+
+        return;
     }
 
-    // Block void for Sequra orders (void is not applicable for Sequra)
-    if (order && task.value === 'void') {
-        var sequraInstruments = order.getPaymentInstruments().toArray();
-        if (sequraInstruments.length > 0 && sequraInstruments[0].getPaymentMethod() === 'CHECKOUTCOM_SEQURA') {
-            // eslint-disable-next-line
-            response.writer.println(JSON.stringify({ error: true, message: 'Void is not supported for Sequra payments.' }));
-            return;
-        }
+    if (task.stringValue === 'void' && paymentMethod === 'CHECKOUTCOM_SEQURA') {
+        respond(200, { error: true, message: 'Void is not supported for Sequra payments.' });
+
+        return;
     }
 
     // Prepare the payload
+    // One action per opening of the console's dialog: a double click or a
+    // retried request is processed once by Checkout.com
+    // eslint-disable-next-line
+    var nonce = request.httpParameterMap.get('nonce').stringValue;
+    var idempotencyKey = nonce && /^[a-z0-9]{8,40}$/i.test(nonce) ? 'bm_' + order.getOrderNo() + '_' + task.stringValue + '_' + nonce : null;
     var gRequest = {
         // eslint-disable-next-line
         amount: formatedAmount, // eslint-disable-next-line
-        reference: orderNumber.value, // eslint-disable-next-line
+        reference: order.getOrderNo(), // eslint-disable-next-line
         chargeId: paymentId,
-        service: order ? order.custom.orderProcessedByABCorNAS : '',
+        service: order.custom.orderProcessedByABCorNAS,
+        idempotencyKey: idempotencyKey,
     };
 
-    if (CKOHelper.getNasEnabled().value === 'NAS' && task.value === 'capture') {
+    if (task.stringValue === 'void') {
+        delete gRequest.amount;
+    }
+
+    if (String(CKOHelper.getNasEnabled()) === 'NAS' && task.stringValue === 'capture') {
         gRequest.capture_type = 'NonFinal';
 
         var processing = levelTwoProcessing(order, formatedAmount, currency);
@@ -247,7 +255,7 @@ function remoteCall() {
     }
 
     // Set the service parameter
-    var serviceName = 'cko.transaction.' + task + '.' + mode + '.service';
+    var serviceName = 'cko.transaction.' + task.stringValue + '.' + mode + '.service';
 
     // Log the payment request data
     CKOHelper.log(
@@ -262,42 +270,32 @@ function remoteCall() {
     );
 
     // If Gatway response fails with 403 try alternative
-    // Capture and Void Klarna Transactions
-    if (gResponse === 403 && (task.value === 'capture' || task.value === 'void')) {
-        // Prepare the payload
+    // Capture and Void Klarna Transactions: only for a Klarna payment
+    if (gResponse === 403 && paymentMethod === 'CHECKOUTCOM_KLARNA' && (task.stringValue === 'capture' || task.stringValue === 'void')) {
         gRequest = {
-            // eslint-disable-next-line
-            amount: formatedAmount, // eslint-disable-next-line
-            reference: orderNumber.value, // eslint-disable-next-line
-            chargeId: paymentId, // eslint-disable-next-line
-            service: order ? order.custom.orderProcessedByABCorNAS : '',
+            chargeId: paymentId,
+            reference: order.getOrderNo(),
+            service: order.custom.orderProcessedByABCorNAS,
+            idempotencyKey: idempotencyKey ? idempotencyKey + '_klarna' : null,
         };
 
-        // eslint-disable-next-line
-        if (task.value === 'capture') {
-            gRequest = {
-                amount: formatedAmount, // eslint-disable-next-line
-                chargeId: paymentId, // eslint-disable-next-line
-                reference: orderNumber.value,
-                type: 'klarna',
-                service: order ? order.custom.orderProcessedByABCorNAS : '',
-                klarna: {
-                    description: CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== '' && CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== 'undefined' // eslint-disable-next-line
-                        ? CKOHelper.getValue(constants.CKO_BUSINESS_NAME) : currentSite.httpHostName,
-                },
+        if (task.stringValue === 'capture') {
+            gRequest.amount = formatedAmount;
+            gRequest.type = 'klarna';
+            gRequest.klarna = {
+                description: CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== '' && CKOHelper.getValue(constants.CKO_BUSINESS_NAME) !== 'undefined' // eslint-disable-next-line
+                    ? CKOHelper.getValue(constants.CKO_BUSINESS_NAME) : currentSite.httpHostName,
             };
         }
 
-        if (task.value !== 'refund') {
-            serviceName = 'cko.klarna_transaction.' + task + '.' + mode + '.service';
+        serviceName = 'cko.klarna_transaction.' + task.stringValue + '.' + mode + '.service';
+
+        try {
+            gResponse = CKOHelper.getGatewayClient(serviceName, gRequest);
+        } catch (e) {
+            Logger.getLogger('checkoutcom').error('Business Manager Klarna {0} failed for order {1}: {2}', task.stringValue, order.getOrderNo(), e.message);
+            gResponse = null;
         }
-
-
-        // Perform the request
-        gResponse = CKOHelper.getGatewayClient(
-            serviceName,
-            gRequest
-        );
     }
 
     // Accepted only with an action id: a failure returns an error code (or an

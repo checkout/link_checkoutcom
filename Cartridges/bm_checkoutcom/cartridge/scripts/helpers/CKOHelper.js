@@ -7,6 +7,7 @@ var PaymentTransaction = require('dw/order/PaymentTransaction');
 var Resource = require('dw/web/Resource');
 var Logger = require('dw/system/Logger');
 var Site = require('dw/system/Site');
+var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
 
 // Card Currency Config
 var ckoCurrencyConfig = require('*/cartridge/config/ckoCurrencyConfig');
@@ -47,14 +48,22 @@ var CKOHelper = {
         var query = this.parseQuery(request.httpQueryString || '');
         // eslint-disable-next-line no-undef
         var range = this.parseYearRange(query.year || request.httpParameterMap.get('year').stringValue);
+        // eslint-disable-next-line no-undef
+        var tid = request.httpParameterMap.get('tid').stringValue;
+
+        // A payment or action id, or nothing to look for
+        if (tid && !/^(pay|act)_[a-z0-9]+$/i.test(tid)) {
+            totalPages = 1;
+
+            return [];
+        }
+
         var result = OrderMgr.searchOrders(
             'creationDate >= {0} AND creationDate < {1} AND custom.orderProcessedByABCorNAS != NULL',
             'creationDate desc',
             range.start,
             range.end
         );
-        // eslint-disable-next-line no-undef
-        var tid = request.httpParameterMap.get('tid').stringValue;
 
         // One transaction (the console's detail view): the order holding it, found
         // without loading the whole list
@@ -261,6 +270,8 @@ var CKOHelper = {
                     captured_amount: this.getCapturedAmount(paymentInstruments),
                     data_type: paymentTransaction.type.toString(),
                     nasEnabled: result[j].custom.orderProcessedByABCorNAS,
+                    // The field the console's scripts read (list.js, sequraActions.js)
+                    abcOrNasEnabled: result[j].custom.orderProcessedByABCorNAS,
                     payment_method: instrument.getPaymentMethod(),
                 };
 
@@ -605,7 +616,8 @@ var CKOHelper = {
             return false;
         }
         var trimmed = endpoint.trim();
-        var pattern = /^https:\/\/[A-Za-z0-9.\-]+(:\d+)?\/?$/;
+        // Checkout.com hosts only: the secret key is sent to this host
+        var pattern = /^https:\/\/([a-z0-9-]+\.)*checkout\.com(:443)?\/?$/i;
         return pattern.test(trimmed);
     },
 
@@ -650,7 +662,9 @@ var CKOHelper = {
      * @returns {Object} The NAS value
      */
     getNasEnabled: function() {
-        var str = this.getValue(constants.CKO_MODE) === 'live' ? 'Live' : 'Sandbox';
+        // The mode is an enum value: compared by its value, like getAccountKeys
+        var ckoMode = this.getValue(constants.CKO_MODE);
+        var str = ckoMode && String(ckoMode.value || ckoMode) === 'live' ? 'Live' : 'Sandbox';
         var liveOrSandboxPreference = (str === 'Live') ? constants.CKO_LIVE_NAS_ENABLED : constants.CKO_SANDBOX_NAS_ENABLED;
         var nasEnabled = this.getValue(liveOrSandboxPreference);
         return nasEnabled;

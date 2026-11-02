@@ -27,6 +27,7 @@ function loadHelper(services) {
         'dw/web/Resource': { msg: function(key) { return key; } },
         'dw/system/Logger': { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {}, debug: function() {} }; } },
         'dw/system/Site': { getCurrent: function() { return { getCustomPreferenceValue: function() { return null; } }; } },
+        'dw/svc/LocalServiceRegistry': {},
         '*/cartridge/config/ckoCurrencyConfig': ckoCurrencyConfig,
         '*/cartridge/config/constants': constants,
     };
@@ -109,6 +110,7 @@ describe('BM console: actions (CKOTransactionActions-RemoteCall, a module of its
         };
         global.response = {
             setStatus: function(value) { status = value; },
+            setContentType: function() {},
             writer: { println: function(text) { output += text; } },
         };
 
@@ -127,9 +129,11 @@ describe('BM console: actions (CKOTransactionActions-RemoteCall, a module of its
     }
 
     var orders;
+    var method;
 
     beforeEach(function() {
         csrfValid = true;
+        method = 'CHECKOUTCOM_APM';
         orders = {
             '00001': {
                 custom: { orderProcessedByABCorNAS: 'NAS' },
@@ -140,10 +144,11 @@ describe('BM console: actions (CKOTransactionActions-RemoteCall, a module of its
         };
         helper = {
             getOrderPaymentId: function() { return 'pay_order1'; },
+            getCkoInstrument: function() { return { getPaymentMethod: function() { return method; } }; },
             getAvailableAmount: sinon.stub().returns(4500),
             getValue: function() { return 'sandbox'; },
             getFormattedPrice: function(amount) { return String(Math.round(parseFloat(amount) * 100)); },
-            getNasEnabled: function() { return { value: 'NAS' }; },
+            getNasEnabled: function() { return { value: 'NAS', toString: function() { return 'NAS'; } }; },
             log: function() {},
             _: function(key) { return key; },
             getGatewayClient: sinon.stub().returns({ action_id: 'act_1' }),
@@ -204,12 +209,44 @@ describe('BM console: actions (CKOTransactionActions-RemoteCall, a module of its
         assert.isFalse(helper.getGatewayClient.called);
     });
 
-    it('refuses an unknown task and a missing or negative amount', function() {
+    it('refuses an unknown task and a missing, negative or malformed amount', function() {
         assert.isFalse(remoteCall({ params: Object.assign({}, capture, { task: 'payouts' }) }));
         assert.equal(status, 400);
-        assert.isFalse(remoteCall({ params: Object.assign({}, capture, { amount: '-5' }) }));
-        assert.isFalse(remoteCall({ params: Object.assign({}, capture, { task: 'refund', amount: '' }) }));
+
+        ['-5', '', '5abc', '1e-9', '1,5', '0.001', '0'].forEach(function(amount) {
+            assert.deepEqual(remoteCall({ params: Object.assign({}, capture, { task: 'refund', amount: amount }) }), { error: 'invalid_amount' }, amount);
+            assert.equal(status, 400);
+        });
         assert.isFalse(helper.getGatewayClient.called);
+    });
+
+    it('sends one idempotency key per console dialog, and no amount for a void', function() {
+        remoteCall({ params: Object.assign({}, capture, { nonce: 'abc12345' }) });
+        assert.equal(helper.getGatewayClient.firstCall.args[1].idempotencyKey, 'bm_00001_capture_abc12345');
+
+        remoteCall({ params: { task: 'void', orderNo: '00001', nonce: 'bad nonce!' } });
+        assert.isNull(helper.getGatewayClient.secondCall.args[1].idempotencyKey);
+        assert.notProperty(helper.getGatewayClient.secondCall.args[1], 'amount');
+    });
+
+    it('blocks capture for a method that has none, by the order\'s Checkout.com payment', function() {
+        method = 'CHECKOUTCOM_ALMA';
+
+        assert.deepEqual(remoteCall({ params: capture }), { error: true, message: 'Capture and Void are not supported for Alma payments.' });
+        assert.isFalse(helper.getGatewayClient.called);
+    });
+
+    it('retries a 403 with the Klarna services only for a Klarna payment', function() {
+        helper.getGatewayClient = sinon.stub().returns(403);
+        remoteCall({ params: capture });
+        assert.isTrue(helper.getGatewayClient.calledOnce);
+
+        method = 'CHECKOUTCOM_KLARNA';
+        helper.getGatewayClient = sinon.stub();
+        helper.getGatewayClient.onFirstCall().returns(403);
+        helper.getGatewayClient.onSecondCall().returns({ action_id: 'act_k' });
+        assert.deepEqual(remoteCall({ params: capture }), { action_id: 'act_k' });
+        assert.equal(helper.getGatewayClient.secondCall.args[0], 'cko.klarna_transaction.capture.sandbox.service');
     });
 
     it('reports a failed action as a failure, not as success', function() {
@@ -326,6 +363,42 @@ describe('BM console: transactions list and limits (CKOHelper)', function() {
 
         helper.getPaymentBalances = function() { return { available_to_capture: 4500, available_to_refund: 0, available_to_void: 4500 }; };
         assert.equal(helper.getAvailableAmount(paid, 'pay_1', 'capture'), 4500);
+    });
+
+    it('reads the balances with the service registry, for the payment id, encoded', function() {
+        var calls = [];
+        var helper = proxyquire(BM + '/scripts/helpers/CKOHelper', {
+            'dw/order/OrderMgr': {},
+            'dw/order/PaymentMgr': {},
+            'dw/order/PaymentTransaction': {},
+            'dw/web/Resource': { msg: function(key) { return key; } },
+            'dw/system/Logger': { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {}, debug: function() {} }; } },
+            'dw/system/Site': { getCurrent: function() { return { getCustomPreferenceValue: function() { return null; } }; } },
+            'dw/svc/LocalServiceRegistry': {
+                createService: function(id, callbacks) {
+                    var svc = { url: 'https://api.sandbox.checkout.com/payments', getURL: function() { return this.url; }, setURL: function(value) { this.url = value; }, setRequestMethod: function() {}, addHeader: function() {} };
+
+                    return {
+                        call: function() {
+                            callbacks.createRequest(svc);
+                            calls.push({ id: id, url: svc.url });
+
+                            return { isOk: function() { return true; }, getObject: function() { return callbacks.parseResponse(svc, { text: '{"balances":{"available_to_capture":4500}}' }); } };
+                        },
+                    };
+                },
+            },
+            '*/cartridge/config/ckoCurrencyConfig': ckoCurrencyConfig,
+            '*/cartridge/config/constants': constants,
+        });
+
+        helper.getValue = function() { return 'sandbox'; };
+        helper.getServiceEndpoint = function() { return null; };
+        helper.getAccountKeys = function() { return { secretKey: 'sk_test' }; };
+        helper.getCartridgeMeta = function() { return 'test'; };
+
+        assert.deepEqual(helper.getPaymentBalances({ custom: {} }, 'pay_a/b'), { available_to_capture: 4500 });
+        assert.deepEqual(calls, [{ id: 'cko.verify.charges.sandbox.service', url: 'https://api.sandbox.checkout.com/payments/pay_a%2Fb' }]);
     });
 
     it('encodes the payment id in the service URL', function() {

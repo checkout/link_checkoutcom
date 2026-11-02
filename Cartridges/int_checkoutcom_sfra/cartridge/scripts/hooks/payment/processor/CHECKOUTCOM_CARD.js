@@ -241,6 +241,22 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
+    // The security code was needed for this request only: it is never kept on the order
+    try {
+        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData || '{}');
+
+        if (paymentData.securityCode) {
+            delete paymentData.securityCode;
+            Transaction.wrap(function() {
+                paymentInstrument.custom.ckoPaymentData = JSON.stringify(paymentData); // eslint-disable-line no-param-reassign
+            });
+        }
+    } catch (e) {
+        Transaction.wrap(function() {
+            paymentInstrument.custom.ckoPaymentData = ''; // eslint-disable-line no-param-reassign
+        });
+    }
+
     // On error the caller fails the order, after releasing any payment Checkout.com took for it
     // eslint-disable-next-line
     return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest ? ckoPaymentRequest.redirectUrl : null };
