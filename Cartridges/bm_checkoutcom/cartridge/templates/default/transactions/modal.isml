@@ -123,7 +123,7 @@
 </div>
 
 <!-- Transaction action controller URL -->
-<input type="hidden" id="actionControllerUrl" value="${URLUtils.url('CKOTransactions-RemoteCall')}">
+<input type="hidden" id="actionControllerUrl" value="${URLUtils.url('CKOTransactionActions-RemoteCall')}">
 
 <!-- CSRF token, sent with every capture, void and refund -->
 <input type="hidden" id="csrfToken" name="${dw.web.CSRFProtection.getTokenName()}" value="${dw.web.CSRFProtection.generateToken()}">

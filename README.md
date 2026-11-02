@@ -31,3 +31,18 @@ Upload the configuration using the Prophet Debugger and VS Code.
 ## Documentation
 
 - [Link](https://github.com/checkout/link_checkoutcom/blob/master/Documentation/SFRA/SFRA_Integration_Guide_v26.3.0.docx)
+
+## Business Manager console access
+
+*Merchant Tools → Checkout.com Manager* has two modules. Grant them per role in
+*Administration → Organization → Roles → (role) → Business Manager Modules*:
+
+| Module | Grants |
+| --- | --- |
+| **Checkout.com Transactions (view only)** | The transactions list |
+| **Checkout.com Transactions (capture, refund, void)** | The list, plus capture, refund and void |
+
+Capture, refund and void move money: grant the second module only to the roles allowed to do
+that. An action always applies to the order's own Checkout.com payment, in the order's currency,
+and the amount can't exceed what is still available for the payment (its balances on
+Checkout.com, or the order's own captures and refunds when the account's payments carry none).

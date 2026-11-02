@@ -1,10 +1,15 @@
+<iscomment>
+	Third-party assets carry Subresource Integrity: this page holds the CSRF token
+	for capture, refund and void, so a tampered CDN file must not load. The hashes
+	are the ones cdnjs publishes for these exact versions.
+</iscomment>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/css/tabulator.min.css" integrity="sha512-0xecX7O/mDo8bkFtRFG7XlOQFZba5cdGxLObxUehxnse0l23IoqD7DAahWMPuWEtO3Y2mcBIUHIQ5DfucNNIyQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/css/semantic-ui/tabulator_semantic-ui.min.css" integrity="sha512-W0ttIEKmY9ou8i6HSRA7x9rY5AwwGHM9eCtc2YitiE8cxNn7gHjZSm7v1h5ngR2/vMDvvGHyYQu6rpnflV/f1Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <style>
-	@import url("https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/css/tabulator.min.css");
-	@import url("https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/css/semantic-ui/tabulator_semantic-ui.min.css");
 	@import url("${URLUtils.staticURL('/css/core/global.css')}");
 	@import url("${URLUtils.staticURL('/css/core/list.css')}");
-	@import url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css");
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha512-6MXa8B6uaO18Hid6blRMetEIoPqHf7Ux1tnyIQdpt9qI5OACx7C+O3IVTr98vwGnlcg0LOLa02i9Y1HpVhlfiw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <isscript>
 var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.msg('cko.transaction.missing', 'cko', null), noResults: dw.web.Resource.msg('cko.no.results', 'cko', null), rowId: dw.web.Resource.msg('cko.row.id', 'cko', null), orderNo: dw.web.Resource.msg('cko.row.id', 'cko', null), transactionId: dw.web.Resource.msg('cko.row.id', 'cko', null), paymentId: dw.web.Resource.msg('cko.payment.id', 'cko', null), amount: dw.web.Resource.msg('cko.transaction.amount', 'cko', null), currency: dw.web.Resource.msg('cko.transaction.currency', 'cko', null), date: dw.web.Resource.msg('cko.transaction.date', 'cko', null), type: dw.web.Resource.msg('cko.transaction.type', 'cko', null), opened: dw.web.Resource.msg('cko.transaction.opened', 'cko', null), processor: dw.web.Resource.msg('cko.transaction.processor', 'cko', null), actions: dw.web.Resource.msg('cko.transaction.actions', 'cko', null), capture: dw.web.Resource.msg('cko.label.capture', 'cko', null), void: dw.web.Resource.msg('cko.label.void', 'cko', null), refund: dw.web.Resource.msg('cko.label.refund', 'cko', null), first: dw.web.Resource.msg('cko.pagination.first', 'cko', null), firstTitle: dw.web.Resource.msg('cko.pagination.firsttitle', 'cko', null), last: dw.web.Resource.msg('cko.pagination.last', 'cko', null), lastTitle: dw.web.Resource.msg('cko.pagination.lasttitle', 'cko', null), prev: dw.web.Resource.msg('cko.pagination.prev', 'cko', null), prevTitle: dw.web.Resource.msg('cko.pagination.prevtitle', 'cko', null), next: dw.web.Resource.msg('cko.pagination.next', 'cko', null), nextTitle: dw.web.Resource.msg('cko.pagination.nexttitle', 'cko', null) });
 </isscript>
@@ -68,7 +73,7 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 <input type="hidden" id="transactionsControllerUrl" value="${URLUtils.url('CKOTransactions-GetTransactionsData')}">
 
 <!-- Scripts-->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/js/tabulator.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/js/tabulator.min.js" integrity="sha512-MvA0xGrgiqUHHyHCxHWFeD7k6yRqT21xKVZ7vKsRN8l5PHj/UD1P9tIIcf5vaTa/HiWOP60aj/5IPptM76g95Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="${URLUtils.staticURL('/js/core/list.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/almaActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/mbwayActions.js')}"></script>

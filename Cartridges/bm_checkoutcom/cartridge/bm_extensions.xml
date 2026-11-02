@@ -10,13 +10,28 @@
  		<icon>icons/cko_logo.png</icon>
 	</menuitem>
 
+	<!-- The transactions list, read only. The id is unchanged, so roles granted it keep it. -->
 	<menuaction id="checkoutcom_transactions_manager_action" menupath="checkoutcom_manager_item" position="9999" site="true">
-		<name xml:lang="x-default">Checkout.com Transactions</name>
-		<short_description xml:lang="x-default">Manage the Checkout.com transactions.</short_description>
-		<description xml:lang="x-default">Manage the Checkout.com transactions.</description>
+		<name xml:lang="x-default">Checkout.com Transactions (view only)</name>
+		<short_description xml:lang="x-default">View Checkout.com transactions.</short_description>
+		<description xml:lang="x-default">View Checkout.com transactions. Capture, refund and void need the Checkout.com Transactions (capture, refund, void) module.</description>
 		<exec pipeline="CKOTransactions" node="ListTransactions" />
 		<sub-pipelines>
 			<pipeline name="CKOTransactions" />
+		</sub-pipelines>
+		<icon>icons/cko_logo.png</icon>
+	</menuaction>
+	<!-- Capture, refund and void: a module of its own, so only roles granted it
+	     (Administration > Organization > Roles > Business Manager Modules) can move
+	     money. It opens the same transactions list, with the actions working. -->
+	<menuaction id="checkoutcom_transaction_actions" menupath="checkoutcom_manager_item" position="10000" site="true">
+		<name xml:lang="x-default">Checkout.com Transactions (capture, refund, void)</name>
+		<short_description xml:lang="x-default">View Checkout.com transactions, and capture, refund and void payments.</short_description>
+		<description xml:lang="x-default">View Checkout.com transactions, and capture, refund and void payments. Grant this module only to the roles allowed to move money.</description>
+		<exec pipeline="CKOTransactions" node="ListTransactions" />
+		<sub-pipelines>
+			<pipeline name="CKOTransactions" />
+			<pipeline name="CKOTransactionActions" />
 		</sub-pipelines>
 		<icon>icons/cko_logo.png</icon>
 	</menuaction>

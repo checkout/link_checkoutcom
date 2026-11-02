@@ -12,6 +12,10 @@ var Site = require('dw/system/Site');
 var ckoCurrencyConfig = require('*/cartridge/config/ckoCurrencyConfig');
 var totalPages;
 
+/** The list's page size: the console's default, and the most one request may ask for. */
+var DEFAULT_PAGE_SIZE = 50;
+var MAX_PAGE_SIZE = 100;
+
 /** Checkout Data Configuration File **/
 var constants = require('*/cartridge/config/constants');
 
@@ -30,36 +34,190 @@ var CKOHelper = {
     },
 
     /**
-     * Get the Checkout.com orders.
-     * @returns {array} Retuns the orders array
+     * Get the Checkout.com orders of a year range, one page at a time.
+     *
+     * Only orders placed with Checkout.com (custom.orderProcessedByABCorNAS, set
+     * when a Checkout.com order is created), so the query never walks every order
+     * of the site. The range is validated (YYYY-YYYY, at most 10 years) and the
+     * list is always paged.
+     * @returns {array} The orders of the page
      */
     getCkoOrders: function() {
         // eslint-disable-next-line
-        var query = this.parseQuery(request.httpQueryString);
-        var year;
-        if (query.year) {
-            year = query.year;
-        } else {
-            // eslint-disable-next-line no-undef
-            year = request.httpParameterMap.get('year').stringValue;
+        var query = this.parseQuery(request.httpQueryString || '');
+        // eslint-disable-next-line no-undef
+        var range = this.parseYearRange(query.year || request.httpParameterMap.get('year').stringValue);
+        var result = OrderMgr.searchOrders(
+            'creationDate >= {0} AND creationDate < {1} AND custom.orderProcessedByABCorNAS != NULL',
+            'creationDate desc',
+            range.start,
+            range.end
+        );
+        // eslint-disable-next-line no-undef
+        var tid = request.httpParameterMap.get('tid').stringValue;
+
+        // One transaction (the console's detail view): the order holding it, found
+        // without loading the whole list
+        if (tid) {
+            var found = [];
+
+            while (result.hasNext() && found.length === 0) {
+                var candidate = result.next();
+                var instrument = this.getCkoInstrument(candidate);
+                var transaction = instrument ? instrument.getPaymentTransaction() : null;
+
+                if (transaction && (transaction.getTransactionID() === tid || transaction.custom.ckoActionId === tid)) {
+                    found.push(candidate);
+                }
+            }
+
+            result.close();
+            totalPages = 1;
+
+            return found;
         }
 
-        var split = year.split('-');
-        var startDate = new Date(split[0], '00', '01');
-        var endDate = new Date(split[1], '00', '01');
-        var result = OrderMgr.searchOrders('creationDate >= {0} AND creationDate < {1}', 'creationDate desc', startDate, endDate);
+        var size = Math.min(Math.max(parseInt(query.size, 10) || DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+        var page = Math.max(parseInt(query.page, 10) || 1, 1);
 
-        if (!query.page) {
-            return result.asList();
+        totalPages = Math.max(Math.ceil(result.getCount() / size), 1);
+
+        var orders = result.asList((page - 1) * size, size).toArray();
+
+        result.close();
+
+        return orders;
+    },
+
+    /**
+     * @param {string} value A year range from the console, "YYYY-YYYY"
+     * @returns {Object} { start, end }: the dates; this year when the value is missing or invalid
+     */
+    parseYearRange: function(value) {
+        var match = /^(\d{4})-(\d{4})$/.exec(String(value || ''));
+        var thisYear = new Date().getFullYear();
+        var from = match ? parseInt(match[1], 10) : thisYear;
+        var to = match ? parseInt(match[2], 10) : thisYear + 1;
+
+        if (!match || to <= from || to - from > 10) {
+            from = thisYear;
+            to = thisYear + 1;
         }
 
-        var page = query.page;
-        var pagination = query.size;
-        var start = (page - 1) * pagination;
+        return { start: new Date(from, 0, 1), end: new Date(to, 0, 1) };
+    },
 
-        totalPages = Math.ceil(result.getCount() / pagination);
+    /**
+     * The order's Checkout.com payment instrument: the last CHECKOUTCOM_ one with a payment id.
+     * @param {dw.order.Order} order The order
+     * @returns {dw.order.OrderPaymentInstrument|null} The instrument, or null
+     */
+    getCkoInstrument: function(order) {
+        var instruments = order.getPaymentInstruments().toArray();
 
-        return result.asList(start, pagination);
+        for (var i = instruments.length - 1; i >= 0; i--) {
+            var transaction = instruments[i].getPaymentTransaction();
+
+            if (String(instruments[i].getPaymentMethod() || '').indexOf('CHECKOUTCOM_') === 0 && transaction && transaction.getTransactionID()) {
+                return instruments[i];
+            }
+        }
+
+        return null;
+    },
+
+    /**
+     * @param {dw.order.Order} order The order
+     * @returns {string|null} The order's own Checkout.com payment id (pay_…)
+     */
+    getOrderPaymentId: function(order) {
+        var instrument = this.getCkoInstrument(order);
+        var id = instrument ? String(instrument.getPaymentTransaction().getTransactionID()) : null;
+
+        return id && /^pay_[a-z0-9]+$/i.test(id) ? id : null;
+    },
+
+    /**
+     * The payment's balances on Checkout.com (GET /payments/{id}), with the keys of
+     * the account the order was processed with.
+     * @param {dw.order.Order} order The order
+     * @param {string} paymentId The payment id
+     * @returns {Object|null} balances (minor units), or null when not available
+     */
+    getPaymentBalances: function(order, paymentId) {
+        var self = this;
+        var mode = String(this.getValue(constants.CKO_MODE)) === 'live' ? 'live' : 'sandbox';
+
+        try {
+            var service = LocalServiceRegistry.createService('cko.verify.charges.' + mode + '.service', {
+                createRequest: function(svc) {
+                    var url = svc.getURL().replace(/\/$/, '') + '/' + encodeURIComponent(paymentId);
+                    var endpoint = self.getServiceEndpoint();
+
+                    svc.setURL(endpoint ? url.replace(constants.CKO_END_POINTS, endpoint) : url);
+                    svc.setRequestMethod('GET');
+                    svc.addHeader('Authorization', self.getAccountKeys(order.custom.orderProcessedByABCorNAS).secretKey);
+                    svc.addHeader('User-Agent', self.getCartridgeMeta());
+
+                    return null;
+                },
+                parseResponse: function(svc, response) {
+                    return JSON.parse(response.text);
+                },
+                getRequestLogMessage: function() {
+                    return 'GET /payments/{id}';
+                },
+                getResponseLogMessage: function(response) {
+                    return 'HTTP ' + response.statusCode;
+                },
+            });
+            var result = service.call();
+
+            return result.isOk() && result.getObject() && result.getObject().balances ? result.getObject().balances : null;
+        } catch (e) {
+            Logger.getLogger('checkoutcom').warn('Payment {0}: balances not read: {1}', paymentId, e.message);
+
+            return null;
+        }
+    },
+
+    /**
+     * What can still be captured, refunded or voided for the order's payment, in
+     * minor units: the payment's balances on Checkout.com, or, for an account
+     * whose payments carry none, the order's own captures and refunds.
+     * @param {dw.order.Order} order The order
+     * @param {string} paymentId The order's payment id
+     * @param {string} task capture, refund or void
+     * @returns {number|null} The amount, or null when it can't be told
+     */
+    getAvailableAmount: function(order, paymentId, task) {
+        var balances = this.getPaymentBalances(order, paymentId);
+        var field = { capture: 'available_to_capture', refund: 'available_to_refund', void: 'available_to_void' }[task];
+
+        if (balances && typeof balances[field] === 'number') {
+            return balances[field];
+        }
+
+        var currency = order.getCurrencyCode();
+        var instruments = order.getPaymentInstruments().toArray();
+        var minor = function(value) {
+            return Number(this.getFormattedPrice(String(value), currency));
+        }.bind(this);
+        var total = minor(order.getTotalGrossPrice().getValue());
+        var captured = minor(this.getCapturedAmount(instruments));
+        var refundable = minor(this.getRefundableAmount(instruments));
+
+        Logger.getLogger('checkoutcom').info('Payment {0}: no balances from Checkout.com; using the order\'s captures and refunds.', paymentId);
+
+        if (task === 'capture') {
+            return Math.max(total - captured, 0);
+        }
+
+        if (task === 'refund') {
+            return Math.max(refundable, 0);
+        }
+
+        return captured > 0 ? 0 : total;
     },
 
     /**
@@ -76,13 +234,17 @@ var CKOHelper = {
         // Loop through the results
         var i = 1;
         for (var j = 0; j < result.length; j++) {
-            // Get the payment instruments
+            // The Checkout.com instrument; orders without one (a zero-total order) are skipped
             var paymentInstruments = result[j].getPaymentInstruments().toArray();
-            var k = paymentInstruments.length - 1;
+            var instrument = this.getCkoInstrument(result[j]);
 
-            var paymentTransaction = paymentInstruments[k].getPaymentTransaction();
+            if (!instrument) {
+                continue; // eslint-disable-line no-continue
+            }
+
+            var paymentTransaction = instrument.getPaymentTransaction();
             // Add the payment transaction to the output
-            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, paymentInstruments[k])) {
+            if (!this.containsObject(paymentTransaction, data) && this.isTransactionNeeded(paymentTransaction, instrument)) {
                 // Build the row data
                 var row = {
                     id: i,
@@ -94,12 +256,12 @@ var CKOHelper = {
                     currency: paymentTransaction.amount.currencyCode,
                     creation_date: paymentTransaction.getCreationDate().toDateString(),
                     type: paymentTransaction.type.displayValue,
-                    processor: this.getProcessorId(paymentInstruments[k]),
+                    processor: this.getProcessorId(instrument),
                     refundable_amount: this.getRefundableAmount(paymentInstruments),
                     captured_amount: this.getCapturedAmount(paymentInstruments),
                     data_type: paymentTransaction.type.toString(),
                     nasEnabled: result[j].custom.orderProcessedByABCorNAS,
-                    payment_method: paymentInstruments[0].getPaymentMethod(),
+                    payment_method: instrument.getPaymentMethod(),
                 };
 
                 // Add the transaction
@@ -329,7 +491,8 @@ var CKOHelper = {
 
         // Prepare the request URL and data
         if (Object.prototype.hasOwnProperty.call(requestData, 'chargeId')) {
-            var requestUrl = serv.getURL().replace('chargeId', requestData.chargeId);
+            // The payment id goes in the URL path: encoded
+            var requestUrl = serv.getURL().replace('chargeId', encodeURIComponent(requestData.chargeId));
             var serviceEndpoint = this.getServiceEndpoint();
             if (serviceEndpoint) {
                 requestUrl = requestUrl.replace(constants.CKO_END_POINTS, serviceEndpoint);

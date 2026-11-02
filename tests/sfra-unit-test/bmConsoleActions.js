@@ -82,7 +82,7 @@ describe('BM console: service lookup (CKOHelper.getService)', function() {
     });
 });
 
-describe('BM console: actions (CKOTransactions-RemoteCall)', function() {
+describe('BM console: actions (CKOTransactionActions-RemoteCall, a module of its own)', function() {
     var output;
     var status;
     var helper;
@@ -112,11 +112,11 @@ describe('BM console: actions (CKOTransactions-RemoteCall)', function() {
             writer: { println: function(text) { output += text; } },
         };
 
-        var controller = proxyquire(BM + '/controllers/CKOTransactions', {
+        var controller = proxyquire(BM + '/controllers/CKOTransactionActions', {
             'dw/web/CSRFProtection': { validateRequest: function() { return csrfValid; } },
-            'dw/template/ISML': {},
+            'dw/system/Logger': { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {} }; } },
             'dw/system/Site': { getCurrent: function() { return { getCustomPreferenceValue: function() { return null; }, httpHostName: 'shop.example' }; } },
-            'dw/order/OrderMgr': { getOrder: function() { return null; } },
+            'dw/order/OrderMgr': { getOrder: function(orderNo) { return orders[orderNo] || null; } },
             '*/cartridge/scripts/helpers/CKOHelper': helper,
             '*/cartridge/config/constants': constants,
         });
@@ -126,9 +126,21 @@ describe('BM console: actions (CKOTransactions-RemoteCall)', function() {
         return JSON.parse(output);
     }
 
+    var orders;
+
     beforeEach(function() {
         csrfValid = true;
+        orders = {
+            '00001': {
+                custom: { orderProcessedByABCorNAS: 'NAS' },
+                getOrderNo: function() { return '00001'; },
+                getCurrencyCode: function() { return 'EUR'; },
+                getPaymentInstruments: function() { return { toArray: function() { return [{ getPaymentMethod: function() { return 'CHECKOUTCOM_APM'; }, custom: {} }]; } }; },
+            },
+        };
         helper = {
+            getOrderPaymentId: function() { return 'pay_order1'; },
+            getAvailableAmount: sinon.stub().returns(4500),
             getValue: function() { return 'sandbox'; },
             getFormattedPrice: function(amount) { return String(Math.round(parseFloat(amount) * 100)); },
             getNasEnabled: function() { return { value: 'NAS' }; },
@@ -151,6 +163,31 @@ describe('BM console: actions (CKOTransactions-RemoteCall)', function() {
         assert.equal(status, 200);
         assert.deepEqual(answer, { action_id: 'act_1' });
         assert.isTrue(helper.getGatewayClient.calledOnce);
+    });
+
+    it('acts on the order\'s own payment, never the pid of the request', function() {
+        remoteCall({ params: Object.assign({}, capture, { pid: 'pay_someone_else' }) });
+
+        assert.equal(helper.getGatewayClient.firstCall.args[1].chargeId, 'pay_order1');
+        assert.equal(helper.getGatewayClient.firstCall.args[1].amount, '1000');
+    });
+
+    it('refuses an amount above what is still available, without calling Checkout.com', function() {
+        helper.getAvailableAmount = sinon.stub().returns(500);
+
+        assert.deepEqual(remoteCall({ params: capture }), { error: 'exceeds_available', limit: 500 });
+        assert.equal(status, 422);
+        assert.isFalse(helper.getGatewayClient.called);
+    });
+
+    it('refuses an unknown order, or an order without a Checkout.com payment', function() {
+        assert.deepEqual(remoteCall({ params: Object.assign({}, capture, { orderNo: '00099' }) }), { error: 'no_order' });
+        assert.equal(status, 404);
+
+        helper.getOrderPaymentId = function() { return null; };
+        assert.deepEqual(remoteCall({ params: capture }), { error: 'no_payment' });
+        assert.equal(status, 409);
+        assert.isFalse(helper.getGatewayClient.called);
     });
 
     it('refuses a request without a valid CSRF token, without calling Checkout.com', function() {
@@ -180,5 +217,125 @@ describe('BM console: actions (CKOTransactions-RemoteCall)', function() {
         helper.getGatewayClient = sinon.stub().returns(422);
 
         assert.isFalse(remoteCall({ params: Object.assign({}, capture, { task: 'refund' }) }));
+    });
+});
+
+describe('BM console: transactions list and limits (CKOHelper)', function() {
+    var searches;
+
+    /**
+     * @param {Object} options orders (search result), query (string), params
+     * @returns {Object} CKOHelper with an order search fake
+     */
+    function helperWith(options) {
+        searches = [];
+        global.request = {
+            httpQueryString: options.query || '',
+            httpParameterMap: { get: function(name) { return { stringValue: (options.params || {})[name] || null }; } },
+        };
+
+        var orders = options.orders || [];
+        var helper = proxyquire(BM + '/scripts/helpers/CKOHelper', {
+            'dw/order/OrderMgr': {
+                searchOrders: function(query, sort, start, end) {
+                    var index = 0;
+
+                    searches.push({ query: query, start: start, end: end });
+
+                    return {
+                        getCount: function() { return orders.length; },
+                        asList: function(from, size) { return { toArray: function() { return orders.slice(from, from + size); } }; },
+                        hasNext: function() { return index < orders.length; },
+                        next: function() { return orders[index++]; },
+                        close: function() {},
+                    };
+                },
+            },
+            'dw/order/PaymentMgr': { getPaymentMethod: function() { return { getPaymentProcessor: function() { return { getID: function() { return 'CHECKOUTCOM_FLOW'; } }; } }; } },
+            'dw/order/PaymentTransaction': { TYPE_CAPTURE: 'CAPTURE', TYPE_CREDIT: 'CREDIT' },
+            'dw/web/Resource': { msg: function(key) { return key; } },
+            'dw/system/Logger': { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {}, debug: function() {} }; } },
+            'dw/system/Site': { getCurrent: function() { return { getCustomPreferenceValue: function() { return null; } }; } },
+            'dw/svc/LocalServiceRegistry': {},
+            '*/cartridge/config/ckoCurrencyConfig': ckoCurrencyConfig,
+            '*/cartridge/config/constants': constants,
+        });
+
+        return helper;
+    }
+
+    function order(orderNo, instruments) {
+        return {
+            orderNo: orderNo,
+            custom: {},
+            getCurrencyCode: function() { return 'EUR'; },
+            getTotalGrossPrice: function() { return { value: 45, getValue: function() { return 45; } }; },
+            getPaymentInstruments: function() { return { toArray: function() { return instruments; } }; },
+        };
+    }
+
+    function instrument(transactionId, type, amount) {
+        var transaction = {
+            transactionID: transactionId,
+            getTransactionID: function() { return transactionId; },
+            type: { toString: function() { return type || 'AUTH'; }, displayValue: type || 'AUTH' },
+            amount: { value: amount || 45, currencyCode: 'EUR' },
+            custom: {},
+            getCreationDate: function() { return new Date('2026-10-01'); },
+        };
+
+        return { getPaymentMethod: function() { return 'CHECKOUTCOM_FLOW'; }, getPaymentTransaction: function() { return transaction; } };
+    }
+
+    afterEach(function() {
+        delete global.request;
+    });
+
+    it('queries Checkout.com orders only, always one page, with a validated year range', function() {
+        helperWith({ query: 'year=2025-2027&page=2&size=500' }).getCkoOrders();
+        assert.match(searches[0].query, /custom\.orderProcessedByABCorNAS != NULL/);
+        assert.equal(searches[0].start.getFullYear(), 2025);
+        assert.equal(searches[0].end.getFullYear(), 2027);
+
+        helperWith({ query: 'year=1900-x' }).getCkoOrders();
+        assert.equal(searches[0].start.getFullYear(), new Date().getFullYear());
+    });
+
+    it('skips an order without a Checkout.com payment instrument instead of failing the list', function() {
+        var result = helperWith({ orders: [order('00001', []), order('00002', [instrument('pay_2')])] }).getCkoTransactions();
+
+        assert.lengthOf(result.data, 1);
+        assert.equal(result.data[0].order_no, '00002');
+    });
+
+    it('finds one transaction by its payment id without loading the list', function() {
+        var found = helperWith({ params: { tid: 'pay_2' }, orders: [order('00001', [instrument('pay_1')]), order('00002', [instrument('pay_2')])] }).getCkoOrders();
+
+        assert.lengthOf(found, 1);
+        assert.equal(found[0].orderNo, '00002');
+    });
+
+    it('without balances from Checkout.com, limits come from the order\'s captures and refunds', function() {
+        var helper = helperWith({});
+        var paid = order('00001', [instrument('pay_1', 'AUTH'), instrument('pay_1', 'CAPTURE', 20), instrument('pay_1', 'CREDIT', 5)]);
+
+        helper.getPaymentBalances = function() { return null; };
+        assert.equal(helper.getAvailableAmount(paid, 'pay_1', 'capture'), 2500);
+        assert.equal(helper.getAvailableAmount(paid, 'pay_1', 'refund'), 1500);
+        assert.equal(helper.getAvailableAmount(paid, 'pay_1', 'void'), 0);
+
+        helper.getPaymentBalances = function() { return { available_to_capture: 4500, available_to_refund: 0, available_to_void: 4500 }; };
+        assert.equal(helper.getAvailableAmount(paid, 'pay_1', 'capture'), 4500);
+    });
+
+    it('encodes the payment id in the service URL', function() {
+        var helper = helperWith({});
+        var url = 'https://api.sandbox.checkout.com/payments/chargeId/captures';
+
+        helper.getService = function() {
+            return { getURL: function() { return url; }, setURL: function(value) { url = value; }, setRequestMethod: function() {}, call: function() { return { status: 'OK', object: {} }; } };
+        };
+        helper.getGatewayClient('cko.transaction.capture.sandbox.service', { chargeId: 'pay_a/b?x', amount: 1 });
+        assert.equal(url, 'https://api.sandbox.checkout.com/payments/pay_a%2Fb%3Fx/captures');
     });
 });
