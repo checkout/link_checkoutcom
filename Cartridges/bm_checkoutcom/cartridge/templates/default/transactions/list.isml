@@ -46,11 +46,7 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 			<option value="10">${Resource.msg('cko.number.10', 'cko', null)}</option>
 			<option value="50" selected>${Resource.msg('cko.number.50', 'cko', null)}</option>
 			<option value="100">${Resource.msg('cko.number.100', 'cko', null)}</option>
-			<option value="150">${Resource.msg('cko.number.150', 'cko', null)}</option>
-			<option value="200">${Resource.msg('cko.number.200', 'cko', null)}</option>
-			<option value="250">${Resource.msg('cko.number.250', 'cko', null)}</option>
-			<option value="300">${Resource.msg('cko.number.300', 'cko', null)}</option>
-			<option value="all">${Resource.msg('cko.pager.all', 'cko', null)}</option>
+			<iscomment>No larger sizes: the server returns at most 100 rows a page (CKOHelper.getCkoOrders)</iscomment>
 		</select>
 	</div>
 	<div id="transactions-table"></div>
