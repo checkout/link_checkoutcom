@@ -4,7 +4,7 @@ const path = require('path');
 const sgmfScripts = require('sgmf-scripts');
 const glob = require('glob');
 
-const entryArray = glob.sync('./Cartridges/int_checkoutcom_sfra/cartridge/client/**/*.js');
+const entryArray = glob.sync('./Cartridges/int_checkoutcom_sfra/cartridge/client/**/*.js', { dotRelative: true });
 const entryObject = entryArray.reduce((acc, item) => {
   const name = item.replace('./Cartridges/int_checkoutcom_sfra/cartridge/client/', '').replace('.js', '');
   acc[name] = item;
