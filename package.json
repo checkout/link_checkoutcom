@@ -13,7 +13,6 @@
     "lint": "npm run lint:js",
     "lint:js": "sgmf-scripts --lint js",
     "lint:fix": "eslint --fix Cartridges/**",
-    "lint:autofix": "npx eslint-auto-fix \"Cartridges/**/*.js\" --verbose --fix-on-startup",
     "lint:check": "eslint --ignore-path .gitignore .",
     "test:sfra": "mocha ./tests/sfra-integration-test",
     "test:sfra-unit": "mocha ./tests/sfra-unit-test",
@@ -35,29 +34,29 @@
     "lint": "^1.1.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.6.3",
+    "@babel/core": "^7.29.6",
     "@babel/preset-env": "^7.29.5",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.0.6",
     "chai": "^3.5.0",
     "cleave.js": "1.6.0",
     "eslint": "^8.56.0",
-    "eslint-auto-fix": "^1.0.3",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-strongloop": "^2.1.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-sitegenesis": "~1.0.0",
+    "glob": "^14.0.3",
     "minimist": "^1.2.6",
-    "mocha": "^10.0.0",
+    "mocha": "^12.0.3",
     "mocha-junit-reporter": "^2.0.2",
     "proxyquire": "^1.7.4",
-    "sgmf-scripts": "^3.0.0",
+    "sgmf-scripts": "^4.0.0",
     "shelljs": "^0.8.5",
     "sinon": "^17.0.1",
     "stylelint": "^15.4.0",
     "stylelint-config-standard-scss": "^11.0.0",
-    "superagent": "^6.1.0",
-    "webpack": "^5.67.0",
+    "superagent": "^10.3.0",
+    "webpack": "^5.104.1",
     "webpack-cli": "^5.0.2"
   },
   "parser": "babel-eslint",
@@ -71,6 +70,11 @@
   "overrides": {
     "exec-sh": "0.4.0",
     "merge": "2.1.1",
-    "form-data": "3.0.4"
+    "mocha": {
+      ".": "$mocha",
+      "glob": "^14.0.3",
+      "minimatch": "^11.0.4"
+    },
+    "uuid": "^11.1.1"
   }
 }
