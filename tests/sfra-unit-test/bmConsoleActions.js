@@ -412,3 +412,59 @@ describe('BM console: transactions list and limits (CKOHelper)', function() {
         assert.equal(url, 'https://api.sandbox.checkout.com/payments/pay_a%2Fb%3Fx/captures');
     });
 });
+
+describe('BM console: the view-only list never offers capture, refund or void', function() {
+    var fs = require('fs');
+    var path = require('path');
+    var root = path.join(__dirname, BM);
+
+    /**
+     * Run a module's ListTransactions and return what it rendered.
+     * @param {string} controller The controller
+     * @returns {Object} The template and its data
+     */
+    function renderList(controller) {
+        var rendered = null;
+        var log = { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {} }; } };
+
+        proxyquire(BM + '/controllers/' + controller, {
+            'dw/template/ISML': { renderTemplate: function(template, data) { rendered = { template: template, data: data }; } },
+            'dw/web/CSRFProtection': {},
+            'dw/system/Logger': log,
+            'dw/system/Site': { getCurrent: function() { return { getCustomPreferenceValue: function() { return '2024'; } }; } },
+            '*/cartridge/scripts/helpers/CKOHelper': {},
+            '*/cartridge/config/constants': constants,
+        }).ListTransactions();
+
+        return rendered;
+    }
+
+    it('renders the list without actions from the view-only module, with them from the actions module', function() {
+        assert.deepEqual(renderList('CKOTransactions'), { template: 'transactions/list', data: { startFilterYear: '2024', canAct: false } });
+        assert.deepEqual(renderList('CKOTransactionActions'), { template: 'transactions/list', data: { startFilterYear: '2024', canAct: true } });
+    });
+
+    it('opens each module on its own list: only the actions module runs CKOTransactionActions', function() {
+        var extensions = fs.readFileSync(path.join(root, 'bm_extensions.xml'), 'utf8');
+        var menuAction = function(id) { return extensions.match(new RegExp('<menuaction id="' + id + '"[\\s\\S]*?</menuaction>'))[0]; };
+        var viewOnly = menuAction('checkoutcom_transactions_manager_action');
+
+        assert.match(viewOnly, /<exec pipeline="CKOTransactions" node="ListTransactions" \/>/);
+        assert.notMatch(viewOnly, /CKOTransactionActions/);
+        assert.match(menuAction('checkoutcom_transaction_actions'), /<exec pipeline="CKOTransactionActions" node="ListTransactions" \/>/);
+    });
+
+    it('leaves the action dialogs, CSRF token and Actions column out of the view-only page', function() {
+        var list = fs.readFileSync(path.join(root, 'templates/default/transactions/list.isml'), 'utf8');
+        var listJs = fs.readFileSync(path.join(root, 'static/default/js/core/list.js'), 'utf8').replace(/document\.addEventListener[\s\S]*$/, '');
+        var columns = function(canAct) {
+            // eslint-disable-next-line no-new-func
+            return new Function('jQuery', listJs + ';return getTableColumns()')(function() { return { val: function() { return canAct; } }; })
+                .map(function(column) { return column.field; });
+        };
+
+        assert.match(list, /<isif condition="\$\{pdict\.canAct\}">\s*<isinclude template="transactions\/modal">\s*<\/isif>/);
+        assert.notInclude(columns('false'), 'actions');
+        assert.include(columns('true'), 'actions');
+    });
+});

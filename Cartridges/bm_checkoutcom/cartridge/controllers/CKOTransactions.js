@@ -13,12 +13,14 @@ var currentSite = require('dw/system/Site').getCurrent();
 var CKOHelper = require('*/cartridge/scripts/helpers/CKOHelper');
 
 /**
- * Get the transactions list
+ * Get the transactions list, read only: no capture, refund or void buttons,
+ * whatever modules the user also has (CKOTransactionActions-ListTransactions
+ * is the list with actions).
  */
 function listTransactions() {
     // Render the template
     var startFilterYear = currentSite.getCustomPreferenceValue('ckoStartFilterYear');
-    ISML.renderTemplate('transactions/list', { startFilterYear: startFilterYear });
+    ISML.renderTemplate('transactions/list', { startFilterYear: startFilterYear, canAct: false });
 }
 
 /**

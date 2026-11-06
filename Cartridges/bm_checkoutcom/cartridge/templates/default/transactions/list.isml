@@ -21,7 +21,7 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 	<isinclude template="inc/Modules">
 	
 	<!-- Breadcrumbs -->
-	<isbreadcrumb name1="${Resource.msg('cko.checkoutcom.label', 'cko', null)}" url1="${URLUtils.url('SiteNavigationBar-ShowMenuitemOverview', 'CurrentMenuItemId', 'checkoutcom_manager_item')}" name2="${Resource.msg('cko.manage.transactions', 'cko', null)}" url2="${URLUtils.url('CKOTransactions-ListTransactions')}">
+	<isbreadcrumb name1="${Resource.msg('cko.checkoutcom.label', 'cko', null)}" url1="${URLUtils.url('SiteNavigationBar-ShowMenuitemOverview', 'CurrentMenuItemId', 'checkoutcom_manager_item')}" name2="${Resource.msg('cko.manage.transactions', 'cko', null)}" url2="${URLUtils.url(pdict.canAct ? 'CKOTransactionActions-ListTransactions' : 'CKOTransactions-ListTransactions')}">
 	
 	<!-- Tab navigation table -->	
     <isinclude template="inc/tabs">
@@ -51,8 +51,10 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 	</div>
 	<div id="transactions-table"></div>
 
-	<!-- Transactions modal windows -->
-	<isinclude template="transactions/modal">
+	<!-- Transactions modal windows (and the CSRF token): the actions list only -->
+	<isif condition="${pdict.canAct}">
+		<isinclude template="transactions/modal">
+	</isif>
 
 </isdecorate>
 
@@ -61,6 +63,9 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 
 <!-- Start Filter Year -->
 <input type="hidden" id="startFilterYear" value="${pdict.startFilterYear}">
+
+<!-- Capture, refund and void buttons: the actions module only -->
+<input type="hidden" id="canAct" value="${pdict.canAct ? 'true' : 'false'}">
 
 <!-- Current locale -->
 <input type="hidden" id="currentLocale" value="${pdict.CurrentRequest.getLocale()}">
@@ -71,6 +76,7 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 <!-- Scripts-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.5.1/js/tabulator.min.js" integrity="sha512-MvA0xGrgiqUHHyHCxHWFeD7k6yRqT21xKVZ7vKsRN8l5PHj/UD1P9tIIcf5vaTa/HiWOP60aj/5IPptM76g95Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="${URLUtils.staticURL('/js/core/list.js')}"></script>
+<isif condition="${pdict.canAct}">
 <script src="${URLUtils.staticURL('/js/core/almaActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/mbwayActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/sequraActions.js')}"></script>
@@ -79,3 +85,4 @@ var translationStrings = JSON.stringify({ transactionMissing: dw.web.Resource.ms
 <script src="${URLUtils.staticURL('/js/core/tamaraActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/alipayHkActions.js')}"></script>
 <script src="${URLUtils.staticURL('/js/core/alipayCnActions.js')}"></script>
+</isif>

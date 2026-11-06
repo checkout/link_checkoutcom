@@ -28,7 +28,7 @@
 		<name xml:lang="x-default">Checkout.com Transactions (capture, refund, void)</name>
 		<short_description xml:lang="x-default">View Checkout.com transactions, and capture, refund and void payments.</short_description>
 		<description xml:lang="x-default">View Checkout.com transactions, and capture, refund and void payments. Grant this module only to the roles allowed to move money.</description>
-		<exec pipeline="CKOTransactions" node="ListTransactions" />
+		<exec pipeline="CKOTransactionActions" node="ListTransactions" />
 		<sub-pipelines>
 			<pipeline name="CKOTransactions" />
 			<pipeline name="CKOTransactionActions" />

@@ -304,10 +304,22 @@ function remoteCall() {
 
     respond(200, accepted ? gResponse : false);
 }
+/**
+ * The transactions list with the capture, refund and void buttons: the entry
+ * point of this module, so only the roles granted it get the actions.
+ */
+function listTransactions() {
+    var ISML = require('dw/template/ISML');
+    var startFilterYear = currentSite.getCustomPreferenceValue('ckoStartFilterYear');
+    ISML.renderTemplate('transactions/list', { startFilterYear: startFilterYear, canAct: true });
+}
+
 /*
 * Web exposed methods
 */
 
+listTransactions.public = true;
 remoteCall.public = true;
 
+exports.ListTransactions = listTransactions;
 exports.RemoteCall = remoteCall;
