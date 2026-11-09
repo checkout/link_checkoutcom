@@ -43,26 +43,7 @@ var constants = require('*/cartridge/config/constants');
  * @returns {boolean} True when the amounts match
  */
 function isPaidAmount(order, payment) {
-    var currency = String(order.getCurrencyCode());
-
-    if (String(payment.currency || '').toUpperCase() !== currency.toUpperCase()) {
-        return false;
-    }
-
-    var amounts = [Number(ckoHelper.getAmount(order))];
-    var instruments = order.getPaymentInstruments();
-    var list = instruments && typeof instruments.toArray === 'function' ? instruments.toArray() : (instruments || []);
-
-    list.forEach(function(instrument) {
-        var transaction = instrument.getPaymentTransaction ? instrument.getPaymentTransaction() : null;
-        var amount = transaction ? transaction.getAmount() : null;
-
-        if (instrument.getPaymentMethod() !== 'GIFT_CERTIFICATE' && amount && amount.isAvailable()) {
-            amounts.push(Number(ckoHelper.getFormattedPrice(amount.getValue().toFixed(2), currency)));
-        }
-    });
-
-    return amounts.indexOf(Number(payment.amount)) !== -1;
+    return orderGuard.isPaidAmount(order, payment);
 }
 
 /**

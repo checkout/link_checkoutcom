@@ -732,9 +732,17 @@ var ckoHelper = {
      * @returns {boolean} Is redirection needed
      */
     redirectPaymentSuccess: function(gatewayResponse) {
+        if (!gatewayResponse || gatewayResponse.approved === false) {
+            return false;
+        }
+
+        // The payment as it is now: a voided or refunded payment's last action is
+        // still accepted (10000), so the response code alone proves nothing
+        var paid = ['Authorized', 'Captured', 'Partially Captured', 'Paid'].indexOf(gatewayResponse.status) !== -1;
+
         // eslint-disable-next-line no-undef
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions') && !empty(gatewayResponse.actions)) {
-            return gatewayResponse
+            return paid
           && (gatewayResponse.actions[0].response_code === '10000'
           || gatewayResponse.actions[0].response_code === '10100'
           || gatewayResponse.actions[0].response_code === '10200');

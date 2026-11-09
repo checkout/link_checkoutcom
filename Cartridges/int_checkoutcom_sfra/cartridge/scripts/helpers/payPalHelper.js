@@ -89,19 +89,22 @@ var payPalHelper = {
         );
         var expected = Number(ckoHelper.getAmount(order));
 
-        if (payment && payment.id && payment.amount === expected
-            && String(payment.currency).toUpperCase() === String(order.getCurrencyCode()).toUpperCase()) {
+        // Approved, in a paid (or pending) state, for this order's amount and currency
+        if (orderGuard.isPaymentFor(order, payment, { allowPending: true })) {
+            // A pending payment has not paid yet: the order is not exported until it is
+            result.awaitingPayment = payment.status === 'Pending'; // eslint-disable-line no-param-reassign
+
             return result;
         }
 
-        Logger.getLogger('checkoutcom').error(
-            'PayPal payment {0} for order {1} is not for the order total ({2} {3}): {4} {5}. Released.',
-            result.transactionID, order.orderNo, expected, order.getCurrencyCode(),
-            payment ? payment.amount : null, payment ? payment.currency : null
-        );
+        var found = payment ? [payment.amount, payment.currency, payment.status].join(' ') : 'unreadable';
+
+        Logger.getLogger('checkoutcom').error('PayPal payment {0} does not pay order {1} ({2} {3}): {4}. Released.', result.transactionID, order.orderNo, expected, order.getCurrencyCode(), found);
 
         if (payment && payment.id) {
-            orderGuard.reversePayment(payment, order.orderNo);
+            if (orderGuard.isLive(payment)) {
+                orderGuard.reversePayment(payment, order.orderNo);
+            }
         } else {
             // Not readable now: whatever was taken under the order's reference
             orderGuard.reverseStrayPayments(order.orderNo);

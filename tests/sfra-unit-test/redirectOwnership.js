@@ -13,6 +13,23 @@ var proxyquire = require('proxyquire').noCallThru().noPreserveCache();
 var CARTRIDGE = '../../Cartridges/int_checkoutcom_sfra/cartridge';
 var constants = require(CARTRIDGE + '/config/constants');
 
+/**
+ * The real orderGuard payment checks (isPaidAmount, isPaymentFor, isLive), over the given ckoHelper.
+ * @param {Object} ckoHelper The ckoHelper fake (getAmount, getFormattedPrice)
+ * @returns {Object} orderGuard
+ */
+function realOrderGuard(ckoHelper) {
+    return proxyquire(CARTRIDGE + '/scripts/helpers/orderGuard', {
+        'dw/system/Logger': { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {} }; } },
+        'dw/order/Order': {},
+        'dw/order/OrderMgr': {},
+        'dw/object/CustomObjectMgr': {},
+        'dw/system/Transaction': {},
+        '*/cartridge/scripts/helpers/ckoHelper': ckoHelper,
+        '*/cartridge/config/constants': constants,
+    });
+}
+
 describe('CKOMain redirect ownership', function() {
     var routes;
     var orderGuard;
@@ -105,6 +122,7 @@ describe('CKOMain redirect ownership', function() {
             getFormattedPrice: function(value) { return String(Math.round(Number(value) * 100)); },
             checkAndRestoreBasket: sinon.spy(),
         };
+        orderGuard.isPaidAmount = realOrderGuard(ckoHelper).isPaidAmount;
         load();
     });
 

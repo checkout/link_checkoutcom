@@ -12,6 +12,23 @@ var proxyquire = require('proxyquire').noCallThru().noPreserveCache();
 var CARTRIDGE = '../../Cartridges/int_checkoutcom_sfra/cartridge';
 var constants = require(CARTRIDGE + '/config/constants');
 
+/**
+ * The real orderGuard payment checks (isPaidAmount, isPaymentFor, isLive), over the given ckoHelper.
+ * @param {Object} ckoHelper The ckoHelper fake (getAmount, getFormattedPrice)
+ * @returns {Object} orderGuard
+ */
+function realOrderGuard(ckoHelper) {
+    return proxyquire(CARTRIDGE + '/scripts/helpers/orderGuard', {
+        'dw/system/Logger': { getLogger: function() { return { info: function() {}, warn: function() {}, error: function() {} }; } },
+        'dw/order/Order': {},
+        'dw/order/OrderMgr': {},
+        'dw/object/CustomObjectMgr': {},
+        'dw/system/Transaction': {},
+        '*/cartridge/scripts/helpers/ckoHelper': ckoHelper,
+        '*/cartridge/config/constants': constants,
+    });
+}
+
 describe('payPalHelper', function() {
     var requests;
     var readBack;
@@ -19,13 +36,33 @@ describe('payPalHelper', function() {
     var helper;
     var order = {
         orderNo: 'ORDER-1',
+        getOrderNo: function() { return 'ORDER-1'; },
         getCurrencyCode: function() { return 'EUR'; },
+        getPaymentInstruments: function() { return []; },
     };
 
     beforeEach(function() {
         requests = [];
-        readBack = { id: 'pay_1', amount: 4500, currency: 'EUR', status: 'Captured' };
-        orderGuard = { reversePayment: sinon.spy(), reverseStrayPayments: sinon.spy() };
+        readBack = { id: 'pay_1', reference: 'ORDER-1', approved: true, amount: 4500, currency: 'EUR', status: 'Captured' };
+        var ckoHelper = {
+            getHost: function() { return ''; },
+            formatCustomerIP: function() { return ''; },
+            getCustomer: function() { return {}; },
+            getValue: function() { return 'sandbox'; },
+            getMetadata: function() { return {}; },
+            log: function() {},
+            _: function(key) { return key; },
+            getAmount: function() { return '4500'; },
+            paymentResponseValidation: function(response) { return !!response && !!response.reference; },
+            gatewayClientRequest: function(service, request) {
+                requests.push({ service: service, request: request });
+
+                return service.indexOf('verify') !== -1 ? readBack : { id: 'pay_1', reference: 'ORDER-1' };
+            },
+            getFormattedPrice: function(value) { return String(Math.round(Number(value) * 100)); },
+        };
+        var real = realOrderGuard(ckoHelper);
+        orderGuard = { reversePayment: sinon.spy(), reverseStrayPayments: sinon.spy(), isPaymentFor: real.isPaymentFor, isPaidAmount: real.isPaidAmount, isLive: real.isLive };
         helper = proxyquire(CARTRIDGE + '/scripts/helpers/payPalHelper', {
             'dw/system/Transaction': {},
             'dw/order/BasketMgr': {},
@@ -37,22 +74,7 @@ describe('payPalHelper', function() {
             'dw/system/Site': { getCurrent: function() { return { getCustomPreferenceValue: function() { return 'pc_site'; } }; } },
             '*/cartridge/scripts/helpers/basketCalculationHelpers': {},
             '*/cartridge/scripts/checkout/checkoutHelpers': {},
-            '*/cartridge/scripts/helpers/ckoHelper': {
-                getHost: function() { return ''; },
-                formatCustomerIP: function() { return ''; },
-                getCustomer: function() { return {}; },
-                getValue: function() { return 'sandbox'; },
-                getMetadata: function() { return {}; },
-                log: function() {},
-                _: function(key) { return key; },
-                getAmount: function() { return '4500'; },
-                paymentResponseValidation: function(response) { return !!response && !!response.reference; },
-                gatewayClientRequest: function(service, request) {
-                    requests.push({ service: service, request: request });
-
-                    return service.indexOf('verify') !== -1 ? readBack : { id: 'pay_1', reference: 'ORDER-1' };
-                },
-            },
+            '*/cartridge/scripts/helpers/ckoHelper': ckoHelper,
             '*/cartridge/scripts/helpers/orderGuard': orderGuard,
             '*/cartridge/config/constants': constants,
         });

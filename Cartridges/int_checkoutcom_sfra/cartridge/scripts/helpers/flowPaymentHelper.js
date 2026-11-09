@@ -271,8 +271,19 @@ var flowPaymentHelper = {
         // Only a payment made for this order is released: a payment id posted
         // with the wrong order may belong to another shopper's order
         if (recorded && recorded !== payment.id && payment.reference === order.getOrderNo() && orderGuard.isLive(payment)) {
-            Logger.getLogger('checkoutcom').warn('Flow payment {0} is a second payment for order {1}, paid with {2}: releasing it.', payment.id, order.getOrderNo(), recorded);
-            orderGuard.reversePayment(payment, order.getOrderNo());
+            // Only once Checkout.com confirms the order is paid by the recorded
+            // payment: a placement whose record was lost (a webhook writing at the
+            // same moment) must not refund the very payment that funds the order
+            var funding = /^pay_/.test(String(recorded)) ? flowHelper.getPaymentDetails(recorded) : null;
+            var fundedElsewhere = !!funding && funding.reference === order.getOrderNo()
+                && orderGuard.isLive(funding) && flowHelper.matchesOrder(funding, order);
+
+            if (fundedElsewhere) {
+                Logger.getLogger('checkoutcom').warn('Flow payment {0} is a second payment for order {1}, paid with {2}: releasing it.', payment.id, order.getOrderNo(), recorded);
+                orderGuard.reversePayment(payment, order.getOrderNo());
+            } else {
+                Logger.getLogger('checkoutcom').error('Flow payment {0} for placed order {1} is not the recorded payment ({2}), which could not be confirmed: nothing released, check the order.', payment.id, order.getOrderNo(), recorded);
+            }
         }
 
         return {

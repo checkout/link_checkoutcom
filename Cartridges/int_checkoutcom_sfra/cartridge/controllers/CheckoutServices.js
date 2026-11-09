@@ -266,7 +266,9 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
 
     // Places the order, once: a webhook committing at the same moment, or the
     // 3DS return, placing it first is a success rather than a failed order
-    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus);
+    // A payment still pending (an APM paid later, a pending PayPal payment): the
+    // order is placed but not exported until a webhook confirms the payment
+    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus, { awaitingPayment: !!handlePaymentResult.awaitingPayment });
     if (placeOrderResult.error) {
         orderGuard.reverseStrayPayments(order.orderNo);
         orderGuard.failOrder(order);

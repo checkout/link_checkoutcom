@@ -60,6 +60,31 @@ var apmHelper = {
     },
 
     /**
+     * Whether the shopper may pay with this APM: enabled by the merchant, and
+     * offered for this currency and country (the checkout page applies the same
+     * filter, ckoApmFilterConfig; the server does not take the page's word for it).
+     * @param {string} type The APM, as posted (ckoSelectedApm)
+     * @param {string} currencyCode The basket or order currency
+     * @param {string} [countryCode] The shopper's country (the request locale)
+     * @returns {boolean} True when the APM may be used
+     */
+    isApmAvailable: function(type, currencyCode, countryCode) {
+        var apmConfig = require('*/cartridge/config/ckoApmConfig');
+        var filters = require('*/cartridge/config/ckoApmFilterConfig');
+        var filter = typeof type === 'string' && Object.prototype.hasOwnProperty.call(filters, type) ? filters[type] : null;
+
+        if (!filter || !filter.enabled || typeof apmConfig[type + 'Authorization'] !== 'function'
+            || !Object.prototype.hasOwnProperty.call(apmConfig, type + 'Authorization')) {
+            return false;
+        }
+
+        var country = String(countryCode || '').toUpperCase();
+        var countryOk = filter.countries.indexOf('*') !== -1 || (!!country && filter.countries.indexOf(country) !== -1);
+
+        return countryOk && filter.currencies.indexOf(String(currencyCode)) !== -1;
+    },
+
+    /**
      * Handle the payment response.
      * @param {Object} gatewayResponse The gateway response data
      * @param {string} orderNumber The order number
@@ -104,6 +129,15 @@ var apmHelper = {
                 + '&sepaResponseId=' + gatewayResponse.id;
             } else if (isResContainRedirectLinks) {
                 result.redirectUrl = gatewayResponse._links.redirect.href;
+            } else if (gatewayResponse.status) {
+                // No redirect: the response is the payment's outcome
+                if (gatewayResponse.approved === false || ['Authorized', 'Captured', 'Partially Captured', 'Paid', 'Pending'].indexOf(gatewayResponse.status) === -1) {
+                    result.error = true;
+                } else if (gatewayResponse.status === 'Pending') {
+                    // Fawry, Benefit Pay, vouchers: not paid yet. The order is placed
+                    // but not exported until a webhook confirms the payment
+                    result.awaitingPayment = true;
+                }
             }
         }
 

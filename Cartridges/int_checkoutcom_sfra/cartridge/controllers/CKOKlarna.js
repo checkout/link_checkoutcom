@@ -146,6 +146,18 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
         return next();
     }
 
+    // Only a Klarna order: authorizing another method's order here (Flow, ACH)
+    // would place it without its payment
+    var isKlarnaOrder = order.getPaymentInstruments(constants.CKO_KLARNA_PAYMENTINSTRUMENT).size() > 0
+        && order.getPaymentInstruments().toArray().every(function(instrument) {
+            return instrument.getPaymentMethod() === constants.CKO_KLARNA_PAYMENTINSTRUMENT || instrument.getPaymentMethod() === 'GIFT_CERTIFICATE';
+        });
+
+    if (!isKlarnaOrder) {
+        res.json({ error: true, errorMessage: Resource.msg('error.technical', 'checkout', null) });
+        return next();
+    }
+
     var klarnaInstruments = order.getPaymentInstruments().toArray().filter(function(instrument) {
         return !!instrument.paymentTransaction.transactionID && instrument.paymentTransaction.transactionID !== order.orderNo;
     });

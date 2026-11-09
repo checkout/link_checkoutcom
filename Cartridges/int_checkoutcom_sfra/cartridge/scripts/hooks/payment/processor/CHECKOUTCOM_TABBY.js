@@ -1,5 +1,7 @@
 'use strict';
 
+/* global session */
+
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var tabbyHelper = require('*/cartridge/scripts/helpers/tabbyHelper');
 var Transaction = require('dw/system/Transaction');
@@ -48,6 +50,25 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         };
     }
 
+    // The context pays the basket as it was when Tabby was chosen: a basket
+    // changed since (items, shipping, a coupon) is never charged that amount
+    var contextAmount = session.privacy.ckoTabbyContextAmount;
+    var contextCurrency = session.privacy.ckoTabbyContextCurrency;
+
+    if (!contextAmount || Number(contextAmount) !== Number(ckoHelper.getAmount(order))
+        || String(contextCurrency || '').toUpperCase() !== String(order.getCurrencyCode()).toUpperCase()) {
+        Transaction.wrap(function() {
+            order.addNote('Tabby Authorization Failed', 'The order total changed after Tabby was selected: ' + contextAmount + ' ' + contextCurrency + ' for an order of ' + ckoHelper.getAmount(order) + ' ' + order.getCurrencyCode() + '.');
+        });
+        session.privacy.ckoTabbyContextId = null;
+
+        return {
+            fieldErrors: {},
+            serverErrors: [ckoHelper.getPaymentFailureMessage()],
+            error: true,
+        };
+    }
+
     var result = tabbyHelper.handleRequest(paymentProcessor.ID, order, paymentContextId, paymentType);
 
     if (result.error) {
@@ -70,6 +91,8 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
 
     session.privacy.ckoTabbyContextId = null;
     session.privacy.ckoTabbyPaymentType = null;
+    session.privacy.ckoTabbyContextAmount = null;
+    session.privacy.ckoTabbyContextCurrency = null;
 
     return {
         fieldErrors: {},

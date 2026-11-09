@@ -295,7 +295,8 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
     }
 
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
-    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus);
+    // A pending PayPal payment: placed, but not exported until it is paid
+    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus, { awaitingPayment: !!handlePaymentResult.awaitingPayment });
 
     if (placeOrderResult.error) {
         // Not placed: release the payment taken for it and fail the order

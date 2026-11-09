@@ -16,6 +16,8 @@ var WEBHOOK_EVENT_TYPE = 'ckoWebhookEvent';
 
 /** Payment statuses that hold money: an order failed with one of these must release it. */
 var LIVE_PAYMENT_STATUSES = ['Authorized', 'Captured', 'Card Verified', 'Paid', 'Pending', 'Partially Captured'];
+// A payment that pays its order (a Card Verified payment holds no money for it)
+var PAID_PAYMENT_STATUSES = ['Authorized', 'Captured', 'Paid', 'Partially Captured'];
 
 var log = Logger.getLogger('checkoutcom');
 
@@ -285,6 +287,60 @@ var orderGuard = {
 
             return { ok: false, payments: [] };
         }
+    },
+
+    /**
+     * Whether the payment is for the order's currency and amount: the order total,
+     * or the Checkout.com payment instrument's amount (the rest paid by gift
+     * certificate). A payment for less never places the order.
+     * @param {dw.order.Order} order The order
+     * @param {Object} payment The payment read back from Checkout.com
+     * @returns {boolean} True when the amounts match
+     */
+    isPaidAmount: function(order, payment) {
+        var currency = String(order.getCurrencyCode());
+
+        if (!payment || String(payment.currency || '').toUpperCase() !== currency.toUpperCase()) {
+            return false;
+        }
+
+        var amounts = [Number(ckoHelper.getAmount(order))];
+        var instruments = order.getPaymentInstruments();
+        var list = instruments && typeof instruments.toArray === 'function' ? instruments.toArray() : (instruments || []);
+
+        list.forEach(function(instrument) {
+            var transaction = instrument.getPaymentTransaction ? instrument.getPaymentTransaction() : null;
+            var amount = transaction ? transaction.getAmount() : null;
+
+            if (instrument.getPaymentMethod() !== 'GIFT_CERTIFICATE' && amount && amount.isAvailable()) {
+                amounts.push(Number(ckoHelper.getFormattedPrice(amount.getValue().toFixed(2), currency)));
+            }
+        });
+
+        return amounts.indexOf(Number(payment.amount)) !== -1;
+    },
+
+    /**
+     * Whether a payment read back from Checkout.com pays this order: made for it
+     * (its reference), approved, in a paid status, and for its amount and
+     * currency. A declined, voided, refunded or expired payment never does.
+     * @param {dw.order.Order} order The order
+     * @param {Object} payment The payment read back from Checkout.com
+     * @param {Object} [options] allowPending: a Pending payment counts (the order then waits for it)
+     * @returns {boolean} True when the payment pays the order
+     */
+    isPaymentFor: function(order, payment, options) {
+        if (!order || !payment || typeof payment !== 'object' || !payment.id || payment.approved === false) {
+            return false;
+        }
+
+        if (String(payment.reference || '') !== String(order.getOrderNo())) {
+            return false;
+        }
+
+        var statuses = PAID_PAYMENT_STATUSES.concat(options && options.allowPending ? ['Pending'] : []);
+
+        return statuses.indexOf(payment.status) !== -1 && this.isPaidAmount(order, payment);
     },
 
     /**

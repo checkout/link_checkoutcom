@@ -385,10 +385,26 @@ describe('Flow: completion races (flowPaymentHelper)', function() {
         order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).toArray()[0].paymentTransaction.transactionID = 'pay_1';
 
         var env = fakes({ '00001': order }, { gateway: function() { return { action_id: 'x' }; } });
-        var result = loadFlow(env).helper.completeOrder(order, 'pay_2', { id: 'pay_2', status: 'Authorized', reference: '00001' });
+        // Checkout.com confirms the order is paid by its recorded payment
+        var funding = { id: 'pay_1', status: 'Captured', reference: '00001' };
+        var result = loadFlow(env, { getPaymentDetails: sinon.stub().withArgs('pay_1').returns(funding) }).helper.completeOrder(order, 'pay_2', { id: 'pay_2', status: 'Authorized', reference: '00001' });
 
         assert.isFalse(result.error);
         assert.deepEqual(env.calls.gateway.map(function(call) { return call.data.chargeId; }), ['pay_2']);
+    });
+
+    // Exploit: the return URL of a placed order whose recorded payment cannot be
+    // confirmed (a lost write, a placeholder): the payment funding it is not refunded
+    it('a placed order\'s payment is not refunded when its recorded payment cannot be confirmed', function() {
+        var order = flowOrder({ status: ORDER.ORDER_STATUS_NEW });
+
+        order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).toArray()[0].paymentTransaction.transactionID = '00001';
+
+        var env = fakes({ '00001': order }, { gateway: function() { return { action_id: 'x' }; } });
+        var result = loadFlow(env).helper.completeOrder(order, 'pay_2', { id: 'pay_2', status: 'Captured', reference: '00001' });
+
+        assert.isFalse(result.error);
+        assert.lengthOf(env.calls.gateway.filter(function(call) { return call.data.chargeId; }), 0);
     });
 
     // Exploit: a shopper posts another shopper's payment id with their own

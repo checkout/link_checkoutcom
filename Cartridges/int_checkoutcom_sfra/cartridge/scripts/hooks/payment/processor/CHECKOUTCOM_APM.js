@@ -40,8 +40,11 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
     }
 
-    if (!paymentInformation.type.value) {
-        // Invalid Payment Type
+    // eslint-disable-next-line no-undef
+    var country = require('dw/util/Locale').getLocale(request.getLocale()).getCountry();
+
+    if (!paymentInformation.type.value || !apmHelper.isApmAvailable(paymentInformation.type.value, currentBasket.getCurrencyCode(), country)) {
+        // Invalid, disabled or not offered for this currency or country
         invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
 
         return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
@@ -91,13 +94,21 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         paymentData: formData,
     };
 
-    // Get the selected APM request data
-    var func = formData.type.value + 'Authorization';
-    var apmConfigData = apmConfig[func](args);
-
     var ckoPaymentRequest = null;
 
     try {
+        // Checked again here: the payment data was posted by the browser
+        var type = formData && formData.type ? formData.type.value : null;
+        // eslint-disable-next-line no-undef
+        var country = require('dw/util/Locale').getLocale(request.getLocale()).getCountry();
+
+        if (!apmHelper.isApmAvailable(type, order.getCurrencyCode(), country)) {
+            throw new Error('APM ' + type + ' is not available for order ' + orderNumber);
+        }
+
+        // Get the selected APM request data
+        var apmConfigData = apmConfig[type + 'Authorization'](args);
+
         ckoPaymentRequest = apmHelper.handleRequest(apmConfigData, paymentProcessor.ID, orderNumber);
 
         // Handle errors
@@ -120,7 +131,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
 
     // On error the caller fails the order, after releasing any payment Checkout.com took for it
     // eslint-disable-next-line
-    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest ? ckoPaymentRequest.redirectUrl : null };
+    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest ? ckoPaymentRequest.redirectUrl : null, awaitingPayment: !!(ckoPaymentRequest && ckoPaymentRequest.awaitingPayment) };
 }
 
 exports.Handle = Handle;
