@@ -5,7 +5,7 @@
  *
  * Every Flow specific preference id and static value lives here so the Flow
  * component stays self contained: it never mutates config/constants.js, which is
- * shared with the card, APM, Apple Pay, Google Pay and SiteGenesis integrations.
+ * shared with the card, APM, Apple Pay and Google Pay integrations.
  */
 var ckoFlowConfig = {
     /* Payment method and processor registered by this component */

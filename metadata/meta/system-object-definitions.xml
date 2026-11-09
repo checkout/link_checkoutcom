@@ -358,10 +358,6 @@
                 <min-length>0</min-length>
                 <default-value>12345678</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoSgPlatformData">
-                <type>string</type>
-                <default-value>Checkout.com Site Genesis Cartridge - Version: 26.4.0</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoSfraPlatformData">
                 <type>string</type>
                 <default-value>Checkout.com SFRA Cartridge - Version: 26.4.0</default-value>

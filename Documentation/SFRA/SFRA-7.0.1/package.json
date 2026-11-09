@@ -8,7 +8,6 @@
     "compile:js": "webpack --config webpack.config.js",
     "build": "npm run compile:js",
     "upload:sfra": "sgmf-scripts --uploadCartridge ../Cartridges/int_checkoutcom_sfra",
-    "upload:sg": "sgmf-scripts --uploadCartridge ../Cartridges/int_checkoutcom",
     "upload:bm": "sgmf-scripts --uploadCartridge ../Cartridges/bm_checkoutcom",
     "lint": "npm run lint:js",
     "lint:js": "sgmf-scripts --lint js",
@@ -16,8 +15,7 @@
     "lint:autofix": "npx eslint-auto-fix \"Cartridges/**/*.js\" --verbose --fix-on-startup",
     "lint:check": "eslint --ignore-path .gitignore .",
     "test:sfra": "mocha ./tests/sfra-integration-test",
-    "test:sfra-unit": "mocha ./tests/sfra-unit-test",
-    "test:sg": "mocha ./tests/sg-integration-test"
+    "test:sfra-unit": "mocha ./tests/sfra-unit-test"
   },
   "repository": {
     "type": "git",

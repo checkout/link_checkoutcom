@@ -26,7 +26,7 @@ var phoneHelper = require('*/cartridge/scripts/helpers/phoneHelper');
  * the SFRA order can be settled once the shopper has paid.
  *
  * This helper only ever reads from ckoHelper; it does not extend or replace it,
- * which keeps the card / APM / SiteGenesis integrations untouched.
+ * which keeps the card / APM integrations untouched.
  */
 var flowHelper = {
     /**

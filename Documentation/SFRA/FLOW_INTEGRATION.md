@@ -5,9 +5,8 @@ It renders every payment method enabled on the Checkout.com account — cards, w
 Buy Now Pay Later, local methods — from a single embedded form, and handles 3DS,
 redirects and wallet sheets itself.
 
-This component lives alongside the existing integrations. **Nothing in the SiteGenesis
-cartridge (`int_checkoutcom`) or in the direct SFRA integration (Card, APM, Apple Pay,
-Google Pay, PayPal, Klarna, Alma, MB WAY, SeQura, Bizum, Tabby, ACH) is changed or
+This component lives alongside the existing integrations. **Nothing in the direct SFRA
+integration (Card, APM, Apple Pay, Google Pay, PayPal, Klarna, Alma, MB WAY, SeQura, Bizum, Tabby, ACH) is changed or
 replaced.** Flow is registered as one more payment method and can be switched on or off
 independently of the others.
 
@@ -110,9 +109,6 @@ an order can always still be paid for.
 | `metadata/meta/system-object-definitions.xml` | `ckoFlow*` site preferences and the "CKO [19] Flow Settings" group |
 | `metadata/sites/{RefArch,RefArchGlobal}/payment-processors.xml` | `CHECKOUTCOM_FLOW` processor |
 | `metadata/sites/{RefArch,RefArchGlobal}/payment-methods.xml` | `CHECKOUTCOM_FLOW` method, disabled by default |
-
-The SiteGenesis site metadata (`metadata/sites/SiteGenesis*`) is deliberately untouched —
-Flow is SFRA only.
 
 ---
 
