@@ -190,8 +190,10 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             }
             paymentInstrument.setCreditCardToken(creditCardToken);
         }
+        // The CVV is needed by the authorization (place order) only: it waits in the
+        // session, never in the payment data stored on the basket and its order
+        cardHelper.holdSecurityCode(cardSecurityCode);
         paymentInstrument.custom.ckoPaymentData = JSON.stringify({
-            securityCode: cardSecurityCode,
             storedPaymentUUID: paymentInformation.storedPaymentUUID,
             saveCard: paymentInformation.saveCard.value,
             type: paymentInformation.cardType.value,
@@ -241,7 +243,9 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
-    // The security code was needed for this request only: it is never kept on the order
+    // The security code was for this request only: forget it whatever the outcome,
+    // and drop one a basket from before this change still carries in its data
+    cardHelper.takeSecurityCode();
     try {
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData || '{}');
 
@@ -252,6 +256,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             });
         }
     } catch (e) {
+        // If parsing fails, clear the data to prevent any sensitive information leakage
         Transaction.wrap(function() {
             paymentInstrument.custom.ckoPaymentData = ''; // eslint-disable-line no-param-reassign
         });

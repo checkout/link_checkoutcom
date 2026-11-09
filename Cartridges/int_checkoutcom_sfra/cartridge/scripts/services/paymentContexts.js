@@ -8,6 +8,20 @@ var util = require('*/cartridge/scripts/helpers/ckoHelper');
 var constants = require('*/cartridge/config/constants');
 
 /**
+ * Validates payment context ID format to prevent path traversal attacks.
+ * Payment context IDs should match the format: pct_<alphanumeric>
+ * @param {string} id The payment context ID to validate
+ * @returns {boolean} true if valid, false otherwise
+ */
+function validatePaymentContextId(id) {
+    if (!id || typeof id !== 'string') {
+        return false;
+    }
+    // Payment context IDs follow the format: pct_[A-Za-z0-9]+
+    return /^pct_[A-Za-z0-9_]+$/.test(id);
+}
+
+/**
  * Transaction service wrapper.
  */
 var wrapper = {
@@ -19,8 +33,18 @@ var wrapper = {
     sandbox: function(serviceId) {
         return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
-                var serviceUrl = args.isPayPalApprove ? (svc.configuration.credential.URL + '/' + args.id) : svc.configuration.credential.URL;
-                var reqMethod = args.isPayPalApprove ? 'GET' : 'POST';
+                var serviceUrl = svc.configuration.credential.URL;
+                var reqMethod = 'POST';
+
+                // Handle PayPal Approve requests with strict validation
+                if (args.isPayPalApprove) {
+                    if (!validatePaymentContextId(args.id)) {
+                        throw new Error('Invalid payment context ID format');
+                    }
+                    // Validated above; encoded as a path segment all the same
+                    serviceUrl = svc.configuration.credential.URL + '/' + encodeURIComponent(args.id);
+                    reqMethod = 'GET';
+                }
 
                 // Route to the configured Service Endpoint when present and valid;
                 // otherwise leave the default service credentials URL in place.
@@ -60,8 +84,18 @@ var wrapper = {
     live: function(serviceId) {
         return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
-                var serviceUrl = args.isPayPalApprove ? (svc.configuration.credential.URL + '/' + args.id) : svc.configuration.credential.URL;
-                var reqMethod = args.isPayPalApprove ? 'GET' : 'POST';
+                var serviceUrl = svc.configuration.credential.URL;
+                var reqMethod = 'POST';
+
+                // Handle PayPal Approve requests with strict validation
+                if (args.isPayPalApprove) {
+                    if (!validatePaymentContextId(args.id)) {
+                        throw new Error('Invalid payment context ID format');
+                    }
+                    // Validated above; encoded as a path segment all the same
+                    serviceUrl = svc.configuration.credential.URL + '/' + encodeURIComponent(args.id);
+                    reqMethod = 'GET';
+                }
 
                 // Route to the configured Service Endpoint when present and valid;
                 // otherwise leave the default service credentials URL in place.
