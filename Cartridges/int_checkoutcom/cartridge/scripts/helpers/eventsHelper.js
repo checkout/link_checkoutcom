@@ -11,6 +11,27 @@ var Transaction = require('dw/system/Transaction');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var transactionHelper = require('*/cartridge/scripts/helpers/transactionHelper');
 
+/**
+ * An order placed with a pending payment (CKOMain-HandleReturn) is not
+ * exported until its payment is approved or captured: release it then.
+ * Runs inside the webhook's transaction.
+ * @param {dw.order.Order} order The order
+ */
+function releaseAwaitingOrder(order) {
+    var Order = require('dw/order/Order');
+
+    if (!order) {
+        return;
+    }
+
+    var status = order.getStatus().getValue();
+
+    if (order.getExportStatus().getValue() === Order.EXPORT_STATUS_NOTEXPORTED
+        && (status === Order.ORDER_STATUS_NEW || status === Order.ORDER_STATUS_OPEN)) {
+        order.setExportStatus(Order.EXPORT_STATUS_READY);
+    }
+}
+
 var CONSTANTS = {
     PAYMENT_STATUS_PAID: 'PAYMENT_STATUS_PAID',
     PAYMENT_STATUS_NOTPAID: 'PAYMENT_STATUS_NOTPAID',
@@ -200,6 +221,8 @@ var eventsHelper = {
             paymentInstrument.paymentTransaction.custom.ckoParentTransactionId = parentTransaction.transactionID;
             parentTransaction.custom.ckoTransactionOpened = false;
         }
+
+        releaseAwaitingOrder(order);
     },
 
     /**
@@ -212,6 +235,8 @@ var eventsHelper = {
 
         // Create the authorized transaction
         transactionHelper.createAuthorization(hook);
+
+        releaseAwaitingOrder(OrderMgr.getOrder(hook.data.reference));
     },
 
     /**

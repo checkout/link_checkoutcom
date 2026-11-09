@@ -138,7 +138,20 @@ function show() {
 }
 
 function redirectRoute(orderNo) {
-    var order = OrderMgr.getOrder(request.httpQueryString);
+    // Only the order this session just paid: the URL's order number alone would
+    // show anyone's confirmation (name, email, addresses, items)
+    // eslint-disable-next-line no-undef
+    var sessionOrderNo = session.privacy.ckoOrderId;
+    // eslint-disable-next-line no-undef
+    var order = sessionOrderNo && request.httpQueryString === sessionOrderNo ? OrderMgr.getOrder(sessionOrderNo) : null;
+
+    if (!order) {
+        // eslint-disable-next-line no-undef
+        response.redirect(require('dw/web/URLUtils').url('Cart-Show'));
+
+        return;
+    }
+
     if (!order.customer.authenticated) {
         // Initializes the account creation form for guest checkouts by populating the first and last name with the
         // used billing address.

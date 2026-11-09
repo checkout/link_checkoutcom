@@ -86,7 +86,33 @@ var ckoHelper = {
         var requestKey = request.httpHeaders.get('authorization');
         var privateSharedKey = this.getAccountKeys().privateSharedKey;
 
-        return requestKey === privateSharedKey;
+        // No key configured authenticates nothing (a request without the header
+        // would otherwise match an unset preference)
+        if (!privateSharedKey || !requestKey) {
+            return false;
+        }
+
+        return this.safeEquals(String(requestKey), String(privateSharedKey));
+    },
+
+    /**
+     * Compare two strings in constant time (for their length).
+     * @param {string} a The first string
+     * @param {string} b The second string
+     * @returns {boolean} True when equal
+     */
+    safeEquals: function(a, b) {
+        if (a.length !== b.length) {
+            return false;
+        }
+
+        var diff = 0;
+
+        for (var i = 0; i < a.length; i += 1) {
+            diff |= a.charCodeAt(i) ^ b.charCodeAt(i); // eslint-disable-line no-bitwise
+        }
+
+        return diff === 0;
     },
 
     /**
@@ -185,14 +211,11 @@ var ckoHelper = {
      * @returns {string} The order id
      */
     getOrderId: function() {
+        // The order this session sent to payment (set by the payment processors).
+        // Never the request's reference parameter: it would let a shopper name
+        // another order, its currency for their charge, or its return
         // eslint-disable-next-line
-        var orderId = (this.getValue(constants.CKO_3DS)) ? request.httpParameterMap.get('reference').stringValue : request.httpParameterMap.get('reference').stringValue;
-        if (orderId === null) {
-            // eslint-disable-next-line
-            orderId = session.privacy.ckoOrderId;
-        }
-
-        return orderId;
+        return session.privacy.ckoOrderId || null;
     },
 
     /**
@@ -390,6 +413,15 @@ var ckoHelper = {
      * @returns {boolean} The payment success or failure
      */
     paymentSuccess: function(gatewayResponse) {
+        if (!gatewayResponse || typeof gatewayResponse !== 'object' || gatewayResponse.approved === false) {
+            return false;
+        }
+
+        // A payment declined, cancelled, expired or reversed is never a success
+        if (['Declined', 'Canceled', 'Cancelled', 'Expired', 'Voided', 'Refunded'].indexOf(gatewayResponse.status) !== -1) {
+            return false;
+        }
+
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'response_code')) {
             return gatewayResponse.response_code === '10000' || gatewayResponse.response_code === '10100' || gatewayResponse.response_code === '10200';
         // eslint-disable-next-line no-undef
@@ -398,10 +430,55 @@ var ckoHelper = {
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
             return gatewayResponse.source.type === 'sofort' || gatewayResponse.source.type === 'bancontact' || gatewayResponse.source.type === 'boleto' || gatewayResponse.source.type === 'oxxo' || gatewayResponse.source.type === 'token';
         } else if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'reference')) {
-            return gatewayResponse.reference === this.getOrderId();
+            // A payment that redirects the shopper (3DS, redirect APMs): its outcome
+            // is verified on the return (paysOrder), never taken from this response
+            // eslint-disable-next-line no-underscore-dangle
+            var redirects = !!gatewayResponse._links && Object.prototype.hasOwnProperty.call(gatewayResponse._links, 'redirect');
+
+            return redirects && gatewayResponse.reference === this.getOrderId();
         }
 
         return false;
+    },
+
+    /**
+     * Whether a payment read back from Checkout.com pays this order: made for it
+     * (its reference), approved, authorized or captured (or pending, when
+     * allowed: the order then waits for it), for its amount and currency.
+     * @param {dw.order.Order} order The order
+     * @param {Object} payment The payment read back from Checkout.com
+     * @param {Object} [options] allowPending
+     * @returns {boolean} True when the payment pays the order
+     */
+    paysOrder: function(order, payment, options) {
+        if (!order || !payment || typeof payment !== 'object' || !payment.id || payment.approved === false) {
+            return false;
+        }
+
+        if (String(payment.reference || '') !== String(order.getOrderNo())) {
+            return false;
+        }
+
+        var statuses = ['Authorized', 'Captured', 'Partially Captured', 'Paid'].concat(options && options.allowPending ? ['Pending'] : []);
+        var currency = String(order.getCurrencyCode());
+
+        if (statuses.indexOf(payment.status) === -1 || String(payment.currency || '').toUpperCase() !== currency.toUpperCase()) {
+            return false;
+        }
+
+        // The order total, or the Checkout.com instrument's amount (the rest paid by gift certificate)
+        var self = this;
+        var amounts = [Number(this.getAmount(order))];
+
+        order.getPaymentInstruments().toArray().forEach(function(instrument) {
+            var amount = instrument.getPaymentTransaction() ? instrument.getPaymentTransaction().getAmount() : null;
+
+            if (instrument.getPaymentMethod() !== 'GIFT_CERTIFICATE' && amount && amount.isAvailable()) {
+                amounts.push(Number(self.getFormattedPrice(amount.getValue().toFixed(2), currency)));
+            }
+        });
+
+        return amounts.indexOf(Number(payment.amount)) !== -1;
     },
 
     /**
@@ -672,7 +749,7 @@ var ckoHelper = {
      * @returns {number} The amount
      */
     getAmount: function(order) {
-        var amount = this.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), this.getCurrency());
+        var amount = this.getFormattedPrice(order.totalGrossPrice.value.toFixed(2), order.getCurrencyCode());
 
         return amount;
     },

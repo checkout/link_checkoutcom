@@ -16,6 +16,7 @@
     "lint:check": "eslint --ignore-path .gitignore .",
     "test:sfra": "mocha ./tests/sfra-integration-test",
     "test:sfra-unit": "mocha ./tests/sfra-unit-test",
+    "test:sg-unit": "mocha ./tests/sg-unit-test",
     "test:sg": "mocha ./tests/sg-integration-test"
   },
   "repository": {
