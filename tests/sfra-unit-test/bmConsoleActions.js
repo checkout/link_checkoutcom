@@ -458,8 +458,8 @@ describe('BM console: the view-only list never offers capture, refund or void', 
         var list = fs.readFileSync(path.join(root, 'templates/default/transactions/list.isml'), 'utf8');
         var listJs = fs.readFileSync(path.join(root, 'static/default/js/core/list.js'), 'utf8').replace(/document\.addEventListener[\s\S]*$/, '');
         var columns = function(canAct) {
-            // eslint-disable-next-line no-new-func
-            return new Function('jQuery', listJs + ';return getTableColumns()')(function() { return { val: function() { return canAct; } }; })
+            // list.js in a sandbox of its own, with a jQuery that answers the canAct field
+            return require('vm').runInNewContext(listJs + ';getTableColumns()', { jQuery: function() { return { val: function() { return canAct; } }; } })
                 .map(function(column) { return column.field; });
         };
 
