@@ -468,3 +468,79 @@ describe('BM console: the view-only list never offers capture, refund or void', 
         assert.include(columns('true'), 'actions');
     });
 });
+
+describe('BM console: the action dialogs (actions.js)', function() {
+    var fs = require('fs');
+    var path = require('path');
+    var root = path.join(__dirname, BM);
+
+    /**
+     * actions.js in a sandbox of its own, with a jQuery that records requests and
+     * the messages shown, and a Submit button whose disabled state is kept.
+     * @returns {Object} performAction, the requests sent and the messages shown
+     */
+    function loadConsoleActions() {
+        var source = fs.readFileSync(path.join(root, 'static/default/js/core/actions.js'), 'utf8').replace(/document\.addEventListener\([^;]*;$/, '');
+        var state = { requests: [], shown: [], disabled: false };
+        var jQuery = function(selector) {
+            return {
+                val: function() { return selector.indexOf('actionControllerUrl') !== -1 ? '/RemoteCall' : ''; },
+                text: function() { return selector.indexOf('payment_id') !== -1 ? 'pay_abcdefghij' : ''; },
+                attr: function() { return 'csrf_token'; },
+                prop: function(name, value) {
+                    if (value === undefined) {
+                        return state.disabled;
+                    }
+                    state.disabled = value;
+
+                    return this;
+                },
+                show: function() { state.shown.push(selector); },
+                trigger: function() {},
+            };
+        };
+        jQuery.ajax = function(options) { state.requests.push(options); };
+        var sandbox = { jQuery: jQuery, window: { ckoActionNonce: 'abcdef123456' }, getTransactions: function() {} };
+
+        require('vm').runInNewContext(source, sandbox);
+
+        return { performAction: sandbox.performAction, state: state };
+    }
+
+    it('sends one request at a time, with Submit greyed out until it answers', function() {
+        var consoleActions = loadConsoleActions();
+        var state = consoleActions.state;
+
+        consoleActions.performAction('void');
+        consoleActions.performAction('void');
+
+        assert.lengthOf(state.requests, 1);
+        assert.isTrue(state.disabled);
+
+        state.requests[0].success({ action_id: 'act_1' });
+        state.requests[0].complete();
+        assert.isFalse(state.disabled);
+
+        consoleActions.performAction('void');
+        assert.lengthOf(state.requests, 2);
+    });
+
+    it('asks to reload the page on a 403 (expired CSRF token), and keeps the generic message for other failures', function() {
+        var consoleActions = loadConsoleActions();
+        var state = consoleActions.state;
+
+        consoleActions.performAction('void');
+        state.requests[0].error({ status: 403 });
+        state.requests[0].complete();
+        consoleActions.performAction('void');
+        state.requests[1].error({ status: 502 });
+
+        assert.deepEqual(state.shown, ['.ckoSessionMessage', '.ckoErrorMessage']);
+
+        var modal = fs.readFileSync(path.join(root, 'templates/default/transactions/modal.isml'), 'utf8');
+        var properties = fs.readFileSync(path.join(root, 'templates/resources/cko.properties'), 'utf8');
+
+        assert.lengthOf(modal.match(/ckoSessionMessage[\s\S]*?cko\.transaction\.session\.expired/g), 3);
+        assert.match(properties, /^cko\.transaction\.session\.expired=.+Reload the page/m);
+    });
+});
