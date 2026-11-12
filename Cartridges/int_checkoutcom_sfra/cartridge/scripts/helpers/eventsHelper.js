@@ -12,6 +12,7 @@ var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
 var savedCardHelper = require('*/cartridge/scripts/helpers/savedCardHelper');
 var transactionHelper = require('*/cartridge/scripts/helpers/transactionHelper');
 var constants = require('*/cartridge/config/constants');
+var flowConfig = require('*/cartridge/config/ckoFlowConfig');
 
 var CONSTANTS = {
     PAYMENT_STATUS_PAID: 'PAYMENT_STATUS_PAID',
@@ -50,6 +51,32 @@ function setPaymentStatus(order) {
     } else {
         order.setPaymentStatus(order.PAYMENT_STATUS_NOTPAID);
     }
+}
+
+/**
+ * Whether a webhook is about the payment the order is currently paid (or being
+ * paid) with. An order can see several payments: a declined first attempt
+ * before a successful one, or a stray payment. Only an event about the order's
+ * own payment may fail it.
+ * @param {dw.order.Order} order The order
+ * @param {Object} hook The gateway webhook data
+ * @returns {boolean} True when the event may change the order's state
+ */
+function isOrderPayment(order, hook) {
+    var recorded = order.getPaymentInstruments().toArray().map(function(instrument) {
+        return instrument.paymentTransaction.transactionID;
+    }).filter(function(transactionID) {
+        return !!transactionID && transactionID !== order.getOrderNo();
+    });
+
+    if (recorded.length > 0) {
+        return recorded.indexOf(hook.data.id) !== -1;
+    }
+
+    // Nothing recorded yet. Flow records its payment only on completion and the
+    // shopper may retry within the same order, so its completion decides; the
+    // other methods record the payment when it is submitted.
+    return order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).size() === 0;
 }
 
 /**
@@ -97,7 +124,9 @@ var eventsHelper = {
                 order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
             }
 
-            if (orderStatus && !alreadyPaid && (orderStatus.indexOf('CANCELLED') !== -1 || orderStatus.indexOf('FAILED') !== -1)) {
+            // Only an event about the order's own payment fails it, and only while it waits for payment
+            if (orderStatus && !alreadyPaid && (orderStatus.indexOf('CANCELLED') !== -1 || orderStatus.indexOf('FAILED') !== -1)
+                && order.getStatus().getValue() === Order.ORDER_STATUS_CREATED && isOrderPayment(order, hook)) {
                 OrderMgr.failOrder(order, true);
             }
         });
@@ -204,8 +233,9 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentApproved: function(hook) {
-        // Create the webhook info
-        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, null);
+        // Create the webhook info. Webhooks can arrive out of order: an approval
+        // delivered after the capture must not set a PAID order back to NOTPAID
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, null, true);
 
         // Create the authorized transaction
         transactionHelper.createAuthorization(hook);
@@ -246,7 +276,8 @@ var eventsHelper = {
      * @param {Object} hook The gateway webhook data
      */
     paymentCaptureDeclined: function(hook) {
-        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED);
+        // A declined (partial) capture never undoes a capture that succeeded
+        this.addWebhookInfo(hook, CONSTANTS.PAYMENT_STATUS_NOTPAID, CONSTANTS.ORDER_STATUS_FAILED, true);
     },
 
     /**
@@ -420,6 +451,44 @@ var eventsHelper = {
         if (order && order.getCustomer() && order.getCustomer().isRegistered()) {
             var achHelper = require('*/cartridge/scripts/helpers/achHelper');
             achHelper.deleteProcessorToken(order.getCustomer());
+        }
+    },
+
+    /**
+     * An order placed with a pending payment is not exported until it is paid.
+     * Its approval or capture releases it for export; a decline, expiry or
+     * cancellation cancels it, so it is never fulfilled without payment.
+     * Runs after the event's own handler.
+     * @param {Object} hook The gateway webhook data
+     */
+    settleAwaitingOrder: function(hook) {
+        var order = hook && hook.data && hook.data.reference ? OrderMgr.getOrder(hook.data.reference) : null;
+
+        if (!order || order.getExportStatus().getValue() !== Order.EXPORT_STATUS_NOTEXPORTED) {
+            return;
+        }
+
+        var status = order.getStatus().getValue();
+
+        if ((status !== Order.ORDER_STATUS_NEW && status !== Order.ORDER_STATUS_OPEN) || !isOrderPayment(order, hook)) {
+            return;
+        }
+
+        if (hook.type === 'payment_approved' || hook.type === 'payment_captured') {
+            Transaction.wrap(function() {
+                order.setExportStatus(Order.EXPORT_STATUS_READY);
+            });
+
+            return;
+        }
+
+        var failed = ['payment_declined', 'payment_expired', 'payment_canceled', 'payment_voided'];
+
+        if (failed.indexOf(hook.type) !== -1 && order.paymentStatus !== Order.PAYMENT_STATUS_PAID) {
+            Transaction.wrap(function() {
+                OrderMgr.cancelOrder(order);
+                order.setConfirmationStatus(Order.CONFIRMATION_STATUS_NOTCONFIRMED);
+            });
         }
     },
 };

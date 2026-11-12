@@ -37,6 +37,9 @@ server.post('CreateContext', server.middleware.https, csrfProtection.validateAja
                 var paymentType = responseObject.available_payment_types[0].payment_type || 'Installment';
                 req.session.privacyCache.set('ckoTabbyContextId', responseObject.id);
                 req.session.privacyCache.set('ckoTabbyPaymentType', paymentType);
+                // What the context pays: the order must still be for it when it is charged
+                req.session.privacyCache.set('ckoTabbyContextAmount', String(requestData.amount));
+                req.session.privacyCache.set('ckoTabbyContextCurrency', String(requestData.currency));
 
                 res.json({ success: true });
                 return next();

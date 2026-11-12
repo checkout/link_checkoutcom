@@ -1,6 +1,7 @@
 'use strict';
 
 /* API Includes */
+/* global session */
 var OrderMgr = require('dw/order/OrderMgr');
 var URLUtils = require('dw/web/URLUtils');
 var Site = require('dw/system/Site');
@@ -54,7 +55,7 @@ var cardHelper = {
         var result = {
             error: !ckoHelper.paymentSuccess(gatewayResponse),
             redirectUrl: false,
-            transactionID: gatewayResponse.id,
+            transactionID: gatewayResponse ? gatewayResponse.id : null,
         };
 
         // Handle the response
@@ -188,12 +189,14 @@ var cardHelper = {
         // Replace selectedCardUuid by get saved card token from selectedCardUuid
         var cardSource;
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
+        // From the session (Handle); a basket from before this change still has it in its data
+        var securityCode = this.takeSecurityCode() || paymentData.securityCode || null;
 
-        if (paymentData.securityCode && paymentData.saveCard) {
+        if (securityCode && paymentData.saveCard) {
             cardSource = {
                 type: 'id',
                 id: paymentInstrument.creditCardToken,
-                cvv: paymentData.securityCode,
+                cvv: securityCode,
                 name: paymentInstrument.creditCardHolder,
             };
         } else {
@@ -202,12 +205,34 @@ var cardHelper = {
                 number: paymentInstrument.creditCardNumber,
                 expiry_month: paymentInstrument.creditCardExpirationMonth,
                 expiry_year: paymentInstrument.creditCardExpirationYear,
-                cvv: paymentData.securityCode,
+                cvv: securityCode,
                 name: paymentInstrument.creditCardHolder,
             };
         }
 
         return cardSource;
+    },
+
+    /**
+     * Keep the card security code for the authorization, which runs in a later
+     * request (place order). It stays in the session only, in memory: it is never
+     * written to the basket, the order or any log.
+     * @param {string} securityCode The CVV entered with the payment details
+     */
+    holdSecurityCode: function(securityCode) {
+        session.privacy.ckoCardSecurityCode = securityCode ? String(securityCode) : null;
+    },
+
+    /**
+     * Read the held security code once, and forget it.
+     * @returns {string|null} The CVV, or null
+     */
+    takeSecurityCode: function() {
+        var securityCode = session.privacy.ckoCardSecurityCode || null;
+
+        session.privacy.ckoCardSecurityCode = null;
+
+        return securityCode;
     },
 };
 

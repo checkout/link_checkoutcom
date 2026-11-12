@@ -73,4 +73,9 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYCN' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoAlipayCNEnabled')}">
         <isinclude template="checkout/billing/paymentOptions/tabs/alipayCnTab"/>
     </isif>
+
+    <iscomment> Checkout.com Flow - countries and currencies are restricted on the payment method in BM </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_FLOW' && dw.system.Site.getCurrent().getCustomPreferenceValue('ckoFlowEnabled')}">
+        <isinclude template="checkout/billing/paymentOptions/tabs/flowTab"/>
+    </isif>
 </isloop>

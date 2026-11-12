@@ -5,6 +5,7 @@ var OrderMgr = require('dw/order/OrderMgr');
 
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 
 /** Checkout Data Configuration File **/
 var constants = require('*/cartridge/config/constants');
@@ -70,11 +71,16 @@ var klarnaHelper = {
                     );
 
                     if (ckoHelper.paymentResponseValidation(verifyServiceResponse) && verifyServiceResponse.amount) {
-                        if (verifyServiceResponse.amount === order.totalGrossPrice.multiply(100).value) {
+                        // Approved and paid, for this order, in its amount and currency
+                        if (orderGuard.isPaymentFor(order, verifyServiceResponse)) {
                             return responseData;
                         }
-                        errorMessage = 'Klarna Transaction amount ' + verifyServiceResponse.amount / 100 + ' doesnt match the order total amount ' + order.totalGrossPrice + ' for the order:' + order.orderNo + '. Transaction ID: ' + transactionID;
+                        errorMessage = 'Klarna payment ' + transactionID + ' (' + verifyServiceResponse.amount + ' ' + verifyServiceResponse.currency + ', ' + verifyServiceResponse.status + ') does not pay the order ' + order.orderNo + ' (' + ckoHelper.getAmount(order) + ' ' + order.getCurrencyCode() + '). Released.';
                         Logger.error(errorMessage);
+
+                        if (orderGuard.isLive(verifyServiceResponse)) {
+                            orderGuard.reversePayment(verifyServiceResponse, order.orderNo);
+                        }
                     } else {
                         errorMessage = 'The Klarna payment authorization for the order:' + order.orderNo + ' is failed. Transaction ID:' + transactionID;
                         Logger.error(errorMessage);

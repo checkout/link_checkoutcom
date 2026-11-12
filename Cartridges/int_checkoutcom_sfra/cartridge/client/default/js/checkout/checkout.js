@@ -11,6 +11,7 @@ var summaryHelpers = require('base/checkout/summary');
 var formHelpers = require('base/checkout/formErrors');
 var klarna = require('../klarna');
 var tabby = require('../tabby');
+var flowInline = require('../flow/flowInline');
 var scrollAnimate = require('base/components/scrollAnimate');
 var location = window.location;
 var history = window.history;
@@ -391,7 +392,11 @@ if(script) {
                                     defer.reject(data);
                                 }
                             } else {
-                                if (data.apm) {
+                                if (data.flowSessionUrl) {
+                                    // Checkout.com Flow: the order is created, mount Flow in this
+                                    // step instead of redirecting to the Flow page at continueUrl
+                                    flowInline.start(data);
+                                } else if (data.apm) {
                                     var params = data.continueUrl.slice(data.continueUrl.indexOf('?') + 1).split('&');
                                     var redirect = $('<form>')
                                         .appendTo(document.body)

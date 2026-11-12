@@ -41,6 +41,24 @@ var paymentHelper = {
         );
     },
 
+    /**
+     * Send the shopper back to checkout when their payment could not be
+     * confirmed (Checkout.com unreachable). Never a decline: the order is kept,
+     * so the message asks them not to pay again.
+     * @param {Object} res The response
+     */
+    getUnverifiedPageRedirect: function(res) {
+        res.redirect(
+            URLUtils.url(
+                'Checkout-Begin',
+                'stage',
+                'payment',
+                'paymentError',
+                Resource.msg('cko.payment.unverified', 'cko', null)
+            )
+        );
+    },
+
     getPaymentPageRedirect: function(res) {
         res.redirect(
             URLUtils.url(

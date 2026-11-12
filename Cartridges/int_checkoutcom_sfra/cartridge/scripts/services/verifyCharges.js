@@ -19,7 +19,11 @@ var wrapper = {
     sandbox: function(serviceId) {
         return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
-                var serviceUrl = svc.configuration.credential.URL + '/' + args.paymentToken;
+                // GET /payments/{id}, or GET /payments?reference=... to find the
+                // payments of an order (used when a response was lost)
+                var serviceUrl = args.query
+                    ? svc.configuration.credential.URL + '?' + args.query
+                    : svc.configuration.credential.URL + '/' + args.paymentToken;
 
                 // Route to the configured Service Endpoint when present and valid;
                 // otherwise leave the default service credentials URL in place.
@@ -60,7 +64,11 @@ var wrapper = {
     live: function(serviceId) {
         return LocalServiceRegistry.createService(serviceId, {
             createRequest: function(svc, args) {
-                var serviceUrl = svc.configuration.credential.URL + '/' + args.paymentToken;
+                // GET /payments/{id}, or GET /payments?reference=... to find the
+                // payments of an order (used when a response was lost)
+                var serviceUrl = args.query
+                    ? svc.configuration.credential.URL + '?' + args.query
+                    : svc.configuration.credential.URL + '/' + args.paymentToken;
 
                 // Route to the configured Service Endpoint when present and valid;
                 // otherwise leave the default service credentials URL in place.

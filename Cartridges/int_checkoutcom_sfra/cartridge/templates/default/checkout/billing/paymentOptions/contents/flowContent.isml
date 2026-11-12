@@ -1,0 +1,21 @@
+<iscomment>
+    Checkout.com Flow billing tab.
+
+    Flow collects the payment details itself after the order is placed: inline in
+    the place order step (js/flow/flowInline.js), or on the CKOFlow-Show page as a
+    fallback. This tab only carries the payment method selection, and loads
+    flow.css for the inline panel.
+</iscomment>
+<isscript>
+    var assets = require('*/cartridge/scripts/assets.js');
+    assets.addCss('/css/flow.css');
+</isscript>
+<div class="tab-pane flow-content" id="flow-content" role="tabpanel">
+    <fieldset class="payment-form-fields">
+        <input type="hidden" class="form-control" name="${pdict.forms.billingForm.paymentMethod.htmlName}" value="" />
+        <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}" />
+        <div class="flow-info">
+            <p class="flow-info-message">${Resource.msg('cko.flow.info','cko',null)}</p>
+        </div>
+    </fieldset>
+</div>

@@ -1,0 +1,15 @@
+<iscomment>
+    Checkout.com Flow billing tab.
+    The thumbnail is only rendered when a payment method image has been uploaded
+    in Business Manager, so the tab still works on a fresh install.
+</iscomment>
+<isset name="flowPaymentMethod" value="${dw.order.PaymentMgr.getPaymentMethod(paymentOption.ID)}" scope="page" />
+
+<li class="nav-item" data-method-id="${paymentOption.ID}">
+    <a class="nav-link flow-tab" data-toggle="tab" href="#flow-content" role="tab">
+        <isif condition="${flowPaymentMethod && flowPaymentMethod.image}">
+            <img alt="${Resource.msg('cko.flow.name','cko',null)}" height="22" id="flow_thumb" src="${flowPaymentMethod.image.URL}"/>
+        </isif>
+        ${paymentOption.name}
+    </a>
+</li>

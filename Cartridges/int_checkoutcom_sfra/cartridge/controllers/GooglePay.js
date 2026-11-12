@@ -10,6 +10,7 @@ var OrderModel = require('*/cartridge/models/order');
 var reportingUrlsHelper = require('*/cartridge/scripts/reportingUrls');
 var URLUtils = require('dw/web/URLUtils');
 var Resource = require('dw/web/Resource');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var BasketMgr = require('dw/order/BasketMgr');
 var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
@@ -200,9 +201,20 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
     }
 
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
-    var placeOrderResult = COHelpers.placeOrder(order, fraudDetectionStatus);
+    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus);
 
-    if (order.getCustomerEmail()) {
+    if (placeOrderResult.error) {
+        // Not placed: release the payment taken for it and fail the order
+        orderGuard.reverseStrayPayments(order.orderNo);
+        orderGuard.failOrder(order);
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
+    }
+
+    if (order.getCustomerEmail() && !placeOrderResult.alreadyPlaced) {
         COHelpers.sendConfirmationEmail(order, req.locale.id);
     }
 

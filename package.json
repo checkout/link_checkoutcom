@@ -1,22 +1,20 @@
 {
   "name": "int_checkoutcom_sfra",
   "packageName": "int_checkoutcom_sfra",
-  "version": "26.3.0",
+  "version": "26.4.0",
   "description": "Checkout.com payment integrations for SFCC",
   "main": "index.js",
   "scripts": {
     "compile:js": "webpack --config webpack.config.js",
     "build": "npm run compile:js",
     "upload:sfra": "sgmf-scripts --uploadCartridge ../Cartridges/int_checkoutcom_sfra",
-    "upload:sg": "sgmf-scripts --uploadCartridge ../Cartridges/int_checkoutcom",
     "upload:bm": "sgmf-scripts --uploadCartridge ../Cartridges/bm_checkoutcom",
     "lint": "npm run lint:js",
     "lint:js": "sgmf-scripts --lint js",
     "lint:fix": "eslint --fix Cartridges/**",
     "lint:check": "eslint --ignore-path .gitignore .",
     "test:sfra": "mocha ./tests/sfra-integration-test",
-    "test:sfra-unit": "mocha ./tests/sfra-unit-test",
-    "test:sg": "mocha ./tests/sg-integration-test"
+    "test:sfra-unit": "mocha ./tests/sfra-unit-test"
   },
   "repository": {
     "type": "git",

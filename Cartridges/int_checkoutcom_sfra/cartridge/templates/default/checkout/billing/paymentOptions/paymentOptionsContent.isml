@@ -74,4 +74,9 @@
     <isif condition="${paymentOption.ID === 'CHECKOUTCOM_ALIPAYCN'}">
         <isinclude template="checkout/billing/paymentOptions/contents/alipayCnContent" />
     </isif>
+
+    <iscomment> Checkout.com Flow </iscomment>
+    <isif condition="${paymentOption.ID === 'CHECKOUTCOM_FLOW'}">
+        <isinclude template="checkout/billing/paymentOptions/contents/flowContent" />
+    </isif>
 </isloop>

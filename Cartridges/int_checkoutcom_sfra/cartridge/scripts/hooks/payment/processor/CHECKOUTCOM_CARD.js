@@ -11,6 +11,7 @@ var Transaction = require('dw/system/Transaction');
 
 /** CKO Util */
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var cardHelper = require('*/cartridge/scripts/helpers/cardHelper');
 var Site = require('dw/system/Site');
 
@@ -189,8 +190,10 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             }
             paymentInstrument.setCreditCardToken(creditCardToken);
         }
+        // The CVV is needed by the authorization (place order) only: it waits in the
+        // session, never in the payment data stored on the basket and its order
+        cardHelper.holdSecurityCode(cardSecurityCode);
         paymentInstrument.custom.ckoPaymentData = JSON.stringify({
-            securityCode: cardSecurityCode,
             storedPaymentUUID: paymentInformation.storedPaymentUUID,
             saveCard: paymentInformation.saveCard.value,
             type: paymentInformation.cardType.value,
@@ -217,8 +220,10 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
     var fieldErrors = {};
     var error = false;
 
+    var ckoPaymentRequest = null;
+
     try {
-        var ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
+        ckoPaymentRequest = cardHelper.handleRequest(orderNumber, paymentInstrument, paymentProcessor);
 
         // Handle errors
         if (ckoPaymentRequest.error) {
@@ -226,20 +231,11 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             serverErrors.push(
                 ckoHelper.getPaymentFailureMessage()
             );
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
-                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                // eslint-disable-next-line
-                paymentInstrument.custom.ckoPaymentData = '';
-            });
-        } else {
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
-                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                // eslint-disable-next-line
-                paymentInstrument.custom.ckoPaymentData = '';
-            });
         }
+
+        // A webhook may update the order at the same moment: a write conflict here
+        // must not turn an approved payment into a failed order
+        orderGuard.recordTransaction(orderNumber, paymentInstrument, paymentProcessor, ckoPaymentRequest.transactionID);
     } catch (e) {
         error = true;
         serverErrors.push(
@@ -247,8 +243,28 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
+    // The security code was for this request only: forget it whatever the outcome,
+    // and drop one a basket from before this change still carries in its data
+    cardHelper.takeSecurityCode();
+    try {
+        var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData || '{}');
+
+        if (paymentData.securityCode) {
+            delete paymentData.securityCode;
+            Transaction.wrap(function() {
+                paymentInstrument.custom.ckoPaymentData = JSON.stringify(paymentData); // eslint-disable-line no-param-reassign
+            });
+        }
+    } catch (e) {
+        // If parsing fails, clear the data to prevent any sensitive information leakage
+        Transaction.wrap(function() {
+            paymentInstrument.custom.ckoPaymentData = ''; // eslint-disable-line no-param-reassign
+        });
+    }
+
+    // On error the caller fails the order, after releasing any payment Checkout.com took for it
     // eslint-disable-next-line
-    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
+    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest ? ckoPaymentRequest.redirectUrl : null };
 }
 
 exports.Handle = Handle;

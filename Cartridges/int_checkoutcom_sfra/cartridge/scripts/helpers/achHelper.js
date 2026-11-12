@@ -39,11 +39,20 @@ var achHelper = {
                 if (!obj) {
                     obj = CustomObjectMgr.createCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
                 }
+                // Never replace a later state with an earlier one (out-of-order delivery)
+                var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
+
+                if (orderGuard.notificationRank(obj.custom.webhookType) > orderGuard.notificationRank(hook.type)) {
+                    return;
+                }
+
                 obj.custom.webhookPayload = JSON.stringify(hook);
                 obj.custom.webhookType = hook.type;
             });
         } catch (e) {
             Logger.error('achHelper.storeWebhookNotification failed for order {0}: {1}', orderNo, e.message);
+            // The webhook then fails and is delivered again: the poll must see it
+            throw e;
         }
     },
 

@@ -131,15 +131,85 @@ var ckoHelper = {
     },
 
     /**
-     * Check if the gateway response is valid.
-     * @param {Object} req The HTTP response data
-     * @returns {boolean} Is the private shared key valid
+     * Compare two secrets character by character, so the time taken does not
+     * reveal how much of a guess was right.
+     * @param {string} a A string
+     * @param {string} b Another string
+     * @returns {boolean} True when they are equal
+     */
+    safeEquals: function(a, b) {
+        if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) {
+            return false;
+        }
+
+        var difference = 0;
+
+        for (var i = 0; i < a.length; i += 1) {
+            difference |= a.charCodeAt(i) ^ b.charCodeAt(i); // eslint-disable-line no-bitwise
+        }
+
+        return difference === 0;
+    },
+
+    /**
+     * Check that a webhook comes from Checkout.com, as set in the Webhook
+     * Authentication preference: the Authorization header key (the default),
+     * the cko-signature HMAC of the body, or both.
+     * @param {Object} req The webhook request
+     * @returns {boolean} True when the webhook is authentic
      */
     isValidResponse: function(req) {
-        var requestKey = req.httpHeaders.authorization;
-        var privateSharedKey = this.getAccountKeys().privateSharedKey;
+        var setting = this.getValue(constants.CKO_WEBHOOK_AUTHENTICATION);
+        var method = (setting && setting.value) || setting || 'authorization_header';
+        var keys = this.getAccountKeys();
+        var headers = req.httpHeaders || {};
 
-        return requestKey === privateSharedKey;
+        var headerValid = function() {
+            return !!keys.privateSharedKey && !!headers.authorization
+                && ckoHelper.safeEquals(String(headers.authorization), String(keys.privateSharedKey));
+        };
+        var signatureValid = function() {
+            return ckoHelper.isValidSignature(req.body, headers['cko-signature'], keys.webhookSignatureKey);
+        };
+
+        if (method === 'signature') {
+            return signatureValid();
+        }
+
+        if (method === 'both') {
+            return headerValid() && signatureValid();
+        }
+
+        return headerValid();
+    },
+
+    /**
+     * Check the cko-signature header: the HMAC-SHA256 of the raw body, in hex.
+     * @param {string} body The raw request body
+     * @param {string} signature The cko-signature header
+     * @param {string} signatureKeys The webhook signature key; several, comma-separated, while rotating
+     * @returns {boolean} True when the signature matches one of the keys
+     */
+    isValidSignature: function(body, signature, signatureKeys) {
+        if (!body || !signature || !signatureKeys) {
+            return false;
+        }
+
+        var Mac = require('dw/crypto/Mac');
+        var Encoding = require('dw/crypto/Encoding');
+        var expected = String(signature).toLowerCase();
+
+        return String(signatureKeys).split(',').some(function(key) {
+            var trimmed = key.trim();
+
+            if (!trimmed) {
+                return false;
+            }
+
+            var computed = Encoding.toHex(new Mac(Mac.HMAC_SHA_256).digest(body, trimmed)).toLowerCase();
+
+            return ckoHelper.safeEquals(computed, expected);
+        });
     },
 
     /**
@@ -183,7 +253,8 @@ var ckoHelper = {
         }
         var trimmed = endpoint.trim();
         // Must start with https:// and contain no whitespace or path/query characters in the host
-        var pattern = /^https:\/\/[A-Za-z0-9.\-]+(:\d+)?\/?$/;
+        // Checkout.com hosts only: the secret key is sent to this host
+        var pattern = /^https:\/\/([a-z0-9-]+\.)*checkout\.com(:443)?\/?$/i;
         return pattern.test(trimmed);
     },
 
@@ -377,6 +448,7 @@ var ckoHelper = {
         keys.publicKey = this.getValue('cko' + str + nasEnabled + 'PublicKey');
         keys.secretKey = this.getValue('cko' + str + nasEnabled + 'SecretKey');
         keys.privateSharedKey = this.getValue('cko' + str + nasEnabled + 'PrivateSharedKey');
+        keys.webhookSignatureKey = this.getValue('cko' + str + 'WebhookSignatureKey');
 
         return keys;
     },
@@ -660,17 +732,34 @@ var ckoHelper = {
      * @returns {boolean} Is redirection needed
      */
     redirectPaymentSuccess: function(gatewayResponse) {
+        if (!gatewayResponse || gatewayResponse.approved === false) {
+            return false;
+        }
+
+        // The payment as it is now: a voided or refunded payment's last action is
+        // still accepted (10000), so the response code alone proves nothing
+        var paid = ['Authorized', 'Captured', 'Partially Captured', 'Paid'].indexOf(gatewayResponse.status) !== -1;
+
         // eslint-disable-next-line no-undef
         if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'actions') && !empty(gatewayResponse.actions)) {
-            return gatewayResponse
+            return paid
           && (gatewayResponse.actions[0].response_code === '10000'
           || gatewayResponse.actions[0].response_code === '10100'
           || gatewayResponse.actions[0].response_code === '10200');
         }
 
-        if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source')) {
-            if (Object.prototype.hasOwnProperty.call(gatewayResponse.source, 'type') && (gatewayResponse.source.type === 'alipay' || gatewayResponse.source.type === 'oxxo' || gatewayResponse.source.type === 'boleto' || gatewayResponse.source.type === 'bancontact' || gatewayResponse.source.type === 'tabby')) {
-                return true;
+        if (Object.prototype.hasOwnProperty.call(gatewayResponse, 'source') && gatewayResponse.source) {
+            var type = gatewayResponse.source.type;
+
+            // Tabby and Bancontact are paid once authorized or captured, never on a
+            // decline, a cancellation or an expired session
+            if (type === 'tabby' || type === 'bancontact') {
+                return ['Authorized', 'Captured', 'Partially Captured'].indexOf(gatewayResponse.status) !== -1;
+            }
+
+            // Vouchers (OXXO, Boleto) and Alipay are pending until the shopper pays
+            if (type === 'alipay' || type === 'oxxo' || type === 'boleto') {
+                return ['Pending', 'Authorized', 'Captured', 'Partially Captured'].indexOf(gatewayResponse.status) !== -1;
             }
         }
 

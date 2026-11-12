@@ -358,17 +358,13 @@
                 <min-length>0</min-length>
                 <default-value>12345678</default-value>
             </attribute-definition>
-            <attribute-definition attribute-id="ckoSgPlatformData">
-                <type>string</type>
-                <default-value>Checkout.com Site Genesis Cartridge - Version: 26.3.0</default-value>
-            </attribute-definition>
             <attribute-definition attribute-id="ckoSfraPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com SFRA Cartridge - Version: 26.3.0</default-value>
+                <default-value>Checkout.com SFRA Cartridge - Version: 26.4.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBmPlatformData">
                 <type>string</type>
-                <default-value>Checkout.com Business Manager Cartridge - Version: 26.3.0</default-value>
+                <default-value>Checkout.com Business Manager Cartridge - Version: 26.4.0</default-value>
             </attribute-definition>
             <attribute-definition attribute-id="ckoBillingDescriptor1">
                 <display-name xml:lang="x-default">Billing Descriptor 1</display-name>
@@ -728,6 +724,41 @@
                     </value-definition>
                 </value-definitions>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoSandboxWebhookSignatureKey">
+                <display-name xml:lang="x-default">Webhook Signature Key</display-name>
+                <description xml:lang="x-default">Sandbox key that signs Checkout.com webhooks (the cko-signature header), shown on the webhook in the Checkout.com Dashboard. Needed when Webhook Authentication uses the signature. Several keys, comma-separated, while rotating.</description>
+                <type>password</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoLiveWebhookSignatureKey">
+                <display-name xml:lang="x-default">Webhook Signature Key</display-name>
+                <description xml:lang="x-default">Live key that signs Checkout.com webhooks (the cko-signature header), shown on the webhook in the Checkout.com Dashboard. Needed when Webhook Authentication uses the signature. Several keys, comma-separated, while rotating.</description>
+                <type>password</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoWebhookAuthentication">
+                <display-name xml:lang="x-default">Webhook Authentication</display-name>
+                <description xml:lang="x-default">How webhooks are checked. Authorization header: the header must equal the Private Shared Key. Signature: the cko-signature HMAC of the body must match the Webhook Signature Key, which a copied header value cannot forge (recommended). Both: both checks must pass.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">Authorization header</display>
+                        <value>authorization_header</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Signature (recommended)</display>
+                        <value>signature</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Authorization header and signature</display>
+                        <value>both</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
             <attribute-definition attribute-id="ckoSandboxNASPrivateSharedKey">
                 <display-name xml:lang="x-default">NAS Private Shared Key</display-name>
                 <description xml:lang="x-default">NAS Sandbox private shared key provided by Checkout.com.</description>
@@ -983,6 +1014,56 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowEnabled">
+                <display-name xml:lang="x-default">Enable Flow</display-name>
+                <description xml:lang="x-default">Enable the Checkout.com Flow component (Checkout Web Components). Flow renders every payment method enabled on the Checkout.com account in a single embedded form, so it is normally used instead of the individual Checkout.com payment methods rather than alongside them.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>false</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowCapture">
+                <display-name xml:lang="x-default">Flow Auto Capture</display-name>
+                <description xml:lang="x-default">Capture Flow payments automatically. When not set, the cartridge wide Auto Capture preference is used. The Auto Capture Time preference also applies.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <default-value>true</default-value>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowPaymentMethods">
+                <display-name xml:lang="x-default">Flow Payment Methods</display-name>
+                <description xml:lang="x-default">Optional comma separated list of the payment methods Flow may offer, for example "card,googlepay,klarna". Leave empty to offer every method enabled on the Checkout.com account.</description>
+                <type>string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowAppearance">
+                <display-name xml:lang="x-default">Flow Appearance</display-name>
+                <description xml:lang="x-default">Optional JSON passed to the Flow appearance option to match the storefront branding, for example {"colorAction":"#000000"}. Invalid JSON is ignored and the Flow default styling is used.</description>
+                <type>text</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="ckoFlowDisplayMode">
+                <display-name xml:lang="x-default">Flow Display Mode</display-name>
+                <description xml:lang="x-default">Where Flow is shown after the shopper places the order. Inline: in the place order step of the checkout page, below the payment summary. Separate page: on a dedicated Checkout.com Flow page. The separate page is also used as a fallback when Flow cannot be shown inline.</description>
+                <type>enum-of-string</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <select-multiple-flag>false</select-multiple-flag>
+                <value-definitions>
+                    <value-definition default="true">
+                        <display xml:lang="x-default">Inline in the checkout page</display>
+                        <value>inline</value>
+                    </value-definition>
+                    <value-definition>
+                        <display xml:lang="x-default">Separate page</display>
+                        <value>page</value>
+                    </value-definition>
+                </value-definitions>
+            </attribute-definition>
         </custom-attribute-definitions>
 
         <group-definitions>
@@ -992,6 +1073,7 @@
                 <attribute attribute-id="ckoSandboxNASPublicKey"/>
                 <attribute attribute-id="ckoSandboxNASSecretKey"/>
                 <attribute attribute-id="ckoSandboxNASPrivateSharedKey"/>
+                <attribute attribute-id="ckoSandboxWebhookSignatureKey"/>
                 <attribute attribute-id="ckoSandboxABCPrivateSharedKey"/>
                 <attribute attribute-id="ckoSandboxABCSecretKey"/>
             </attribute-group>
@@ -1001,6 +1083,7 @@
                 <attribute attribute-id="ckoLiveNASPublicKey"/>
                 <attribute attribute-id="ckoLiveNASSecretKey"/>
                 <attribute attribute-id="ckoLiveNASPrivateSharedKey"/>
+                <attribute attribute-id="ckoLiveWebhookSignatureKey"/>
                 <attribute attribute-id="ckoLiveABCPrivateSharedKey"/>
                 <attribute attribute-id="ckoLiveABCSecretKey"/>
             </attribute-group>
@@ -1028,6 +1111,7 @@
                 <attribute attribute-id="ckoMADABins"/>
                 <attribute attribute-id="ckoProcessingChannelId"/>
                 <attribute attribute-id="ckoRegionEndPoint"/>
+                <attribute attribute-id="ckoWebhookAuthentication"/>
 				<attribute attribute-id="riskJsEnabled"/>
             </attribute-group>
             <attribute-group group-id="CKO [5] APM Settings">
@@ -1115,6 +1199,14 @@
 			<attribute-group group-id="CKO [18] AlipayCN Settings">
                 <display-name xml:lang="x-default">Checkout.com AlipayCN Payment Settings</display-name>
                 <attribute attribute-id="ckoAlipayCNEnabled"/>
+            </attribute-group>
+			<attribute-group group-id="CKO [19] Flow Settings">
+                <display-name xml:lang="x-default">Checkout.com Flow Settings</display-name>
+                <attribute attribute-id="ckoFlowEnabled"/>
+                <attribute attribute-id="ckoFlowCapture"/>
+                <attribute attribute-id="ckoFlowPaymentMethods"/>
+                <attribute attribute-id="ckoFlowAppearance"/>
+                <attribute attribute-id="ckoFlowDisplayMode"/>
             </attribute-group>
        </group-definitions>
        

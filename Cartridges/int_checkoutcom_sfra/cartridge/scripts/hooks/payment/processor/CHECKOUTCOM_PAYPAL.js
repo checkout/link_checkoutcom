@@ -72,6 +72,7 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         serverErrors: serverErrors,
         error: result.error,
         redirectUrl: result.redirectUrl,
+        awaitingPayment: !!result.awaitingPayment,
     };
 }
 

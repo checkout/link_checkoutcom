@@ -10,6 +10,7 @@ var OrderMgr = require('dw/order/OrderMgr');
 
 /** CKO Util */
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var apmHelper = require('*/cartridge/scripts/helpers/apmHelper');
 var apmConfig = require('*/cartridge/config/ckoApmConfig');
 
@@ -39,8 +40,11 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
     }
 
-    if (!paymentInformation.type.value) {
-        // Invalid Payment Type
+    // eslint-disable-next-line no-undef
+    var country = require('dw/util/Locale').getLocale(request.getLocale()).getCountry();
+
+    if (!paymentInformation.type.value || !apmHelper.isApmAvailable(paymentInformation.type.value, currentBasket.getCurrencyCode(), country)) {
+        // Invalid, disabled or not offered for this currency or country
         invalidPaymentMethod = Resource.msg('error.payment.not.valid', 'checkout', null);
 
         return { fieldErrors: [], serverErrors: [invalidPaymentMethod], error: true };
@@ -90,12 +94,22 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         paymentData: formData,
     };
 
-    // Get the selected APM request data
-    var func = formData.type.value + 'Authorization';
-    var apmConfigData = apmConfig[func](args);
+    var ckoPaymentRequest = null;
 
     try {
-        var ckoPaymentRequest = apmHelper.handleRequest(apmConfigData, paymentProcessor.ID, orderNumber);
+        // Checked again here: the payment data was posted by the browser
+        var type = formData && formData.type ? formData.type.value : null;
+        // eslint-disable-next-line no-undef
+        var country = require('dw/util/Locale').getLocale(request.getLocale()).getCountry();
+
+        if (!apmHelper.isApmAvailable(type, order.getCurrencyCode(), country)) {
+            throw new Error('APM ' + type + ' is not available for order ' + orderNumber);
+        }
+
+        // Get the selected APM request data
+        var apmConfigData = apmConfig[type + 'Authorization'](args);
+
+        ckoPaymentRequest = apmHelper.handleRequest(apmConfigData, paymentProcessor.ID, orderNumber);
 
         // Handle errors
         if (ckoPaymentRequest.error) {
@@ -103,20 +117,11 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
             serverErrors.push(
                 ckoHelper.getPaymentFailureMessage()
             );
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
-                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                // eslint-disable-next-line
-                paymentInstrument.custom.ckoPaymentData = '';
-            });
-        } else {
-            Transaction.wrap(function() {
-                paymentInstrument.paymentTransaction.setTransactionID(ckoPaymentRequest.transactionID);
-                paymentInstrument.paymentTransaction.setPaymentProcessor(paymentProcessor);
-                // eslint-disable-next-line
-                paymentInstrument.custom.ckoPaymentData = '';
-            });
         }
+
+        // A webhook may update the order at the same moment: a write conflict here
+        // must not turn an approved payment into a failed order
+        orderGuard.recordTransaction(orderNumber, paymentInstrument, paymentProcessor, ckoPaymentRequest.transactionID);
     } catch (e) {
         error = true;
         serverErrors.push(
@@ -124,8 +129,9 @@ function Authorize(orderNumber, paymentInstrument, paymentProcessor) {
         );
     }
 
+    // On error the caller fails the order, after releasing any payment Checkout.com took for it
     // eslint-disable-next-line
-    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest.redirectUrl };
+    return { fieldErrors: fieldErrors, serverErrors: serverErrors, error: error, redirectUrl: ckoPaymentRequest ? ckoPaymentRequest.redirectUrl : null, awaitingPayment: !!(ckoPaymentRequest && ckoPaymentRequest.awaitingPayment) };
 }
 
 exports.Handle = Handle;

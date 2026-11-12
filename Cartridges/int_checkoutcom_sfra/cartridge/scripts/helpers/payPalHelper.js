@@ -9,9 +9,12 @@ var Resource = require('dw/web/Resource');
 var basketCalculationHelpers = require('*/cartridge/scripts/helpers/basketCalculationHelpers');
 var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 var OrderMgr = require('dw/order/OrderMgr');
+var Logger = require('dw/system/Logger');
+var Site = require('dw/system/Site');
 
 /** Utility **/
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 
 /** Checkout Data Configuration File **/
 var constants = require('*/cartridge/config/constants');
@@ -37,10 +40,12 @@ var payPalHelper = {
 
         // If the request is valid, process the response
         if (paymentData) {
+            // The payment data comes from the browser: only its context id is used.
+            // The channel is the site's own, and the amount is checked afterwards
             var requestData = JSON.parse(paymentData);
+            var processingChannelId = Site.getCurrent().getCustomPreferenceValue('ckoProcessingChannelId');
             gatewayRequest = {
                 payment_context_id: requestData.paymentContext_id,
-                processing_channel_id: requestData.payment_request.processing_channel_id,
                 reference: order.orderNo,
                 customer: ckoHelper.getCustomer(order),
                 risk: {
@@ -52,6 +57,10 @@ var payPalHelper = {
                 metadata: ckoHelper.getMetadata({}, processorId),
             };
 
+            if (processingChannelId) {
+                gatewayRequest.processing_channel_id = processingChannelId;
+            }
+
             // Log the payment request data
             ckoHelper.log(processorId + ' ' + ckoHelper._('cko.request.data', 'cko'), gatewayRequest);
 
@@ -60,7 +69,48 @@ var payPalHelper = {
         }
 
         // Process the response
-        return this.handleResponse(gatewayResponse);
+        var result = this.handleResponse(gatewayResponse);
+
+        return result.error ? result : this.checkPaidAmount(order, result);
+    },
+
+    /**
+     * The PayPal context was created for the basket as it was then: the payment
+     * must still be for the order's amount and currency, or it is released and
+     * the order is not placed.
+     * @param {dw.order.Order} order The order
+     * @param {Object} result The accepted payment result (transactionID)
+     * @returns {Object} The result, or an error result
+     */
+    checkPaidAmount: function(order, result) {
+        var payment = ckoHelper.gatewayClientRequest(
+            'cko.verify.charges.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
+            { paymentToken: result.transactionID }
+        );
+        var expected = Number(ckoHelper.getAmount(order));
+
+        // Approved, in a paid (or pending) state, for this order's amount and currency
+        if (orderGuard.isPaymentFor(order, payment, { allowPending: true })) {
+            // A pending payment has not paid yet: the order is not exported until it is
+            result.awaitingPayment = payment.status === 'Pending'; // eslint-disable-line no-param-reassign
+
+            return result;
+        }
+
+        var found = payment ? [payment.amount, payment.currency, payment.status].join(' ') : 'unreadable';
+
+        Logger.getLogger('checkoutcom').error('PayPal payment {0} does not pay order {1} ({2} {3}): {4}. Released.', result.transactionID, order.orderNo, expected, order.getCurrencyCode(), found);
+
+        if (payment && payment.id) {
+            if (orderGuard.isLive(payment)) {
+                orderGuard.reversePayment(payment, order.orderNo);
+            }
+        } else {
+            // Not readable now: whatever was taken under the order's reference
+            orderGuard.reverseStrayPayments(order.orderNo);
+        }
+
+        return { error: true, redirectUrl: false, transactionID: '' };
     },
 
     /**

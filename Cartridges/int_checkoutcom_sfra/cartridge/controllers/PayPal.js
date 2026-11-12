@@ -5,6 +5,7 @@
 var server = require('server');
 var BasketMgr = require('dw/order/BasketMgr');
 var ckoHelper = require('*/cartridge/scripts/helpers/ckoHelper');
+var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var constants = require('*/cartridge/config/constants');
 var payPalHelper = require('*/cartridge/scripts/helpers/payPalHelper');
@@ -111,6 +112,10 @@ server.post('CreateOrder', csrfProtection.validateAjaxRequest, function(req, res
     responseData = ckoHelper.createContext('cko.payment.contexts.' + ckoHelper.getValue(constants.CKO_MODE) + '.service', requestData, 'POST');
 
     if (responseData.status === 'OK') {
+        // Bind the payment context to this session: OnApprove and ExpressCheckout
+        // accept only this id. A flat value: session.privacy keeps primitives only
+        session.privacy.ckoPayPalContextId = responseData.object.id;
+
         res.json({
             success: true,
             id: responseData.object.id,
@@ -137,19 +142,56 @@ server.get('OnApprove', function(req, res, next) {
     var reqData = req.querystring ? req.querystring : '';
     var responseData;
 
-    if (!empty(reqData)) {
-        responseData = ckoHelper.createContext('cko.payment.contexts.' + ckoHelper.getValue(constants.CKO_MODE) + '.service', { id: reqData.id, isPayPalApprove: true }, 'GET');
+    // Verify that the payment context ID belongs to the current session
+    if (empty(reqData) || !reqData.id) {
+        res.json({
+            error: true,
+            message: Resource.msg('error.paypal.invalid.context', 'cko', null),
+        });
+        return next();
     }
 
-    if (responseData.status === 'OK') {
+    // Check that the requested payment context matches the one stored in this session
+    var storedContextId = session.privacy.ckoPayPalContextId || null;
+    if (!storedContextId || reqData.id !== storedContextId) {
+        res.json({
+            error: true,
+            message: Resource.msg('error.paypal.invalid.context', 'cko', null),
+        });
+        return next();
+    }
+
+    if (!empty(reqData)) {
+        try {
+            responseData = ckoHelper.createContext('cko.payment.contexts.' + ckoHelper.getValue(constants.CKO_MODE) + '.service', { id: reqData.id, isPayPalApprove: true }, 'GET');
+        } catch (e) {
+            res.json({
+                error: true,
+                message: Resource.msg('error.paypal.invalid.context', 'cko', null),
+            });
+            return next();
+        }
+    }
+
+    if (responseData && responseData.status === 'OK') {
+        // Only what the browser needs: it adds the context id and posts it back with the
+        // payment form, and the server uses nothing else from it (payPalHelper)
         res.json({
             success: true,
-            response: responseData.object,
+            response: {
+                id: responseData.object.id,
+                status: responseData.object.status,
+            },
         });
-    } else if (responseData.status === 'SERVICE_UNAVAILABLE') {
+    } else if (responseData && responseData.status === 'SERVICE_UNAVAILABLE') {
         res.json({
             error: true,
             status: responseData.status,
+            message: Resource.msg('error.paypal.service.unavailable', 'cko', null),
+        });
+    } else {
+        res.json({
+            error: true,
             message: Resource.msg('error.paypal.service.unavailable', 'cko', null),
         });
     }
@@ -162,7 +204,29 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
     var result = {};
     var response;
     var paymentContextId = req.form.paymentContextId;
-    response = ckoHelper.createContext('cko.payment.contexts.' + ckoHelper.getValue(constants.CKO_MODE) + '.service', { id: paymentContextId, isPayPalApprove: true }, 'GET');
+
+    // Verify that the payment context ID belongs to the current session
+    var storedContextId = session.privacy.ckoPayPalContextId || null;
+    if (!storedContextId || paymentContextId !== storedContextId) {
+        ckoHelper.restoreBasket();
+        res.json({
+            error: true,
+            message: Resource.msg('error.paypal.invalid.context', 'cko', null),
+        });
+        return next();
+    }
+
+    try {
+        response = ckoHelper.createContext('cko.payment.contexts.' + ckoHelper.getValue(constants.CKO_MODE) + '.service', { id: paymentContextId, isPayPalApprove: true }, 'GET');
+    } catch (e) {
+        ckoHelper.restoreBasket();
+        res.json({
+            error: true,
+            message: Resource.msg('error.paypal.invalid.context', 'cko', null),
+        });
+        return next();
+    }
+
     if (response.status !== 'OK') {
         ckoHelper.restoreBasket();
         res.json({
@@ -231,9 +295,21 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
     }
 
     var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
-    var placeOrderResult = COHelpers.placeOrder(order, fraudDetectionStatus);
+    // A pending PayPal payment: placed, but not exported until it is paid
+    var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus, { awaitingPayment: !!handlePaymentResult.awaitingPayment });
 
-    if (order.getCustomerEmail()) {
+    if (placeOrderResult.error) {
+        // Not placed: release the payment taken for it and fail the order
+        orderGuard.reverseStrayPayments(order.orderNo);
+        orderGuard.failOrder(order);
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
+    }
+
+    if (order.getCustomerEmail() && !placeOrderResult.alreadyPlaced) {
         COHelpers.sendConfirmationEmail(order, req.locale.id);
     }
     ckoHelper.restoreBasket();
