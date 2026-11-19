@@ -143,7 +143,7 @@ function startPaymentSession(orderNo, routeName) {
  * @returns {Object} The view data
  */
 function getViewData(started) {
-    var viewData = getViewData(started);
+    var viewData = flowHelper.getViewData(started.order, started.session);
 
     viewData.failureUrl = URLUtils.https('CKOFlow-HandleFail', 'ref', started.order.getOrderNo(), 'ct', started.cancelToken).toString();
 

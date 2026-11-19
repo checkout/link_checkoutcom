@@ -250,6 +250,19 @@ function settleRedirect(req, res, verified) {
 }
 
 /**
+ * The gateway payment id recorded on the order's instrument of a method.
+ * @param {dw.order.Order} order The order
+ * @param {string} paymentMethodId The payment method
+ * @returns {string|null} The payment id
+ */
+function recordedPaymentId(order, paymentMethodId) {
+    var instruments = order.getPaymentInstruments(paymentMethodId).toArray();
+    var paymentId = instruments.length > 0 ? instruments[0].paymentTransaction.transactionID : null;
+
+    return paymentId && paymentId !== order.getOrderNo() ? paymentId : null;
+}
+
+/**
  * Settle an MB WAY, Bizum or ACH order from its polling mailbox record. The
  * record only says that a webhook arrived: the order is placed only when the
  * payment recorded on its instrument, read back from Checkout.com, pays it
@@ -263,9 +276,8 @@ function settleRedirect(req, res, verified) {
  */
 function settlePolledOrder(res, order, notification, paymentMethodId, mailbox) {
     var orderNo = order.getOrderNo();
-    var instruments = order.getPaymentInstruments(paymentMethodId).toArray();
-    var paymentId = instruments.length > 0 ? instruments[0].paymentTransaction.transactionID : null;
-    var payment = paymentId && paymentId !== orderNo ? orderGuard.readPayment(paymentId) : null;
+    var paymentId = recordedPaymentId(order, paymentMethodId);
+    var payment = paymentId ? orderGuard.readPayment(paymentId) : null;
 
     if (!payment) {
         // Not known yet, or Checkout.com could not be asked: polled again
@@ -276,7 +288,7 @@ function settlePolledOrder(res, order, notification, paymentMethodId, mailbox) {
 
     if (!orderGuard.isPaymentFor(order, payment, { allowPending: true })) {
         Logger.getLogger('checkoutcom').warn('Order {0}: the polled notification ({1}) does not match its payment {2} ({3}); discarded.', orderNo, notification.webhookType, payment.id, payment.status);
-        mailbox.deleteWebhookNotification(orderNo);
+        mailbox.deleteWebhookNotification(orderNo, paymentId);
         res.json({ status: 'pending' });
 
         return;
@@ -288,16 +300,18 @@ function settlePolledOrder(res, order, notification, paymentMethodId, mailbox) {
     var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: !paid });
 
     if (placeOrderResult.error) {
-        // Not placed, and not by anyone else: release the payment, fail the order
+        // Not placed, and not by anyone else: release the payment, fail the order;
+        // the record is done with, so a later poll does not act on it again
         orderGuard.reverseStrayPayments(orderNo);
         orderGuard.failOrder(order);
+        mailbox.deleteWebhookNotification(orderNo, paymentId);
         res.json({ status: 'error' });
 
         return;
     }
 
     // Clean up the notification so subsequent polls don't re-place
-    mailbox.deleteWebhookNotification(orderNo);
+    mailbox.deleteWebhookNotification(orderNo, paymentId);
 
     res.json({
         status: 'confirmed',
@@ -495,7 +509,7 @@ server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next
     }
 
     var mbwayHelperInst = require('*/cartridge/scripts/helpers/mbwayHelper');
-    var notification = mbwayHelperInst.getWebhookNotification(orderNo);
+    var notification = mbwayHelperInst.getWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_MBWAY'));
 
     if (!notification) {
         res.json({ status: 'pending' });
@@ -507,7 +521,7 @@ server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         settlePolledOrder(res, order, notification, 'CHECKOUTCOM_MBWAY', mbwayHelperInst);
     } else if (eventType === 'payment_declined' || eventType === 'payment_expired') {
-        mbwayHelperInst.deleteWebhookNotification(orderNo);
+        mbwayHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_MBWAY'));
 
         res.json({
             status: 'failed',
@@ -539,7 +553,7 @@ server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next
     }
 
     var bizumHelperInst = require('*/cartridge/scripts/helpers/bizumHelper');
-    var notification = bizumHelperInst.getWebhookNotification(orderNo);
+    var notification = bizumHelperInst.getWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_BIZUM'));
 
     if (!notification) {
         res.json({ status: 'pending' });
@@ -551,7 +565,7 @@ server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
         settlePolledOrder(res, order, notification, 'CHECKOUTCOM_BIZUM', bizumHelperInst);
     } else if (eventType === 'payment_declined' || eventType === 'payment_expired') {
-        bizumHelperInst.deleteWebhookNotification(orderNo);
+        bizumHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_BIZUM'));
 
         res.json({
             status: 'failed',
@@ -897,7 +911,7 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
     }
 
     var achHelperInst = require('*/cartridge/scripts/helpers/achHelper');
-    var notification = achHelperInst.getWebhookNotification(orderNo);
+    var notification = achHelperInst.getWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_ACH'));
 
     if (!notification) {
         res.json({ status: 'pending' });
@@ -910,7 +924,7 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
         settlePolledOrder(res, order, notification, 'CHECKOUTCOM_ACH', achHelperInst);
     } else if (eventType === 'payment_declined') {
         // eventsHelper.paymentDeclined already called OrderMgr.failOrder — do NOT call it again
-        achHelperInst.deleteWebhookNotification(orderNo);
+        achHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_ACH'));
 
         res.json({
             status: 'failed',
@@ -919,7 +933,7 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
     } else if (eventType === 'payment_expired') {
         // AC11: server does NOT fail the order for ACH payment_expired,
         // but the client must stop polling and allow the shopper to retry.
-        achHelperInst.deleteWebhookNotification(orderNo);
+        achHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_ACH'));
 
         res.json({
             status: 'failed',
