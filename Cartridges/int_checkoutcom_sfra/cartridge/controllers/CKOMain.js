@@ -90,10 +90,16 @@ function verifyRedirect(querystring) {
         }
 
         if (found.payments.length === 0) {
-            return { payment: null, order: OrderMgr.getOrder(querystring.reference), unverified: false };
+            return { payment: null, order: OrderMgr.getOrder(querystring.reference), unverified: false, byReference: true };
         }
 
         payment = ckoHelper.gatewayClientRequest(verifyService, { paymentToken: found.payments[0].id });
+
+        if (payment && typeof payment === 'object' && payment.reference) {
+            // A reference is guessable: it may place an order its payment pays,
+            // never fail one
+            return { payment: payment, order: OrderMgr.getOrder(payment.reference), unverified: false, byReference: true };
+        }
     } else {
         return { payment: null, order: null, unverified: false };
     }
@@ -170,8 +176,15 @@ function settleRedirect(req, res, verified) {
     }
 
     if (!orderGuard.isOpen(order)) {
-        // The order was already given up: a late success must not keep the money
-        if (success && orderGuard.isLive(payment)) {
+        // The order was given up before it was placed (failed): a late success
+        // must not keep the money. A cancelled or replaced order was placed and
+        // then closed by the merchant: what happens to its payment is the
+        // merchant's decision, so only a payment it was never placed with is
+        // released. This request only carries a guessable order number.
+        var failed = order.getStatus().getValue() === require('dw/order/Order').ORDER_STATUS_FAILED;
+        var funding = payment && payment.id ? orderGuard.recordedPaymentIds(order).indexOf(payment.id) !== -1 : true;
+
+        if (success && orderGuard.isLive(payment) && (failed || !funding)) {
             orderGuard.reversePayment(payment, order.getOrderNo());
         }
 
@@ -186,7 +199,10 @@ function settleRedirect(req, res, verified) {
             orderGuard.reversePayment(payment, order.getOrderNo());
         }
 
-        if (owned && orderGuard.failOrder(order)) {
+        // Failed only on the gateway's redirect for this order (a cko-session-id
+        // Checkout.com confirms): a link carrying just the order number, which
+        // any site can make the shopper's browser open, changes nothing
+        if (owned && !verified.byReference && orderGuard.failOrder(order)) {
             ckoHelper.checkAndRestoreBasket(order);
         }
 
@@ -223,7 +239,7 @@ function settleRedirect(req, res, verified) {
                 placedOrder.setPaymentStatus(placedOrder.PAYMENT_STATUS_NOTPAID);
             }
 
-            placedOrder.setConfirmationStatus(placedOrder.CONFIRMATION_STATUS_CONFIRMED);
+            placedOrder.setConfirmationStatus(orderGuard.confirmationStatusFor(placedOrder));
         });
     } catch (e) {
         // A webhook updated the order at the same time; it carries the payment status
@@ -231,6 +247,80 @@ function settleRedirect(req, res, verified) {
     }
 
     confirm(placedOrder);
+}
+
+/**
+ * The gateway payment id recorded on the order's instrument of a method.
+ * @param {dw.order.Order} order The order
+ * @param {string} paymentMethodId The payment method
+ * @returns {string|null} The payment id
+ */
+function recordedPaymentId(order, paymentMethodId) {
+    var instruments = order.getPaymentInstruments(paymentMethodId).toArray();
+    var paymentId = instruments.length > 0 ? instruments[0].paymentTransaction.transactionID : null;
+
+    return paymentId && paymentId !== order.getOrderNo() ? paymentId : null;
+}
+
+/**
+ * Settle an MB WAY, Bizum or ACH order from its polling mailbox record. The
+ * record only says that a webhook arrived: the order is placed only when the
+ * payment recorded on its instrument, read back from Checkout.com, pays it
+ * (its reference, approved, its amount and currency). A record that does not
+ * match is discarded and the shopper keeps waiting.
+ * @param {Object} res The response
+ * @param {dw.order.Order} order The polled order (its token already checked)
+ * @param {Object} notification The mailbox record (webhookType)
+ * @param {string} paymentMethodId The order's payment method
+ * @param {Object} mailbox The method's mailbox helper
+ */
+function settlePolledOrder(res, order, notification, paymentMethodId, mailbox) {
+    var orderNo = order.getOrderNo();
+    var paymentId = recordedPaymentId(order, paymentMethodId);
+    var payment = paymentId ? orderGuard.readPayment(paymentId) : null;
+
+    if (!payment) {
+        // Not known yet, or Checkout.com could not be asked: polled again
+        res.json({ status: 'pending' });
+
+        return;
+    }
+
+    if (!orderGuard.isPaymentFor(order, payment, { allowPending: true })) {
+        Logger.getLogger('checkoutcom').warn('Order {0}: the polled notification ({1}) does not match its payment {2} ({3}); discarded.', orderNo, notification.webhookType, payment.id, payment.status);
+        mailbox.deleteWebhookNotification(orderNo, paymentId);
+        res.json({ status: 'pending' });
+
+        return;
+    }
+
+    // Once only: a concurrent poll placing it first is a success. A payment
+    // not captured yet is not exported until its capture webhook
+    var paid = payment.status === 'Captured' || payment.status === 'Paid';
+    var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: !paid });
+
+    if (placeOrderResult.error) {
+        // Not placed, and not by anyone else: release the payment, fail the order;
+        // the record is done with, so a later poll does not act on it again
+        orderGuard.reverseStrayPayments(orderNo);
+        orderGuard.failOrder(order);
+        mailbox.deleteWebhookNotification(orderNo, paymentId);
+        res.json({ status: 'error' });
+
+        return;
+    }
+
+    // Clean up the notification so subsequent polls don't re-place
+    mailbox.deleteWebhookNotification(orderNo, paymentId);
+
+    res.json({
+        status: 'confirmed',
+        confirmUrl: URLUtils.https(
+            'Order-Confirm',
+            'ID', order.orderNo,
+            'token', order.orderToken
+        ).toString(),
+    });
 }
 
 /**
@@ -284,6 +374,10 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
         return next();
     }
 
+    // The order's funding payments before the event is applied: its handler
+    // records the event's own payment id
+    var fundingIds = hook && hook.data ? eventsHelper.getFundingPaymentIds(hook) : [];
+
     // Apply the event; once more when it lost a race with another update of
     // the order (ORMOptimisticLockingException), reading the order again
     var applyHook = function() {
@@ -302,7 +396,7 @@ server.post('HandleWebhook', server.middleware.https, function(req, res, next) {
             }
 
             // An order placed with a pending payment: exported once paid, cancelled if not
-            eventsHelper.settleAwaitingOrder(hook);
+            eventsHelper.settleAwaitingOrder(hook, fundingIds);
 
             // MB WAY: store capture/error webhook events in the webhookNotification custom object
             // so the client-side polling loop can detect them and act accordingly.
@@ -415,7 +509,7 @@ server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next
     }
 
     var mbwayHelperInst = require('*/cartridge/scripts/helpers/mbwayHelper');
-    var notification = mbwayHelperInst.getWebhookNotification(orderNo);
+    var notification = mbwayHelperInst.getWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_MBWAY'));
 
     if (!notification) {
         res.json({ status: 'pending' });
@@ -425,40 +519,13 @@ server.get('CheckMBWayWebhook', server.middleware.https, function(req, res, next
     var eventType = notification.webhookType;
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
-        // Place the order if not already placed
-        // Once only: a concurrent poll (or the webhook) placing it first is a success.
-        // Capture pending is not paid yet: not exported until payment_captured
-        var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: eventType === 'payment_capture_pending' });
-
-        if (placeOrderResult.error) {
-            // Not placed, and not by anyone else: release the payment, fail the order
-            orderGuard.reverseStrayPayments(order.getOrderNo());
-            orderGuard.failOrder(order);
-            res.json({ status: 'error' });
-            return next();
-        }
-
-        // Clean up the notification so subsequent polls don't re-place
-        mbwayHelperInst.deleteWebhookNotification(orderNo);
-
-        res.json({
-            status: 'confirmed',
-            confirmUrl: URLUtils.https(
-                'Order-Confirm',
-                'ID', order.orderNo,
-                'token', order.orderToken
-            ).toString(),
-        });
+        settlePolledOrder(res, order, notification, 'CHECKOUTCOM_MBWAY', mbwayHelperInst);
     } else if (eventType === 'payment_declined' || eventType === 'payment_expired') {
-        mbwayHelperInst.deleteWebhookNotification(orderNo);
+        mbwayHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_MBWAY'));
 
         res.json({
             status: 'failed',
-            failureUrl: URLUtils.https(
-                'Checkout-Begin',
-                'stage', 'payment',
-                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
-            ).toString(),
+            failureUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID, true).toString(),
         });
     } else {
         res.json({ status: 'pending' });
@@ -486,7 +553,7 @@ server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next
     }
 
     var bizumHelperInst = require('*/cartridge/scripts/helpers/bizumHelper');
-    var notification = bizumHelperInst.getWebhookNotification(orderNo);
+    var notification = bizumHelperInst.getWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_BIZUM'));
 
     if (!notification) {
         res.json({ status: 'pending' });
@@ -496,40 +563,13 @@ server.get('CheckBizumWebhook', server.middleware.https, function(req, res, next
     var eventType = notification.webhookType;
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
-        // Place the order if not already placed
-        // Once only: a concurrent poll (or the webhook) placing it first is a success.
-        // Capture pending is not paid yet: not exported until payment_captured
-        var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: eventType === 'payment_capture_pending' });
-
-        if (placeOrderResult.error) {
-            // Not placed, and not by anyone else: release the payment, fail the order
-            orderGuard.reverseStrayPayments(order.getOrderNo());
-            orderGuard.failOrder(order);
-            res.json({ status: 'error' });
-            return next();
-        }
-
-        // Clean up the notification so subsequent polls don't re-place
-        bizumHelperInst.deleteWebhookNotification(orderNo);
-
-        res.json({
-            status: 'confirmed',
-            confirmUrl: URLUtils.https(
-                'Order-Confirm',
-                'ID', order.orderNo,
-                'token', order.orderToken
-            ).toString(),
-        });
+        settlePolledOrder(res, order, notification, 'CHECKOUTCOM_BIZUM', bizumHelperInst);
     } else if (eventType === 'payment_declined' || eventType === 'payment_expired') {
-        bizumHelperInst.deleteWebhookNotification(orderNo);
+        bizumHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_BIZUM'));
 
         res.json({
             status: 'failed',
-            failureUrl: URLUtils.https(
-                'Checkout-Begin',
-                'stage', 'payment',
-                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
-            ).toString(),
+            failureUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID, true).toString(),
         });
     } else {
         // payment_pending or any other event — keep polling
@@ -871,7 +911,7 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
     }
 
     var achHelperInst = require('*/cartridge/scripts/helpers/achHelper');
-    var notification = achHelperInst.getWebhookNotification(orderNo);
+    var notification = achHelperInst.getWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_ACH'));
 
     if (!notification) {
         res.json({ status: 'pending' });
@@ -881,53 +921,23 @@ server.get('CheckAchWebhook', server.middleware.https, function(req, res, next) 
     var eventType = notification.webhookType;
 
     if (eventType === 'payment_capture_pending' || eventType === 'payment_captured') {
-        // Shopper approved payment in banking portal — place the order
-        // Once only: a concurrent poll (or the webhook) placing it first is a success.
-        // Capture pending is not paid yet: not exported until payment_captured
-        var placeOrderResult = orderGuard.placeOrder(order, null, { awaitingPayment: eventType === 'payment_capture_pending' });
-
-        if (placeOrderResult.error) {
-            // Not placed, and not by anyone else: release the payment, fail the order
-            orderGuard.reverseStrayPayments(order.getOrderNo());
-            orderGuard.failOrder(order);
-            res.json({ status: 'error' });
-            return next();
-        }
-
-        achHelperInst.deleteWebhookNotification(orderNo);
-
-        res.json({
-            status: 'confirmed',
-            confirmUrl: URLUtils.https(
-                'Order-Confirm',
-                'ID', order.orderNo,
-                'token', order.orderToken
-            ).toString(),
-        });
+        settlePolledOrder(res, order, notification, 'CHECKOUTCOM_ACH', achHelperInst);
     } else if (eventType === 'payment_declined') {
         // eventsHelper.paymentDeclined already called OrderMgr.failOrder — do NOT call it again
-        achHelperInst.deleteWebhookNotification(orderNo);
+        achHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_ACH'));
 
         res.json({
             status: 'failed',
-            failureUrl: URLUtils.https(
-                'Checkout-Begin',
-                'stage', 'payment',
-                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
-            ).toString(),
+            failureUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID, true).toString(),
         });
     } else if (eventType === 'payment_expired') {
         // AC11: server does NOT fail the order for ACH payment_expired,
         // but the client must stop polling and allow the shopper to retry.
-        achHelperInst.deleteWebhookNotification(orderNo);
+        achHelperInst.deleteWebhookNotification(orderNo, recordedPaymentId(order, 'CHECKOUTCOM_ACH'));
 
         res.json({
             status: 'failed',
-            failureUrl: URLUtils.https(
-                'Checkout-Begin',
-                'stage', 'payment',
-                'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
-            ).toString(),
+            failureUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID, true).toString(),
         });
     } else {
         // payment_pending, bank_account_updated, or any other event — keep polling
@@ -950,11 +960,7 @@ server.post('GetPlaidLinkToken', server.middleware.https, csrfProtection.validat
     var token = req.form.token;
     var order = OrderMgr.getOrder(orderNo);
 
-    var failureUrl = URLUtils.https(
-        'Checkout-Begin',
-        'stage', 'payment',
-        'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
-    ).toString();
+    var failureUrl = paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID, true).toString();
 
     if (!order || order.orderToken !== token) {
         res.json({ error: true, failureUrl: failureUrl });
@@ -1027,11 +1033,7 @@ server.post('ProcessAchPayment', server.middleware.https, csrfProtection.validat
 
     var order = OrderMgr.getOrder(orderNo);
 
-    var failureUrl = URLUtils.https(
-        'Checkout-Begin',
-        'stage', 'payment',
-        'paymentError', Resource.msg('error.payment.not.valid', 'checkout', null)
-    ).toString();
+    var failureUrl = paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID, true).toString();
 
     if (!order || order.orderToken !== token || !publicToken || !accountId) {
         res.json({ error: true, failureUrl: failureUrl });

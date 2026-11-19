@@ -129,7 +129,6 @@ server.post('CreateContext', server.middleware.https, csrfProtection.validateAja
 server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, next) {
     var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
     var addressHelpers = require('*/cartridge/scripts/helpers/addressHelpers');
-    var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
     var orderId = req.form.orderID;
     var OrderMgr = require('dw/order/OrderMgr');
     var URLUtils = require('dw/web/URLUtils');
@@ -141,7 +140,8 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
     var shopper = req.currentCustomer && req.currentCustomer.raw;
     var isShopperOrder = !!order && !!shopper && !!order.getCustomer() && order.getCustomer().getID() === shopper.getID();
 
-    if (!isShopperOrder) {
+    // A session blocked by fraud detection places nothing
+    if (!isShopperOrder || req.session.privacyCache.get('fraudDetectionStatus')) {
         res.json({ error: true, errorMessage: Resource.msg('error.technical', 'checkout', null) });
         return next();
     }
@@ -173,23 +173,10 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
         return next();
     }
 
-    var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo, authorizeKlarna);
-    if (handlePaymentResult.error) {
-        res.json({
-            error: true,
-            errorMessage: Resource.msg('error.technical', 'checkout', null),
-        });
-        return next();
-    }
-
-    var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', order, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
+    // Fraud detection before the Klarna authorization: a rejected order never
+    // holds a payment that a concurrent request could place it with
+    var fraudDetectionStatus = orderGuard.screenOrder(req, order, order);
     if (fraudDetectionStatus.status === 'fail') {
-        orderGuard.reverseStrayPayments(order.orderNo);
-        orderGuard.failOrder(order);
-
-        // fraud detection failed
-        req.session.privacyCache.set('fraudDetectionStatus', true);
-
         res.json({
             error: true,
             cartError: true,
@@ -197,8 +184,16 @@ server.post('OnApprove', csrfProtection.validateAjaxRequest, function(req, res, 
             errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
 
-        this.emit('route:Complete', req, res);
-        return;
+        return next();
+    }
+
+    var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo, authorizeKlarna);
+    if (handlePaymentResult.error) {
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
     }
 
     // Places the order (once: a concurrent approval placing it first is a success)

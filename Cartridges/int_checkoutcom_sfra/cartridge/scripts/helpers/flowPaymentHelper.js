@@ -242,7 +242,7 @@ var flowPaymentHelper = {
                 } else if (placedOrder.getPaymentStatus().getValue() !== Order.PAYMENT_STATUS_PAID) {
                     placedOrder.setPaymentStatus(Order.PAYMENT_STATUS_NOTPAID);
                 }
-                placedOrder.setConfirmationStatus(Order.CONFIRMATION_STATUS_CONFIRMED);
+                placedOrder.setConfirmationStatus(orderGuard.confirmationStatusFor(placedOrder));
             });
         } catch (e) {
             Logger.getLogger('checkoutcom').warn('Flow order {0}: payment status not updated after placement: {1}', placedOrder.getOrderNo(), e.message);
@@ -274,13 +274,26 @@ var flowPaymentHelper = {
             // Only once Checkout.com confirms the order is paid by the recorded
             // payment: a placement whose record was lost (a webhook writing at the
             // same moment) must not refund the very payment that funds the order
+            // Only a payment that actually pays the order (Authorized or Captured,
+            // for its amount and currency) justifies releasing another one: a
+            // Pending recorded payment has not paid, and may never pay
             var funding = /^pay_/.test(String(recorded)) ? flowHelper.getPaymentDetails(recorded) : null;
-            var fundedElsewhere = !!funding && funding.reference === order.getOrderNo()
-                && orderGuard.isLive(funding) && flowHelper.matchesOrder(funding, order);
+            var fundedElsewhere = !!funding && orderGuard.isPaymentFor(order, funding) && flowHelper.matchesOrder(funding, order);
 
             if (fundedElsewhere) {
                 Logger.getLogger('checkoutcom').warn('Flow payment {0} is a second payment for order {1}, paid with {2}: releasing it.', payment.id, order.getOrderNo(), recorded);
                 orderGuard.reversePayment(payment, order.getOrderNo());
+            } else if (funding && orderGuard.isLive(funding)) {
+                // Two payments and neither confirmed as the one that pays: both are
+                // kept, the order stays as it is and the merchant decides
+                Logger.getLogger('checkoutcom').error('Flow payment {0} for placed order {1} is a second payment, and the recorded payment {2} is {3}: nothing released, check the order.', payment.id, order.getOrderNo(), recorded, funding.status);
+                try {
+                    Transaction.wrap(function() {
+                        order.addNote('Checkout.com', 'Second payment ' + payment.id + ' (' + payment.status + ') received while the recorded payment ' + recorded + ' is ' + funding.status + '. Nothing was released: check both payments.');
+                    });
+                } catch (e) {
+                    Logger.getLogger('checkoutcom').warn('Flow order {0}: note not added: {1}', order.getOrderNo(), e.message);
+                }
             } else {
                 Logger.getLogger('checkoutcom').error('Flow payment {0} for placed order {1} is not the recorded payment ({2}), which could not be confirmed: nothing released, check the order.', payment.id, order.getOrderNo(), recorded);
             }
@@ -448,7 +461,10 @@ var flowPaymentHelper = {
         // eslint-disable-next-line no-undef
         var orderNo = session.privacy.ckoFlowOrderNo;
 
-        if (!orderNo) {
+        // Only the shopper's own navigation (the back button, the cart link): a
+        // request another site makes the browser send must not fail the order
+        // the shopper is paying for
+        if (!orderNo || !this.isSameSiteRequest()) {
             return false;
         }
 
@@ -483,6 +499,91 @@ var flowPaymentHelper = {
     },
 
     /**
+     * Whether the current request comes from this storefront, or was typed by
+     * the shopper: the browser's Sec-Fetch-Site header (which no page can set),
+     * or the Referer host for browsers that do not send it.
+     * @returns {boolean} True for a same-site request
+     */
+    isSameSiteRequest: function() {
+        /* eslint-disable no-undef */
+        if (typeof request === 'undefined' || !request || !request.httpHeaders) {
+            return false;
+        }
+
+        var fetchSite = request.httpHeaders.get('sec-fetch-site');
+
+        if (fetchSite) {
+            return fetchSite === 'same-origin' || fetchSite === 'none';
+        }
+
+        var referer = request.httpHeaders.get('referer');
+        var host = request.httpHost;
+        /* eslint-enable no-undef */
+        var match = referer ? /^https?:\/\/([^/?#]+)/i.exec(String(referer)) : null;
+
+        return !!match && !!host && match[1].toLowerCase() === String(host).toLowerCase();
+    },
+
+    /**
+     * Issue the value that the shopper's own cancel link carries: only the
+     * storefront knows it, so another site cannot cancel the shopper's payment.
+     * @returns {string} The cancel token of this session's Flow order
+     */
+    issueCancelToken: function() {
+        var Encoding = require('dw/crypto/Encoding');
+        var SecureRandom = require('dw/crypto/SecureRandom');
+        var token = Encoding.toHex(new SecureRandom().nextBytes(16));
+
+        // eslint-disable-next-line no-undef
+        session.privacy.ckoFlowCancelToken = token;
+
+        return token;
+    },
+
+    /**
+     * @param {string} value The ct parameter of a cancel request
+     * @returns {boolean} True when it is this session's cancel token
+     */
+    isCancelToken: function(value) {
+        // eslint-disable-next-line no-undef
+        var expected = session.privacy.ckoFlowCancelToken;
+
+        return !!value && !!expected && ckoHelper.safeEquals(String(value), String(expected));
+    },
+
+    /**
+     * Release a payment that completed after its Flow order was given up (the
+     * order failed, or cancelled while it was never placed with this payment):
+     * the shopper must not be charged for an order that does not exist.
+     * @param {Object} payment A payment read back from Checkout.com
+     * @returns {boolean} True when the payment was released
+     */
+    releaseLatePayment: function(payment) {
+        if (!payment || !payment.reference || !orderGuard.isLive(payment)) {
+            return false;
+        }
+
+        var order = OrderMgr.getOrder(payment.reference);
+
+        if (!order || orderGuard.isPlaced(order) || orderGuard.isOpen(order)
+            || order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).size() === 0) {
+            return false;
+        }
+
+        var failed = order.getStatus().getValue() === Order.ORDER_STATUS_FAILED;
+        var funding = orderGuard.recordedPaymentIds(order).indexOf(payment.id) !== -1;
+
+        if (!failed && funding) {
+            // Cancelled by the merchant after it was placed with this payment: theirs to decide
+            return false;
+        }
+
+        Logger.getLogger('checkoutcom').warn('Flow payment {0} completed after order {1} was closed: releasing it.', payment.id, order.getOrderNo());
+
+        return orderGuard.reversePayment(payment, order.getOrderNo());
+    },
+
+    /**
      * Send the order confirmation email, mirroring the behaviour of the standard
      * SFRA place order route. A mail failure must never fail a paid order.
      * @param {dw.order.Order} order The order instance
@@ -509,6 +610,7 @@ var flowPaymentHelper = {
         /* eslint-disable no-undef */
         session.privacy.ckoFlowOrderNo = null;
         session.privacy.ckoFlowSessionId = null;
+        session.privacy.ckoFlowCancelToken = null;
         /* eslint-enable no-undef */
     },
 };

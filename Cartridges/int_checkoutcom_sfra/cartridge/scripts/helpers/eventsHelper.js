@@ -54,20 +54,35 @@ function setPaymentStatus(order) {
 }
 
 /**
+ * The gateway payment ids recorded on an order (its funding payments). The
+ * order number, written as a placeholder by some methods, is not a payment.
+ * @param {dw.order.Order} order The order
+ * @returns {Array<string>} The recorded payment ids
+ */
+function getRecordedPaymentIds(order) {
+    if (!order) {
+        return [];
+    }
+
+    return order.getPaymentInstruments().toArray().map(function(instrument) {
+        return instrument.paymentTransaction.transactionID;
+    }).filter(function(transactionID) {
+        return !!transactionID && transactionID !== order.getOrderNo();
+    });
+}
+
+/**
  * Whether a webhook is about the payment the order is currently paid (or being
  * paid) with. An order can see several payments: a declined first attempt
  * before a successful one, or a stray payment. Only an event about the order's
  * own payment may fail it.
  * @param {dw.order.Order} order The order
  * @param {Object} hook The gateway webhook data
+ * @param {Array<string>} [recordedIds] The ids recorded before the event was applied
  * @returns {boolean} True when the event may change the order's state
  */
-function isOrderPayment(order, hook) {
-    var recorded = order.getPaymentInstruments().toArray().map(function(instrument) {
-        return instrument.paymentTransaction.transactionID;
-    }).filter(function(transactionID) {
-        return !!transactionID && transactionID !== order.getOrderNo();
-    });
+function isOrderPayment(order, hook, recordedIds) {
+    var recorded = recordedIds || getRecordedPaymentIds(order);
 
     if (recorded.length > 0) {
         return recorded.indexOf(hook.data.id) !== -1;
@@ -121,7 +136,8 @@ var eventsHelper = {
 
             if (flagDetails) {
                 order.addNote(ckoHelper._('cko.webhook.info', 'cko'), flagDetails);
-                order.setConfirmationStatus(order.CONFIRMATION_STATUS_NOTCONFIRMED);
+                // Recorded on the order: a placement or capture later keeps it not confirmed
+                require('*/cartridge/scripts/helpers/orderGuard').setFraudFlagged(order);
             }
 
             // Only an event about the order's own payment fails it, and only while it waits for payment
@@ -181,7 +197,7 @@ var eventsHelper = {
                         alipayInstruments[0].paymentTransaction.custom.ckoActionId = hook.data.action_id;
                         alipayInstruments[0].paymentTransaction.custom.ckoTransactionOpened = true;
                         alipayInstruments[0].paymentTransaction.custom.ckoTransactionType = 'Capture';
-                        alipayOrder.setConfirmationStatus(alipayOrder.CONFIRMATION_STATUS_CONFIRMED);
+                        alipayOrder.setConfirmationStatus(require('*/cartridge/scripts/helpers/orderGuard').confirmationStatusFor(alipayOrder));
                     });
                 }
             }
@@ -217,7 +233,8 @@ var eventsHelper = {
 
             setPaymentStatus(order);
 
-            order.setConfirmationStatus(order.CONFIRMATION_STATUS_CONFIRMED);
+            // A capture never confirms an order flagged for fraud review
+            order.setConfirmationStatus(require('*/cartridge/scripts/helpers/orderGuard').confirmationStatusFor(order));
 
             // Update the parent transaction state
             var parentTransaction = transactionHelper.getParentTransaction(hook, 'Authorization');
@@ -455,13 +472,28 @@ var eventsHelper = {
     },
 
     /**
+     * The payment ids recorded on the order a webhook is about, read before the
+     * event is applied: the event handlers record the event's own payment id.
+     * @param {Object} hook The gateway webhook data
+     * @returns {Array<string>} The recorded payment ids
+     */
+    getFundingPaymentIds: function(hook) {
+        var order = hook && hook.data && hook.data.reference ? OrderMgr.getOrder(hook.data.reference) : null;
+
+        return getRecordedPaymentIds(order);
+    },
+
+    /**
      * An order placed with a pending payment is not exported until it is paid.
      * Its approval or capture releases it for export; a decline, expiry or
      * cancellation cancels it, so it is never fulfilled without payment.
-     * Runs after the event's own handler.
+     * Runs after the event's own handler, with the payment ids the order had
+     * recorded before it: only the payment the order was placed on releases it,
+     * and only once Checkout.com confirms that payment pays the order now.
      * @param {Object} hook The gateway webhook data
+     * @param {Array<string>} [fundingIds] The payment ids recorded before the event (getFundingPaymentIds)
      */
-    settleAwaitingOrder: function(hook) {
+    settleAwaitingOrder: function(hook, fundingIds) {
         var order = hook && hook.data && hook.data.reference ? OrderMgr.getOrder(hook.data.reference) : null;
 
         if (!order || order.getExportStatus().getValue() !== Order.EXPORT_STATUS_NOTEXPORTED) {
@@ -469,13 +501,34 @@ var eventsHelper = {
         }
 
         var status = order.getStatus().getValue();
+        var recorded = fundingIds || getRecordedPaymentIds(order);
 
-        if ((status !== Order.ORDER_STATUS_NEW && status !== Order.ORDER_STATUS_OPEN) || !isOrderPayment(order, hook)) {
+        if ((status !== Order.ORDER_STATUS_NEW && status !== Order.ORDER_STATUS_OPEN) || !isOrderPayment(order, hook, recorded)) {
             return;
         }
 
         if (hook.type === 'payment_approved' || hook.type === 'payment_captured') {
+            // The event alone proves nothing about the payment's current state (an
+            // out-of-order or repeated delivery): it is read back and must pay
+            // this order, approved and Authorized or Captured, for its amount
+            var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
+            var payment = orderGuard.readPayment(hook.data.id);
+
+            if (!orderGuard.isPaymentFor(order, payment)) {
+                return;
+            }
+
             Transaction.wrap(function() {
+                if (recorded.length === 0) {
+                    // Nothing recorded yet (a lost write at placement): this payment funds the order
+                    var instruments = order.getPaymentInstruments(flowConfig.PAYMENT_METHOD_ID).toArray();
+                    var instrument = instruments.length > 0 ? instruments[0] : order.getPaymentInstruments().toArray()[0];
+
+                    if (instrument && !instrument.paymentTransaction.transactionID) {
+                        instrument.paymentTransaction.setTransactionID(payment.id);
+                    }
+                }
+
                 order.setExportStatus(Order.EXPORT_STATUS_READY);
             });
 
