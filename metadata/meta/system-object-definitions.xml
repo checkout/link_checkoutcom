@@ -1221,11 +1221,19 @@
                 <externally-managed-flag>false</externally-managed-flag>
                 <min-length>0</min-length>
             </attribute-definition>
+            <attribute-definition attribute-id="ckoFraudFlagged">
+                <display-name xml:lang="x-default">Flagged for fraud review</display-name>
+                <description xml:lang="x-default">Set when the fraud detection hook or a Checkout.com risk rule flags the order. A flagged order is never confirmed automatically: confirm it once reviewed.</description>
+                <type>boolean</type>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+            </attribute-definition>
         </custom-attribute-definitions>
         <group-definitions>
             <attribute-group group-id="ckoOrder">
                 <display-name xml:lang="x-default">CKO Order</display-name>
                 <attribute attribute-id="orderProcessedByABCorNAS"/>
+                <attribute attribute-id="ckoFraudFlagged"/>
             </attribute-group>
         </group-definitions>
     </type-extension>

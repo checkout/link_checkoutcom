@@ -69,6 +69,78 @@ var orderGuard = {
     },
 
     /**
+     * Whether the order was flagged for fraud review: by the fraud detection
+     * hook when it was placed, or by a Checkout.com risk rule.
+     * @param {dw.order.Order} order The order
+     * @returns {boolean} True when the order waits for a fraud review
+     */
+    isFraudFlagged: function(order) {
+        try {
+            return !!order && !!order.custom && order.custom.ckoFraudFlagged === true;
+        } catch (e) {
+            return false;
+        }
+    },
+
+    /**
+     * Record that the order is flagged for fraud review, so every route that
+     * places or confirms it later (a return, a poll, Flow, a webhook) leaves it
+     * not confirmed. Call inside a transaction.
+     * @param {dw.order.Order} order The order
+     */
+    setFraudFlagged: function(order) {
+        try {
+            // eslint-disable-next-line no-param-reassign
+            order.custom.ckoFraudFlagged = true;
+        } catch (e) {
+            // The ckoFraudFlagged attribute is not imported yet
+            log.warn('Order {0}: fraud flag not recorded (import the Order attribute ckoFraudFlagged): {1}', order.getOrderNo(), e.message);
+        }
+
+        order.setConfirmationStatus(Order.CONFIRMATION_STATUS_NOTCONFIRMED);
+    },
+
+    /**
+     * The confirmation status an order may be given automatically: a flagged
+     * order stays not confirmed until the merchant confirms it.
+     * @param {dw.order.Order} order The order
+     * @param {Object} [fraudDetectionStatus] The fraud hook result of this request
+     * @returns {number} The confirmation status
+     */
+    confirmationStatusFor: function(order, fraudDetectionStatus) {
+        var flagged = (fraudDetectionStatus && fraudDetectionStatus.status === 'flag') || this.isFraudFlagged(order);
+
+        return flagged ? Order.CONFIRMATION_STATUS_NOTCONFIRMED : Order.CONFIRMATION_STATUS_CONFIRMED;
+    },
+
+    /**
+     * Run the merchant's fraud detection hook on an order before its payment is
+     * authorized, so a rejected order never holds a payment that a concurrent
+     * return could place it with. A fail fails the order (it is still open and
+     * unpaid) and blocks the session; a flag is recorded on the order.
+     * @param {Object} req The request
+     * @param {dw.order.LineItemCtnr} lineItemCtnr The basket (or the order) given to the hook
+     * @param {dw.order.Order} order The order
+     * @returns {Object} The fraud hook result
+     */
+    screenOrder: function(req, lineItemCtnr, order) {
+        var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
+        var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', lineItemCtnr, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
+        var self = this;
+
+        if (fraudDetectionStatus.status === 'fail') {
+            this.failOrder(order);
+            req.session.privacyCache.set('fraudDetectionStatus', true);
+        } else if (fraudDetectionStatus.status === 'flag') {
+            Transaction.wrap(function() {
+                self.setFraudFlagged(order);
+            });
+        }
+
+        return fraudDetectionStatus;
+    },
+
+    /**
      * Place an order once. Never fails the order: the caller decides what a
      * failure means (it usually releases the payment and fails the order).
      * @param {dw.order.Order} order The order
@@ -96,10 +168,9 @@ var orderGuard = {
                 throw new Error(status.getMessage() || 'placeOrder failed');
             }
 
-            // As the SFRA placeOrder: an order flagged by fraud detection is not confirmed
-            current.setConfirmationStatus(fraudDetectionStatus && fraudDetectionStatus.status === 'flag'
-                ? Order.CONFIRMATION_STATUS_NOTCONFIRMED
-                : Order.CONFIRMATION_STATUS_CONFIRMED);
+            // As the SFRA placeOrder: an order flagged by fraud detection (now,
+            // when it was created, or by a Checkout.com risk rule) is not confirmed
+            current.setConfirmationStatus(this.confirmationStatusFor(current, fraudDetectionStatus));
             current.setExportStatus(options && options.awaitingPayment
                 ? Order.EXPORT_STATUS_NOTEXPORTED
                 : Order.EXPORT_STATUS_READY);
@@ -290,6 +361,48 @@ var orderGuard = {
     },
 
     /**
+     * The gateway payment ids recorded on an order's payment instruments (the
+     * order number, a placeholder of some methods, is not a payment).
+     * @param {dw.order.Order} order The order
+     * @returns {Array<string>} The payment ids
+     */
+    recordedPaymentIds: function(order) {
+        if (!order) {
+            return [];
+        }
+
+        return order.getPaymentInstruments().toArray().map(function(instrument) {
+            return instrument.getPaymentTransaction().getTransactionID();
+        }).filter(function(transactionID) {
+            return !!transactionID && transactionID !== order.getOrderNo();
+        });
+    },
+
+    /**
+     * Read a payment back from Checkout.com by its id.
+     * @param {string} paymentId The payment id
+     * @returns {Object|null} The payment, or null when it could not be read
+     */
+    readPayment: function(paymentId) {
+        if (!paymentId) {
+            return null;
+        }
+
+        try {
+            var payment = ckoHelper.gatewayClientRequest(
+                'cko.verify.charges.' + ckoHelper.getValue(constants.CKO_MODE) + '.service',
+                { paymentToken: paymentId }
+            );
+
+            return payment && typeof payment === 'object' && payment.id ? payment : null;
+        } catch (e) {
+            log.error('Payment {0} could not be read back: {1}', paymentId, e.message);
+
+            return null;
+        }
+    },
+
+    /**
      * Whether the payment is for the order's currency and amount: the order total,
      * or the Checkout.com payment instrument's amount (the rest paid by gift
      * certificate). A payment for less never places the order.
@@ -371,7 +484,7 @@ var orderGuard = {
             if (accepted) {
                 log.warn('Payment {0} of order {1} reversed ({2}): the order was not placed.', payment.id, orderNo, action);
             } else {
-                log.error('Payment {0} of order {1} could not be reversed ({2}): {3}', payment.id, orderNo, action, JSON.stringify(response));
+                log.error('Payment {0} of order {1} could not be reversed ({2}): {3}', payment.id, orderNo, action, ckoHelper.redactServiceLog(response));
             }
 
             return accepted;

@@ -218,13 +218,8 @@ var payPalHelper = {
             basketCalculationHelpers.calculateTotals(currentBasket);
         });
 
-        // Re-calculate the payments.
-        var calculatedPaymentTransaction = COHelpers.calculatePaymentTransaction(
-            currentBasket
-        );
-
-        var order = COHelpers.createOrder(currentBasket);
-        return order;
+        // Only when PayPal applies to this shopper and amount, as PlaceOrder
+        return require('*/cartridge/scripts/helpers/expressCheckoutHelper').createOrder(req, currentBasket);
     },
 };
 

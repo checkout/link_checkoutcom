@@ -118,6 +118,7 @@ describe('PayPal controller: a payment context is read back only by the session 
         var server = {
             get: function(name) { routes[name] = arguments[arguments.length - 1]; },
             post: function(name) { routes[name] = arguments[arguments.length - 1]; },
+            middleware: { https: function() {} },
             exports: function() { return routes; },
         };
 
@@ -150,6 +151,7 @@ describe('PayPal controller: a payment context is read back only by the session 
             '*/cartridge/scripts/middleware/csrf': { validateAjaxRequest: function() {} },
             '*/cartridge/config/constants': constants,
             '*/cartridge/scripts/helpers/payPalHelper': {},
+            '*/cartridge/scripts/helpers/expressCheckoutHelper': { canOrder: function() { return true; } },
             '*/cartridge/scripts/helpers/hooks': function() {},
             '*/cartridge/scripts/checkout/checkoutHelpers': {},
             'dw/web/URLUtils': {},

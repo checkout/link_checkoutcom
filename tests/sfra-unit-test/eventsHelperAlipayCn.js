@@ -93,6 +93,7 @@ describe('eventsHelper paymentCaptured - AlipayCN branch', function () {
             '*/cartridge/scripts/helpers/ckoHelper': ckoHelperStub,
             '*/cartridge/scripts/helpers/savedCardHelper': savedCardHelperStub,
             '*/cartridge/scripts/helpers/transactionHelper': transactionHelperStub,
+            '*/cartridge/scripts/helpers/orderGuard': { confirmationStatusFor: function() { return 'CONFIRMED'; }, setFraudFlagged: function() {} },
             '*/cartridge/config/constants': constants,
             '*/cartridge/config/ckoFlowConfig': require('../../Cartridges/int_checkoutcom_sfra/cartridge/config/ckoFlowConfig'),
         });

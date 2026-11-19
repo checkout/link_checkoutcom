@@ -24,6 +24,17 @@ var Logger = require('dw/system/Logger');
 
 var CUSTOM_OBJECT_TYPE = 'webhookNotification';
 
+/**
+ * The record key: the type is organization-wide while order numbers are only
+ * unique per site, so the key binds the site and one site's webhook can never
+ * be read or deleted by another site's poll.
+ * @param {string} orderNo The order number
+ * @returns {string} The key
+ */
+function mailboxKey(orderNo) {
+    return require('dw/system/Site').getCurrent().getID() + '_' + orderNo;
+}
+
 var achHelper = {
     /**
      * Persists a CKO webhook payload for a given order in the webhookNotification custom object.
@@ -35,9 +46,9 @@ var achHelper = {
     storeWebhookNotification: function(orderNo, hook) {
         try {
             Transaction.wrap(function() {
-                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo));
                 if (!obj) {
-                    obj = CustomObjectMgr.createCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+                    obj = CustomObjectMgr.createCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo));
                 }
                 // Never replace a later state with an earlier one (out-of-order delivery)
                 var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
@@ -63,7 +74,7 @@ var achHelper = {
      * @returns {Object|null} Object with webhookType and webhookPayload, or null if not found
      */
     getWebhookNotification: function(orderNo) {
-        var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+        var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo));
         if (obj) {
             return {
                 webhookType: obj.custom.webhookType,
@@ -81,7 +92,7 @@ var achHelper = {
     deleteWebhookNotification: function(orderNo) {
         try {
             Transaction.wrap(function() {
-                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo));
                 if (obj) {
                     CustomObjectMgr.remove(obj);
                 }

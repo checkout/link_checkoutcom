@@ -40,6 +40,11 @@
                 </fieldset>
 
                 <input type="hidden" name="${pdict.csrf.tokenName}" value="${pdict.csrf.token}"/>
+                <iscomment>The payment errors the checkout page may show: the paymentError query parameter only selects one by its code</iscomment>
+                <span id="ckoPaymentErrors" class="d-none"
+                    data-invalid="${Resource.msg('error.payment.not.valid', 'checkout', null)}"
+                    data-unverified="${Resource.msg('cko.payment.unverified', 'cko', null)}"
+                    data-released="${Resource.msg('cko.payment.released', 'cko', null)}"></span>
                 <input type="hidden" name="localizedNewAddressTitle" value="${Resource.msg('msg.new.address', 'checkout', null)}"/>
             </fieldset>
 

@@ -76,9 +76,6 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
     var cardType = paymentInformation.cardType.value;
     var paymentCard = PaymentMgr.getPaymentCard(cardType);
 
-    // Validate Mada Card
-    var madaCard = false;
-
     // Validate payment instrument
     if (paymentMethodID === PaymentInstrument.METHOD_CREDIT_CARD) {
         var creditCardPaymentMethod = PaymentMgr.getPaymentMethod(PaymentInstrument.METHOD_CREDIT_CARD);
@@ -97,7 +94,15 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
         }
     }
 
-    if (!paymentInformation.creditCardToken) {
+    if (paymentInformation.creditCardToken) {
+        // A saved card: its security code is required and checked here too, the
+        // checkout page's own check is not enforcement
+        if (!cardHelper.isValidSecurityCode(cardSecurityCode, cardType)) {
+            cardErrors[paymentInformation.securityCode.htmlName] = Resource.msg('error.invalid.security.code', 'creditCard', null);
+
+            return { fieldErrors: [cardErrors], serverErrors: serverErrors, error: true };
+        }
+    } else {
         if (paymentCard) {
             creditCardStatus = paymentCard.verify(
                 expirationMonth,
@@ -107,7 +112,6 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             );
 
             // Validate Mada Card
-            madaCard = ckoHelper.isMadaCard(cardNumber, { type: 'creditCard' });
         } else {
             cardErrors[paymentInformation.cardNumber.htmlName] =
                 Resource.msg('error.invalid.card.number', 'creditCard', null);
@@ -189,6 +193,10 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
                 creditCardBin = tokenResult.bin;
             }
             paymentInstrument.setCreditCardToken(creditCardToken);
+        } else if (paymentInformation.creditCardToken) {
+            // A saved card is charged by its token, whether or not "save card" is ticked
+            paymentInstrument.setCreditCardToken(paymentInformation.creditCardToken);
+            creditCardBin = paymentInformation.cardBin;
         }
         // The CVV is needed by the authorization (place order) only: it waits in the
         // session, never in the payment data stored on the basket and its order
@@ -198,7 +206,7 @@ function Handle(basket, paymentInformation, paymentMethodID, req) {
             saveCard: paymentInformation.saveCard.value,
             type: paymentInformation.cardType.value,
             customerNo: req.currentCustomer.raw.registered ? req.currentCustomer.profile.customerNo : null,
-            madaCard: madaCard,
+            storedCard: !!paymentInformation.creditCardToken,
             cardBin: creditCardBin,
         });
     });

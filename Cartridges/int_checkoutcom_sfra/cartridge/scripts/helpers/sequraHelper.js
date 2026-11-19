@@ -25,8 +25,7 @@ var sequraHelper = {
         try {
             var gatewayRequest = this.getSequraRequest(processorId, order, selectedProduct);
 
-            // Log the full unmasked request to custom-ckoPayments-*.log for debugging
-            Logger.info('Sequra raw request for order {0}: {1}', order.orderNo, JSON.stringify(gatewayRequest));
+            // Logged masked, and only with debug logging on, as the other methods
             ckoHelper.log(processorId + ' ' + ckoHelper._('cko.request.data', 'cko'), gatewayRequest);
 
             var gatewayResponse = ckoHelper.gatewayClientRequest(
@@ -176,11 +175,14 @@ var sequraHelper = {
             };
         }
 
-        // Log the full response so the API error body is visible in custom.ckoPayments-*.log
+        // Only the error of the response: it also carries the shopper's personal data
         Logger.error(
-            'Sequra payment response missing redirect link. Transaction ID: {0}. Response: {1}',
+            'Sequra payment response missing redirect link. Transaction ID: {0}. Status: {1}. Error: {2} {3}. Request id: {4}',
             transactionID,
-            JSON.stringify(gatewayResponse)
+            gatewayResponse.status || '',
+            gatewayResponse.error_type || '',
+            gatewayResponse.error_codes ? gatewayResponse.error_codes.join(', ') : '',
+            gatewayResponse.request_id || ''
         );
         return {
             error: true,

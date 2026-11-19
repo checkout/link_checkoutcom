@@ -108,6 +108,8 @@ describe('CKOMain redirect ownership', function() {
             failOrder: sinon.stub().returns(true),
             placeOrder: sinon.spy(function() { return { error: false, order: order }; }),
             reversePayment: sinon.spy(),
+            confirmationStatusFor: function() { return 2; },
+            recordedPaymentIds: function() { return []; },
         };
         paymentHelper = {
             getConfirmationPageRedirect: sinon.spy(),
@@ -145,11 +147,20 @@ describe('CKOMain redirect ownership', function() {
         });
     });
 
-    it('fails the shopper\'s own declined order and restores the basket', function() {
-        routes.HandleFail(request('victim'), {}, function() {});
+    it('fails the shopper\'s own declined order and restores the basket, on the gateway\'s redirect', function() {
+        routes.HandleFail({ querystring: { 'cko-session-id': 'sid_1' }, currentCustomer: { raw: { ID: 'victim' } } }, {}, function() {});
 
         assert.isTrue(orderGuard.failOrder.calledOnce);
         assert.isTrue(ckoHelper.checkAndRestoreBasket.calledOnce);
+    });
+
+    // Finding 9: a cross-site GET carrying only the (guessable) order number
+    it('never fails an order on a request carrying only its reference', function() {
+        routes.HandleFail(request('victim'), {}, function() {});
+
+        assert.isFalse(orderGuard.failOrder.called);
+        assert.isFalse(ckoHelper.checkAndRestoreBasket.called);
+        assert.isTrue(paymentHelper.getFailurePageRedirect.calledOnce);
     });
 
     it('places another shopper\'s paid order without showing its confirmation', function() {

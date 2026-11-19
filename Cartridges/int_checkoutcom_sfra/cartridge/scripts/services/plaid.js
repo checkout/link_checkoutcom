@@ -3,6 +3,9 @@
 /* API Includes */
 var LocalServiceRegistry = require('dw/svc/LocalServiceRegistry');
 
+/* Utility */
+var util = require('*/cartridge/scripts/helpers/ckoHelper');
+
 /**
  * Plaid HTTP service wrapper for ACH Direct Debit.
  * The Plaid endpoint path is appended to the credential base URL via args.endpoint
@@ -30,12 +33,14 @@ var wrapper = {
                 };
             },
 
+            // The bodies carry the Plaid client_id and secret and the shopper's
+            // tokens: only masked copies are written to the communication log
             getRequestLogMessage: function(request) {
-                return request;
+                return util.redactServiceLog(request);
             },
 
             getResponseLogMessage: function(response) {
-                return response.text;
+                return util.redactServiceLog(response.text);
             },
         });
     },
@@ -60,12 +65,14 @@ var wrapper = {
                 };
             },
 
+            // The bodies carry the Plaid client_id and secret and the shopper's
+            // tokens: only masked copies are written to the communication log
             getRequestLogMessage: function(request) {
-                return request;
+                return util.redactServiceLog(request);
             },
 
             getResponseLogMessage: function(response) {
-                return response.text;
+                return util.redactServiceLog(response.text);
             },
         });
     },

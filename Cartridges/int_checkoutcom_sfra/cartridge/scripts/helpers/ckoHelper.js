@@ -314,88 +314,51 @@ var ckoHelper = {
      * @param {Object} gatewayData The gateway data
      */
     log: function(dataType, gatewayData) {
-        // Create's a deep copy gatewayData, this will prevent data being deleted.
-        var cloneGatewayData = JSON.parse(JSON.stringify(gatewayData));
         if (this.getValue(constants.CKO_DEBUG_ENABLED) === true) {
             // Get the logger
             var logger = Logger.getLogger('ckodebug');
 
-            // Remove sensitive data
-            var cleanData = this.removeSentisiveData(cloneGatewayData);
+            // A short message of this cartridge (an error text) is kept; a
+            // payload is masked: only payment attributes are kept in clear
+            var isMessage = typeof gatewayData === 'string' && gatewayData.length <= 200 && !/[{[]/.test(gatewayData);
 
-            // Log the data
             if (logger) {
                 logger.debug(
                     dataType + ' : {0}',
-                    JSON.stringify(cleanData)
+                    isMessage ? gatewayData : this.redactServiceLog(gatewayData)
                 );
             }
         }
     },
 
     /**
-     * Remove sentitive data from the logs.
+     * Remove sensitive data from the logs: everything but the payment
+     * attributes is masked, at any depth (see sensitiveDataHelper).
      * @param {Object} data The log data
-     * @returns {Object} The filtered data
+     * @returns {Object} A masked copy of the data
      */
     removeSentisiveData: function(data) {
-        if (data) {
-            if (Object.prototype.hasOwnProperty.call(data, 'response_data')) {
-                if (Object.prototype.hasOwnProperty.call(data.response_data, 'mandate_reference')) { // eslint-disable-next-line
-                    data.response_data.mandate_reference = String.prototype.replace.call(data.response_data.mandate_reference, /\w/gi, '*');
-                }
-            }
-            if (Object.prototype.hasOwnProperty.call(data, 'source_data')) { // eslint-disable-next-line
-                data.source_data = sensitiveDataHelper.cleanSourceDataObject(data.source_data);
-            }
-            if (Object.prototype.hasOwnProperty.call(data, 'source')) { // eslint-disable-next-line
-                data.source = sensitiveDataHelper.cleanSourceObject(data.source);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, 'customer')) { // eslint-disable-next-line
-                data.customer = sensitiveDataHelper.cleanCustomerObject(data.customer);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, 'shipping')) { // eslint-disable-next-line
-                data.shipping = sensitiveDataHelper.cleanShippingObject(data.shipping);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, 'billing_address')) { // eslint-disable-next-line
-                data.billing_address = sensitiveDataHelper.cleanBillingAddress(data.billing_address);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, '3ds') && data['3ds'] != null) { // eslint-disable-next-line
-                data['3ds'] = sensitiveDataHelper.clean3dsObject(data['3ds']);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, 'metadata') && data.metadata != null) { // eslint-disable-next-line
-                data.metadata = sensitiveDataHelper.cleanMetadataObject(data.metadata);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, 'actions') && data.actions != null) { // eslint-disable-next-line
-                data.actions = sensitiveDataHelper.cleanActionsArray(data.actions);
-            }
-
-            if (Object.prototype.hasOwnProperty.call(data, 'risk') && data.risk != null) { // eslint-disable-next-line
-                data.risk = sensitiveDataHelper.cleanRiskObject(data.risk);
-            }
-
-            data = sensitiveDataHelper.cleanPaymentFields(data);
-        }
-
-        return data;
+        return sensitiveDataHelper.redact(data);
     },
 
     /**
      * Redact sensitive data from service logs
      * @param {Object|string} data The service log data (object or JSON string)
-     * @returns {string} The redacted data as JSON string
+     * @returns {string} The redacted data as JSON string; text that is not JSON is not logged
      */
     redactServiceLog: function(data) {
-        var dataObj = (typeof data === 'string') ? JSON.parse(data) : data;
-        var cloneData = JSON.parse(JSON.stringify(dataObj));
-        var redactedData = this.removeSentisiveData(cloneData);
-        return JSON.stringify(redactedData);
+        var plain = data;
+
+        if (data && typeof data === 'object') {
+            try {
+                // A copy of the plain values (API objects included)
+                plain = JSON.parse(JSON.stringify(data));
+            } catch (e) {
+                return '[payload not logged: ' + e.message + ']';
+            }
+        }
+
+        return sensitiveDataHelper.redactToString(plain);
     },
 
     /**
@@ -1134,13 +1097,9 @@ var ckoHelper = {
      * @returns {boolean} card type
      */
     isMadaCard: function(card, config) {
-        // If MADA is disabled then return fales to process MADA Payments
-        // eslint-disable-next-line no-undef
-        var currentLocale = request.getLocale();
-        var locale = Locale.getLocale(currentLocale);
-        var countryCode = locale.getCountry();
-
-        if (!this.isMADAPaymentsEnabled() || countryCode !== 'SA') {
+        // Mada detection decides whether 3DS is forced: it depends on the card
+        // only, never on the request (its locale is the shopper's choice)
+        if (!this.isMADAPaymentsEnabled() || !card) {
             return false;
         }
 
@@ -1150,6 +1109,9 @@ var ckoHelper = {
 
         var madaBinsConfig = require('*/cartridge/config/ckoMadaConfig');
         var madaBins = madaBinsConfig[config.type] || {};
+
+        // eslint-disable-next-line no-param-reassign
+        card = String(card);
         // First 6 card number
         var cardNumber = card.slice(0, 6);
         // First card number
@@ -1157,13 +1119,13 @@ var ckoHelper = {
 
         switch (firstNumber) {
             case '4':
-                return madaBins.four.some(function(element) { return element === cardNumber; });
+                return (madaBins.four || []).some(function(element) { return element === cardNumber; });
             case '5':
-                return madaBins.five.some(function(element) { return element === cardNumber; });
+                return (madaBins.five || []).some(function(element) { return element === cardNumber; });
             case '6':
-                return madaBins.six.some(function(element) { return element === cardNumber; });
+                return (madaBins.six || []).some(function(element) { return element === cardNumber; });
             case '9':
-                return madaBins.nine.some(function(element) { return element === cardNumber; });
+                return (madaBins.nine || []).some(function(element) { return element === cardNumber; });
             default:
                 return false;
         }

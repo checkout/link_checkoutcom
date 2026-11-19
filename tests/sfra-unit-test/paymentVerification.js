@@ -260,7 +260,7 @@ describe('Klarna: the payment must pay the order; OnApprove acts only on a Klarn
 
         var body = null;
 
-        routes.OnApprove({ form: { orderID: '00001' }, currentCustomer: { raw: { getID: function() { return 'shopper'; } } } }, { json: function(data) { body = data; } }, function() {});
+        routes.OnApprove({ form: { orderID: '00001' }, session: { privacyCache: { get: function() { return null; } } }, currentCustomer: { raw: { getID: function() { return 'shopper'; } } } }, { json: function(data) { body = data; } }, function() {});
 
         assert.isTrue(body.error);
         assert.isFalse(handlePayments.called);
