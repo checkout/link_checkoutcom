@@ -134,7 +134,7 @@ function startPaymentSession(orderNo, routeName) {
     // eslint-disable-next-line no-undef
     session.privacy.ckoFlowSessionId = sessionResult.session.id;
 
-    return { order: order, session: sessionResult.session, cancelToken: flowPaymentHelper.issueCancelToken() };
+    return { order: order, session: sessionResult.session, cancelToken: flowPaymentHelper.issueCancelToken(order.getOrderNo()) };
 }
 
 /**
@@ -357,7 +357,7 @@ server.get('HandleFail', server.middleware.https, function(req, res, next) {
     // order only with proof that it comes from the shopper's own cancel link
     // (its token) or from the gateway's redirect for this order (a payment id
     // that Checkout.com confirms was made for it)
-    if (order && !flowPaymentHelper.isCancelToken(req.querystring.ct)) {
+    if (order && !flowPaymentHelper.isCancelToken(req.querystring.ct, order.getOrderNo())) {
         var returned = flowHelper.getPaymentDetails(getReturnedPaymentId(req.querystring));
 
         if (!returned || returned.reference !== order.getOrderNo()) {

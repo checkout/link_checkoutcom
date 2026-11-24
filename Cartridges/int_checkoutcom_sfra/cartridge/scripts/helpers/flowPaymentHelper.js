@@ -527,28 +527,40 @@ var flowPaymentHelper = {
     /**
      * Issue the value that the shopper's own cancel link carries: only the
      * storefront knows it, so another site cannot cancel the shopper's payment.
+     * One token per order: a refresh, a second tab or the inline mount after
+     * Show gets the same one, so a cancel link already on screen keeps working.
+     * @param {string} orderNo The Flow order the link cancels
      * @returns {string} The cancel token of this session's Flow order
      */
-    issueCancelToken: function() {
+    issueCancelToken: function(orderNo) {
+        /* eslint-disable no-undef */
+        if (session.privacy.ckoFlowCancelToken && session.privacy.ckoFlowCancelOrderNo === orderNo) {
+            return session.privacy.ckoFlowCancelToken;
+        }
+
         var Encoding = require('dw/crypto/Encoding');
         var SecureRandom = require('dw/crypto/SecureRandom');
         var token = Encoding.toHex(new SecureRandom().nextBytes(16));
 
-        // eslint-disable-next-line no-undef
         session.privacy.ckoFlowCancelToken = token;
+        session.privacy.ckoFlowCancelOrderNo = orderNo;
+        /* eslint-enable no-undef */
 
         return token;
     },
 
     /**
      * @param {string} value The ct parameter of a cancel request
-     * @returns {boolean} True when it is this session's cancel token
+     * @param {string} orderNo The order the request would cancel
+     * @returns {boolean} True when it is this session's cancel token for that order
      */
-    isCancelToken: function(value) {
-        // eslint-disable-next-line no-undef
+    isCancelToken: function(value, orderNo) {
+        /* eslint-disable no-undef */
         var expected = session.privacy.ckoFlowCancelToken;
+        var expectedOrderNo = session.privacy.ckoFlowCancelOrderNo;
+        /* eslint-enable no-undef */
 
-        return !!value && !!expected && ckoHelper.safeEquals(String(value), String(expected));
+        return !!value && !!expected && expectedOrderNo === orderNo && ckoHelper.safeEquals(String(value), String(expected));
     },
 
     /**
@@ -611,6 +623,7 @@ var flowPaymentHelper = {
         session.privacy.ckoFlowOrderNo = null;
         session.privacy.ckoFlowSessionId = null;
         session.privacy.ckoFlowCancelToken = null;
+        session.privacy.ckoFlowCancelOrderNo = null;
         /* eslint-enable no-undef */
     },
 };
