@@ -13,7 +13,6 @@ var Resource = require('dw/web/Resource');
 var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var BasketMgr = require('dw/order/BasketMgr');
 var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
-var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
 var cartHelper = require('*/cartridge/scripts/cart/cartHelpers');
 var CartModel = require('*/cartridge/models/cart');
 var Transaction = require('dw/system/Transaction');
@@ -123,18 +122,23 @@ function setPaymentData(req, ckoGooglePayData, shippingAddress, emailAddress) {
         basketCalculationHelpers.calculateTotals(currentBasket);
     });
 
-    // Re-calculate the payments.
-    var calculatedPaymentTransaction = COHelpers.calculatePaymentTransaction(
-        currentBasket
-    );
-
-    var order = COHelpers.createOrder(currentBasket);
-    return order;
+    // Only when Google Pay applies to this shopper and amount, as PlaceOrder
+    return require('*/cartridge/scripts/helpers/expressCheckoutHelper').createOrder(req, currentBasket);
 }
 
-server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req, res, next) {
+server.post('ExpressCheckout', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
+    var expressCheckoutHelper = require('*/cartridge/scripts/helpers/expressCheckoutHelper');
     var currentBasket = BasketMgr.getCurrentBasket();
     var result = {};
+
+    // The gates of the standard PlaceOrder
+    if (!expressCheckoutHelper.canOrder(req, currentBasket, 'CHECKOUTCOM_GOOGLE_PAY')) {
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
+    }
 
     var shippingAddress = JSON.parse(req.form.shippingAddress);
     var ckoGooglePayData = req.form.ckoGooglePayData;
@@ -184,6 +188,27 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
 
     var order = setPaymentData(req, ckoGooglePayData, shippingAddress, emailAddress);
 
+    if (!order) {
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.payment.not.valid', 'checkout', null),
+        });
+        return next();
+    }
+
+    // Fraud detection before the payment is authorized, as PlaceOrder
+    var fraudDetectionStatus = orderGuard.screenOrder(req, currentBasket, order);
+
+    if (fraudDetectionStatus.status === 'fail') {
+        res.json({
+            error: true,
+            cartError: true,
+            redirectUrl: URLUtils.url('Error-ErrorCode', 'err', fraudDetectionStatus.errorCode).toString(),
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
+    }
+
     var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo);
 
     if (handlePaymentResult.error === true) {
@@ -200,7 +225,6 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
         return next();
     }
 
-    var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
     var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus);
 
     if (placeOrderResult.error) {

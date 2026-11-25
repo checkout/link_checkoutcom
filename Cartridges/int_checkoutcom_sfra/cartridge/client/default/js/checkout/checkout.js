@@ -376,10 +376,35 @@ if(script) {
                 } else if (stage === 'placeOrder') {
                     // disable the placeOrder button here
                     $('body').trigger('checkout:disableButton', '.next-step-button button');
+                    // The session's CSRF token: PlaceOrder refuses a request without it.
+                    // The checkout form's first, else any on the page (a storefront
+                    // may render the billing form outside #checkout-main)
+                    var placeOrderData = { deviceSessionId: deviceSessionId };
+                    var $csrfToken = $('#checkout-main input[name*="csrf_token"]').first();
+
+                    if (!$csrfToken.length) {
+                        $csrfToken = $('input[name*="csrf_token"]').first();
+                    }
+
+                    if (!$csrfToken.length) {
+                        // Without a token the request fails and resets the session: say
+                        // so here, and let the shopper reload the page
+                        var ckoMessages = document.getElementById('ckoPaymentErrors');
+
+                        $('body').trigger('checkout:enableButton', '.next-step-button button');
+                        defer.reject({
+                            errorMessage: ckoMessages ? ckoMessages.getAttribute('data-technical') : null,
+                        });
+
+                        return defer;
+                    }
+
+                    placeOrderData[$csrfToken.attr('name')] = $csrfToken.val();
+
                     $.ajax({
                         url: $('.place-order').data('action'),
                         method: 'POST',
-                        data: {deviceSessionId: deviceSessionId},
+                        data: placeOrderData,
                         success: function(data) {
                             // enable the placeOrder button here
                             $('body').trigger('checkout:enableButton', '.next-step-button button');
@@ -460,9 +485,16 @@ if(script) {
                                 }
                             }
                         },
-                        error: function() {
+                        error: function(err) {
                             // enable the placeOrder button here
                             $('body').trigger('checkout:enableButton', $('.next-step-button button'));
+
+                            // An expired CSRF token: the session is reset, start again
+                            if (err.responseJSON && err.responseJSON.csrfError && err.responseJSON.redirectUrl) {
+                                window.location.href = err.responseJSON.redirectUrl;
+                            }
+
+                            defer.reject();
                         },
                     });
 
@@ -659,9 +691,17 @@ var exports = {
         var urlString = window.location.href;
         var url = new URL(urlString);
         var paymentError = url.searchParams.get('paymentError');
-        if (paymentError) {
+        var messages = document.getElementById('ckoPaymentErrors');
+
+        // The parameter is a code chosen from a fixed set; its text comes from
+        // the server's localized messages, never from the URL
+        var message = paymentError && /^[a-z]+$/.test(paymentError) && messages
+            ? messages.getAttribute('data-' + paymentError)
+            : null;
+
+        if (message) {
             $('.error-message').show();
-            $('.error-message-text').text(paymentError);
+            $('.error-message-text').text(message);
         }
     },
 

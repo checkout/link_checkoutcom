@@ -63,13 +63,7 @@ function getPaymentErrorPayload() {
     return {
         error: true,
         errorMessage: ckoHelper.getPaymentFailureMessage(),
-        redirectUrl: URLUtils.url(
-            'Checkout-Begin',
-            'stage',
-            'payment',
-            'paymentError',
-            Resource.msg('error.payment.not.valid', 'checkout', null)
-        ).toString(),
+        redirectUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.INVALID).toString(),
     };
 }
 
@@ -84,7 +78,7 @@ function getPaymentUnverifiedPayload() {
     return {
         error: true,
         errorMessage: message,
-        redirectUrl: URLUtils.url('Checkout-Begin', 'stage', 'payment', 'paymentError', message).toString(),
+        redirectUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.UNVERIFIED).toString(),
     };
 }
 
@@ -140,7 +134,30 @@ function startPaymentSession(orderNo, routeName) {
     // eslint-disable-next-line no-undef
     session.privacy.ckoFlowSessionId = sessionResult.session.id;
 
-    return { order: order, session: sessionResult.session };
+    return { order: order, session: sessionResult.session, cancelToken: flowPaymentHelper.issueCancelToken(order.getOrderNo()) };
+}
+
+/**
+ * The Flow view data, with a cancel link only this session can use.
+ * @param {Object} started The startPaymentSession result
+ * @returns {Object} The view data
+ */
+function getViewData(started) {
+    var viewData = flowHelper.getViewData(started.order, started.session);
+
+    viewData.failureUrl = URLUtils.https('CKOFlow-HandleFail', 'ref', started.order.getOrderNo(), 'ct', started.cancelToken).toString();
+
+    return viewData;
+}
+
+/**
+ * Release a payment that completed for a Flow order already given up, and
+ * tell the shopper.
+ * @param {Object} payment The payment read back from Checkout.com
+ * @returns {boolean} True when the payment was released
+ */
+function releaseLatePayment(payment) {
+    return flowPaymentHelper.releaseLatePayment(payment);
 }
 
 /**
@@ -156,7 +173,7 @@ server.get('Show', server.middleware.https, csrfProtection.generateToken, functi
     }
 
     res.render('checkout/flow/flowPayment', {
-        ckoFlow: flowHelper.getViewData(started.order, started.session),
+        ckoFlow: getViewData(started),
     });
 
     return next();
@@ -176,7 +193,7 @@ server.post('Session', server.middleware.https, csrfProtection.validateAjaxReque
         return next();
     }
 
-    var viewData = flowHelper.getViewData(started.order, started.session);
+    var viewData = getViewData(started);
 
     // A fresh token for the CKOFlow-Complete call that settles the order
     viewData.csrfName = CSRFProtection.getTokenName();
@@ -212,6 +229,23 @@ server.post('Complete', server.middleware.https, csrfProtection.validateAjaxRequ
 
         // HandleReturn (or a refresh) placed it first: the same confirmation
         result = placed ? { error: false, alreadyPlaced: true, order: placed } : { error: true };
+
+        // This session's order was given up while its payment went through:
+        // the payment is released, the shopper is told so
+        if (!placed && req.form.orderNo === session.privacy.ckoFlowOrderNo) { // eslint-disable-line no-undef
+            var late = flowHelper.getPaymentDetails(req.form.paymentId);
+
+            if (late && late.reference === req.form.orderNo && releaseLatePayment(late)) {
+                flowPaymentHelper.clearSession();
+                res.json({
+                    error: true,
+                    errorMessage: Resource.msg('cko.payment.released', 'cko', null),
+                    redirectUrl: paymentHelper.getPaymentErrorUrl(paymentHelper.PAYMENT_ERRORS.RELEASED).toString(),
+                });
+
+                return next();
+            }
+        }
     }
 
     if (result.error) {
@@ -264,6 +298,14 @@ server.get('HandleReturn', server.middleware.https, function(req, res, next) {
         var placed = resolved.payment ? flowPaymentHelper.getPlacedFlowOrder(resolved.payment.reference) : null;
 
         result = placed ? flowPaymentHelper.settlePlacedOrder(placed, resolved.payment) : null;
+
+        if (!result && releaseLatePayment(resolved.payment)) {
+            // Completed after its order was given up: released, and the shopper told so
+            flowPaymentHelper.clearSession();
+            paymentHelper.getReleasedPageRedirect(res);
+
+            return next();
+        }
     }
 
     if (!result) {
@@ -310,6 +352,21 @@ server.get('HandleFail', server.middleware.https, function(req, res, next) {
     // eslint-disable-next-line no-undef
     var orderNo = req.querystring.ref || session.privacy.ckoFlowOrderNo;
     var order = flowPaymentHelper.getSessionOrder(orderNo);
+
+    // A GET that any site can make the shopper's browser send: it gives up the
+    // order only with proof that it comes from the shopper's own cancel link
+    // (its token) or from the gateway's redirect for this order (a payment id
+    // that Checkout.com confirms was made for it)
+    if (order && !flowPaymentHelper.isCancelToken(req.querystring.ct, order.getOrderNo())) {
+        var returned = flowHelper.getPaymentDetails(getReturnedPaymentId(req.querystring));
+
+        if (!returned || returned.reference !== order.getOrderNo()) {
+            Logger.getLogger('checkoutcom').warn('Flow HandleFail for order {0} without a cancel token or a payment of the order: the order is kept.', order.getOrderNo());
+            paymentHelper.getPaymentPageRedirect(res);
+
+            return next();
+        }
+    }
 
     // The failure URL (or going back) proves nothing about the payment: a
     // payment that went through completes the order instead of failing it

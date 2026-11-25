@@ -18,6 +18,37 @@ var Logger = require('dw/system/Logger');
 
 var CUSTOM_OBJECT_TYPE = 'webhookNotification';
 
+/**
+ * The record key: the type is organization-wide while order numbers are only
+ * unique per site, so the key binds the site and one site's webhook can never
+ * be read or deleted by another site's poll.
+ * @param {string} orderNo The order number
+ * @returns {string} The key
+ */
+function mailboxKey(orderNo) {
+    return require('dw/system/Site').getCurrent().getID() + '_' + orderNo;
+}
+
+/**
+ * A record stored before the key bound the site (key = order number), kept
+ * only when it is about the order's own payment: written by this site's
+ * webhook for that payment, never another site's record for the same number.
+ * @param {string} orderNo The order number
+ * @param {string} [paymentId] The payment recorded on the order
+ * @returns {dw.object.CustomObject|null} The record
+ */
+function getLegacyRecord(orderNo, paymentId) {
+    var obj = paymentId ? CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo) : null;
+
+    try {
+        var hook = obj ? JSON.parse(obj.custom.webhookPayload) : null;
+
+        return hook && hook.data && hook.data.id === paymentId ? obj : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 var mbwayHelper = {
     /**
      * Persists a CKO webhook payload for a given order in the webhookNotification custom object.
@@ -29,9 +60,9 @@ var mbwayHelper = {
     storeWebhookNotification: function(orderNo, hook) {
         try {
             Transaction.wrap(function() {
-                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo));
                 if (!obj) {
-                    obj = CustomObjectMgr.createCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+                    obj = CustomObjectMgr.createCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo));
                 }
                 // Never replace a later state with an earlier one (out-of-order delivery)
                 var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
@@ -54,10 +85,11 @@ var mbwayHelper = {
      * Retrieves the stored webhook notification for an order.
      *
      * @param {string} orderNo - SFCC order number
+     * @param {string} [paymentId] - The payment recorded on the order (reads a record stored before the site-bound key)
      * @returns {Object|null} Object with webhookType and webhookPayload, or null if not found
      */
-    getWebhookNotification: function(orderNo) {
-        var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
+    getWebhookNotification: function(orderNo, paymentId) {
+        var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo)) || getLegacyRecord(orderNo, paymentId);
         if (obj) {
             return {
                 webhookType: obj.custom.webhookType,
@@ -71,14 +103,16 @@ var mbwayHelper = {
      * Removes the webhookNotification custom object for an order (cleanup after processing).
      *
      * @param {string} orderNo - SFCC order number
+     * @param {string} [paymentId] - The payment recorded on the order (removes a record stored before the site-bound key)
      */
-    deleteWebhookNotification: function(orderNo) {
+    deleteWebhookNotification: function(orderNo, paymentId) {
         try {
             Transaction.wrap(function() {
-                var obj = CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, orderNo);
-                if (obj) {
-                    CustomObjectMgr.remove(obj);
-                }
+                [CustomObjectMgr.getCustomObject(CUSTOM_OBJECT_TYPE, mailboxKey(orderNo)), getLegacyRecord(orderNo, paymentId)].forEach(function(obj) {
+                    if (obj) {
+                        CustomObjectMgr.remove(obj);
+                    }
+                });
             });
         } catch (e) {
             Logger.error('mbwayHelper.deleteWebhookNotification failed for order {0}: {1}', orderNo, e.message);

@@ -31,6 +31,13 @@ var cardHelper = {
         // Build the request data
         var gatewayRequest = this.buildRequest(orderNumber, paymentInstrument, paymentProcessor.ID);
 
+        if (!gatewayRequest) {
+            // No security code for the card: nothing is sent to the gateway
+            session.privacy.deviceSessionId = null;
+
+            return { error: true, redirectUrl: false, transactionID: null };
+        }
+
         // Log the payment request data
         ckoHelper.log(paymentProcessor.ID + ' ' + ckoHelper._('cko.request.data', 'cko'), gatewayRequest);
 
@@ -99,6 +106,11 @@ var cardHelper = {
         }
 
         var source = this.getCardSource(paymentInstrument);
+
+        if (!source) {
+            return null;
+        }
+
         var customer = ckoHelper.getCustomer(order);
 
         if (order.billingAddress && order.billingAddress.getPhone()) {
@@ -114,25 +126,17 @@ var cardHelper = {
             source.billing_address = ckoHelper.getFormattedBillingAddress(billingAddress);
         }
 
-        if (paymentData.saveCard === false) {
-            if (paymentData.madaCard === true) {
-                metadata = ckoHelper.getMetadata({ type: 'mada' }, paymentProcessor, paymentInstrument);
-                udf5Metadata = ckoHelper.getMetadataString({ type: 'mada' }, paymentProcessor);
-            } else {
-                metadata = ckoHelper.getMetadata({}, paymentProcessor, paymentInstrument);
-                udf5Metadata = ckoHelper.getMetadataString(paymentData, paymentProcessor);
-            }
-        } else {
-            var cardBinNumber = paymentData.cardBin;
-            var madaCard = ckoHelper.isMadaCard(cardBinNumber, { type: 'creditCard' });
+        // Mada, decided here from the card actually charged (the stored BIN of a
+        // saved card, the number of a new one), the same way for both: never a
+        // flag computed earlier nor anything of the shopper's request
+        var madaCard = this.isMadaPayment(paymentInstrument, paymentData, source);
 
-            if (madaCard === true) {
-                metadata = ckoHelper.getMetadata({ type: 'mada' }, paymentProcessor, paymentInstrument);
-                udf5Metadata = ckoHelper.getMetadataString({ type: 'mada' }, paymentProcessor);
-            } else {
-                metadata = ckoHelper.getMetadata({}, paymentProcessor, paymentInstrument);
-                udf5Metadata = ckoHelper.getMetadataString(paymentData, paymentProcessor);
-            }
+        if (madaCard) {
+            metadata = ckoHelper.getMetadata({ type: 'mada' }, paymentProcessor, paymentInstrument);
+            udf5Metadata = ckoHelper.getMetadataString({ type: 'mada' }, paymentProcessor);
+        } else {
+            metadata = ckoHelper.getMetadata({}, paymentProcessor, paymentInstrument);
+            udf5Metadata = ckoHelper.getMetadataString(paymentData, paymentProcessor);
         }
 
         // Prepare the charge data
@@ -145,7 +149,8 @@ var cardHelper = {
             customer: customer,
             billing_descriptor: ckoHelper.getBillingDescriptor(),
             shipping: ckoHelper.getShipping(order),
-            '3ds': (paymentData.madaCard === true) ? { enabled: true } : ckoHelper.get3Ds(),
+            // A Mada payment is always challenged (3DS forced, no attempt_n3d)
+            '3ds': madaCard ? { enabled: true } : ckoHelper.get3Ds(),
             risk: {
                 device_session_id : device_session_id,
                 enabled: ckoHelper.getValue(constants.CKO_ENABLE_RISK_FLAG),
@@ -181,36 +186,81 @@ var cardHelper = {
     },
 
     /**
-     * Get a card source.
+     * Whether a card security code has the format of the card type: 4 digits
+     * for American Express, 3 for the other schemes.
+     * @param {string} securityCode The security code
+     * @param {string} cardType The SFCC card type
+     * @returns {boolean} True when it is valid
+     */
+    isValidSecurityCode: function(securityCode, cardType) {
+        var isAmex = /amex|american/i.test(String(cardType || ''));
+
+        return (isAmex ? /^\d{4}$/ : /^\d{3}$/).test(String(securityCode || ''));
+    },
+
+    /**
+     * Whether the card charged is a Mada card.
+     * @param {Object} paymentInstrument The payment instrument
+     * @param {Object} paymentData The instrument's ckoPaymentData
+     * @param {Object} source The card source sent to the gateway
+     * @returns {boolean} True for a Mada card
+     */
+    isMadaPayment: function(paymentInstrument, paymentData, source) {
+        var bin = source.type === 'id'
+            ? paymentData.cardBin
+            : String(paymentInstrument.creditCardNumber || '').replace(/\D/g, '');
+
+        return !!bin && ckoHelper.isMadaCard(String(bin), { type: 'creditCard' }) === true;
+    },
+
+    /**
+     * Whether the card is charged by its token: a card saved in the shopper's
+     * wallet, or a new card being saved (tokenized by Handle).
+     * @param {Object} paymentInstrument The payment instrument
+     * @param {Object} paymentData The instrument's ckoPaymentData
+     * @returns {boolean} True when the source is the card's token
+     */
+    usesCardToken: function(paymentInstrument, paymentData) {
+        if (!paymentInstrument.creditCardToken) {
+            return false;
+        }
+
+        return paymentData.storedCard === true || !!paymentData.storedPaymentUUID || !!paymentData.saveCard;
+    },
+
+    /**
+     * Get a card source. A saved card is charged by its token, a new card by its
+     * number, whichever is decided by how the card was selected; either way the
+     * security code is required.
      * @param {Object} paymentInstrument The payment data
-     * @returns {Object} The card source
+     * @returns {Object|null} The card source, or null when there is no security code
      */
     getCardSource: function(paymentInstrument) {
-        // Replace selectedCardUuid by get saved card token from selectedCardUuid
-        var cardSource;
         var paymentData = JSON.parse(paymentInstrument.custom.ckoPaymentData);
         // From the session (Handle); a basket from before this change still has it in its data
         var securityCode = this.takeSecurityCode() || paymentData.securityCode || null;
 
-        if (securityCode && paymentData.saveCard) {
-            cardSource = {
+        if (!securityCode) {
+            return null;
+        }
+
+        if (this.usesCardToken(paymentInstrument, paymentData)) {
+            return {
                 type: 'id',
                 id: paymentInstrument.creditCardToken,
                 cvv: securityCode,
                 name: paymentInstrument.creditCardHolder,
             };
-        } else {
-            cardSource = {
-                type: 'card',
-                number: paymentInstrument.creditCardNumber,
-                expiry_month: paymentInstrument.creditCardExpirationMonth,
-                expiry_year: paymentInstrument.creditCardExpirationYear,
-                cvv: securityCode,
-                name: paymentInstrument.creditCardHolder,
-            };
         }
 
-        return cardSource;
+        return {
+            type: 'card',
+            number: paymentInstrument.creditCardNumber,
+            expiry_month: paymentInstrument.creditCardExpirationMonth,
+            expiry_year: paymentInstrument.creditCardExpirationYear,
+            cvv: securityCode,
+            name: paymentInstrument.creditCardHolder,
+        };
     },
 
     /**

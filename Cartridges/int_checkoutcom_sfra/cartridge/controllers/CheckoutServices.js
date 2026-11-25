@@ -30,7 +30,10 @@ server.append('SubmitPayment', server.middleware.https, csrfProtection.validateA
     next();
 });
 
-server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
+// This handler replaces the base route (it never calls next()), so it carries
+// the base POST-only check itself, and a CSRF check: a cross-site request
+// must never turn the shopper's basket into an order
+server.prepend('PlaceOrder', server.middleware.https, server.middleware.post, csrfProtection.validateAjaxRequest, function(req, res, next) {
     var BasketMgr = require('dw/order/BasketMgr');
     var OrderMgr = require('dw/order/OrderMgr');
     var Resource = require('dw/web/Resource');
@@ -163,6 +166,24 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
         return;
     }
 
+    var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
+
+    // Fraud detection before the payment is authorized: a rejected order never
+    // holds a payment, so no concurrent return can place it, and a flag is
+    // recorded on the order for every route that places it later
+    var fraudDetectionStatus = orderGuard.screenOrder(req, currentBasket, order);
+    if (fraudDetectionStatus.status === 'fail') {
+        res.json({
+            error: true,
+            cartError: true,
+            redirectUrl: URLUtils.url('Error-ErrorCode', 'err', fraudDetectionStatus.errorCode).toString(),
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+
+        this.emit('route:Complete', req, res);
+        return;
+    }
+
     // Handles payment authorization
     var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo);
 
@@ -209,27 +230,6 @@ server.prepend('PlaceOrder', server.middleware.https, function(req, res, next) {
             error: true,
             errorMessage: Resource.msg('error.technical', 'checkout', null),
         });
-        this.emit('route:Complete', req, res);
-        return;
-    }
-
-    var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
-    var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
-    if (fraudDetectionStatus.status === 'fail') {
-        // The payment was already authorized: release it with the order
-        orderGuard.reverseStrayPayments(order.orderNo);
-        orderGuard.failOrder(order);
-
-        // fraud detection failed
-        req.session.privacyCache.set('fraudDetectionStatus', true);
-
-        res.json({
-            error: true,
-            cartError: true,
-            redirectUrl: URLUtils.url('Error-ErrorCode', 'err', fraudDetectionStatus.errorCode).toString(),
-            errorMessage: Resource.msg('error.technical', 'checkout', null),
-        });
-
         this.emit('route:Complete', req, res);
         return;
     }

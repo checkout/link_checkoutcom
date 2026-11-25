@@ -91,6 +91,21 @@ function processForm(req, paymentForm, viewFormData) {
         viewData.paymentInformation.cardNumber.value = paymentInstrument.creditCardNumber;
         viewData.paymentInformation.cardType.value = paymentInstrument.creditCardType;
         viewData.paymentInformation.securityCode.value = req.form.securityCode;
+
+        // The security code of a saved card is required and checked here, as a
+        // new card's is by validateCreditCard
+        var cardHelper = require('*/cartridge/scripts/helpers/cardHelper');
+
+        if (!paymentInstrument || !cardHelper.isValidSecurityCode(req.form.securityCode, paymentInstrument.creditCardType)) {
+            var securityCodeErrors = {};
+
+            securityCodeErrors[paymentForm.creditCardFields.securityCode.htmlName] = require('dw/web/Resource').msg('error.invalid.security.code', 'creditCard', null);
+
+            return {
+                fieldErrors: securityCodeErrors,
+                error: true,
+            };
+        }
         viewData.paymentInformation.expirationMonth.value = paymentInstrument.creditCardExpirationMonth;
         viewData.paymentInformation.expirationYear.value = paymentInstrument.creditCardExpirationYear;
         viewData.paymentInformation.creditCardToken = paymentInstrument.raw.creditCardToken;

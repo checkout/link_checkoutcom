@@ -9,7 +9,6 @@ var orderGuard = require('*/cartridge/scripts/helpers/orderGuard');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var constants = require('*/cartridge/config/constants');
 var payPalHelper = require('*/cartridge/scripts/helpers/payPalHelper');
-var hooksHelper = require('*/cartridge/scripts/helpers/hooks');
 var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 var URLUtils = require('dw/web/URLUtils');
 var Site = require('dw/system/Site');
@@ -199,11 +198,22 @@ server.get('OnApprove', function(req, res, next) {
     return next();
 });
 
-server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req, res, next) {
+server.post('ExpressCheckout', server.middleware.https, csrfProtection.validateAjaxRequest, function(req, res, next) {
+    var expressCheckoutHelper = require('*/cartridge/scripts/helpers/expressCheckoutHelper');
     var currentBasket = BasketMgr.getCurrentBasket();
     var result = {};
     var response;
     var paymentContextId = req.form.paymentContextId;
+
+    // The gates of the standard PlaceOrder
+    if (!expressCheckoutHelper.canOrder(req, currentBasket, 'CHECKOUTCOM_PAYPAL')) {
+        ckoHelper.restoreBasket();
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
+    }
 
     // Verify that the payment context ID belongs to the current session
     var storedContextId = session.privacy.ckoPayPalContextId || null;
@@ -274,6 +284,29 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
 
     var order = payPalHelper.setPaymentData(req, ckoPayPalData, result.address, emailAddress);
 
+    if (!order) {
+        ckoHelper.restoreBasket();
+        res.json({
+            error: true,
+            errorMessage: Resource.msg('error.payment.not.valid', 'checkout', null),
+        });
+        return next();
+    }
+
+    // Fraud detection before the payment is authorized, as PlaceOrder
+    var fraudDetectionStatus = orderGuard.screenOrder(req, currentBasket, order);
+
+    if (fraudDetectionStatus.status === 'fail') {
+        ckoHelper.restoreBasket();
+        res.json({
+            error: true,
+            cartError: true,
+            redirectUrl: URLUtils.url('Error-ErrorCode', 'err', fraudDetectionStatus.errorCode).toString(),
+            errorMessage: Resource.msg('error.technical', 'checkout', null),
+        });
+        return next();
+    }
+
     var handlePaymentResult = COHelpers.handlePayments(order, order.orderNo);
 
     if (handlePaymentResult.error === true) {
@@ -294,7 +327,6 @@ server.post('ExpressCheckout', csrfProtection.validateAjaxRequest, function(req,
         return next();
     }
 
-    var fraudDetectionStatus = hooksHelper('app.fraud.detection', 'fraudDetection', currentBasket, require('*/cartridge/scripts/hooks/fraudDetection').fraudDetection);
     // A pending PayPal payment: placed, but not exported until it is paid
     var placeOrderResult = orderGuard.placeOrder(order, fraudDetectionStatus, { awaitingPayment: !!handlePaymentResult.awaitingPayment });
 

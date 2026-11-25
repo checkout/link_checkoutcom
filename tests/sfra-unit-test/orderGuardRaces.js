@@ -42,6 +42,7 @@ function makeOrder(opts) {
             transactionID: definition.transactionID || null,
             setTransactionID: function(id) { this.transactionID = id; },
             getTransactionID: function() { return this.transactionID; },
+            getAmount: function() { return { isAvailable: function() { return false; } }; },
             setPaymentProcessor: function() {},
             setType: function() {},
             custom: {},
@@ -52,6 +53,7 @@ function makeOrder(opts) {
             paymentTransaction: transaction,
             getPaymentTransaction: function() { return transaction; },
             getUUID: function() { return definition.method + '-uuid'; },
+            getPaymentMethod: function() { return definition.method; },
             custom: {},
         };
     });
@@ -69,6 +71,7 @@ function makeOrder(opts) {
         CONFIRMATION_STATUS_CONFIRMED: ORDER.CONFIRMATION_STATUS_CONFIRMED,
         CONFIRMATION_STATUS_NOTCONFIRMED: ORDER.CONFIRMATION_STATUS_NOTCONFIRMED,
         getOrderNo: function() { return this.orderNo; },
+        getCurrencyCode: function() { return 'EUR'; },
         getOrderToken: function() { return this.orderToken; },
         getStatus: function() { var self = this; return { getValue: function() { return self.status; } }; },
         getPaymentStatus: function() { var self = this; return { getValue: function() { return self.paymentStatus; } }; },
@@ -122,6 +125,10 @@ function fakes(ordersByNo, overrides) {
 
     var ckoHelper = {
         getValue: function() { return 'sandbox'; },
+        // The fake orders are for EUR 45.00
+        getAmount: function() { return '4500'; },
+        getFormattedPrice: function(value) { return String(Math.round(Number(value) * 100)); },
+        redactServiceLog: function(value) { return JSON.stringify(value); },
         gatewayClientRequest: function(serviceId, data, method) {
             calls.gateway.push({ serviceId: serviceId, data: data, method: method });
 
@@ -386,7 +393,7 @@ describe('Flow: completion races (flowPaymentHelper)', function() {
 
         var env = fakes({ '00001': order }, { gateway: function() { return { action_id: 'x' }; } });
         // Checkout.com confirms the order is paid by its recorded payment
-        var funding = { id: 'pay_1', status: 'Captured', reference: '00001' };
+        var funding = { id: 'pay_1', status: 'Captured', reference: '00001', approved: true, amount: 4500, currency: 'EUR' };
         var result = loadFlow(env, { getPaymentDetails: sinon.stub().withArgs('pay_1').returns(funding) }).helper.completeOrder(order, 'pay_2', { id: 'pay_2', status: 'Authorized', reference: '00001' });
 
         assert.isFalse(result.error);
@@ -509,6 +516,7 @@ describe('Webhooks: stale and out-of-order events (eventsHelper)', function() {
             '*/cartridge/scripts/helpers/ckoHelper': { _: function(key) { return key; } },
             '*/cartridge/scripts/helpers/savedCardHelper': { updateSavedCard: function() {} },
             '*/cartridge/scripts/helpers/transactionHelper': { createAuthorization: function() {} },
+            '*/cartridge/scripts/helpers/orderGuard': loadGuard(env),
             '*/cartridge/config/ckoFlowConfig': flowConfig,
         }));
     }
@@ -561,10 +569,15 @@ describe('Webhooks: stale and out-of-order events (eventsHelper)', function() {
         });
     };
 
+    // The payment read back from Checkout.com: it pays the fake order (EUR 45.00)
+    var paid = function(id, status) {
+        return function() { return { id: id, reference: '00001', approved: true, status: status || 'Captured', amount: 4500, currency: 'EUR' }; };
+    };
+
     it('the capture of a pending payment releases its order for export', function() {
         var order = awaiting();
 
-        loadEvents(fakes({ '00001': order })).settleAwaitingOrder(hook('payment_captured', 'pay_1'));
+        loadEvents(fakes({ '00001': order }, { gateway: paid('pay_1') })).settleAwaitingOrder(hook('payment_captured', 'pay_1'));
 
         assert.equal(order.exportStatus, ORDER.EXPORT_STATUS_READY);
     });
